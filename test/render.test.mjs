@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { loadDataset, day } from '../src/data.mjs';
 import { makeTimeline } from '../src/timeline.mjs';
-import { activeFireworks, eventPose, modelLabel, skyBox, FIREWORK } from '../src/draw.mjs';
+import { activeFireworks, eventPose, ledgerRows, modelLabel, skyBox, FIREWORK } from '../src/draw.mjs';
 import { makeRenderer } from '../src/node-renderer.mjs';
 import { captions, previewHtml } from '../src/artifacts.mjs';
 const data = await loadDataset(), timeline = makeTimeline(data);
@@ -71,6 +71,24 @@ test('each lab bursts in its own altitude lane, above the ground line in both la
     const lanes = heights.map(set => [...set][0]);
     for (let i = 1; i < lanes.length; i++) assert(lanes[i] - lanes[i - 1] >= box.radius * .3);
     assert(lanes.at(-1) + box.radius < box.y);
+  }
+});
+test('ledger shows the newest name on top and pushes older rows down smoothly without overlap', () => {
+  const clock = { onsets: new Map([['a', 0], ['b', 1], ['c', 1.03], ['d', 3]]) }, events = ['a', 'b', 'c', 'd'].map(id => ({ id }));
+  assert.deepEqual(ledgerRows(events, clock, 5).map(r => r.row), [3, 2, 1, 0]);
+  let previous = ledgerRows(events.slice(0, 3), clock, 1);
+  for (let t = 1.002; t <= 1.6; t += .002) {
+    const rows = ledgerRows(events.slice(0, 3), clock, t);
+    for (let k = 1; k < rows.length; k++) assert(rows[k - 1].row - rows[k].row >= 1 - 1e-9, `rows overlap at ${t}`);
+    for (const [k, r] of rows.entries()) if (r.alpha > 0 && previous[k]?.alpha > 0) assert(Math.abs(r.row - previous[k].row) < .05, `row jumps at ${t}`);
+    previous = rows;
+  }
+  for (const lab of data.labs) {
+    const labEvents = data.releases.filter(e => e.lab === lab.id);
+    for (const e of labEvents) for (const dt of [0, .03, .1, .2]) {
+      const time = timeline.onsets.get(e.id) + dt, rows = ledgerRows(labEvents.filter(x => timeline.onsets.get(x.id) <= time).slice(-6), timeline, time);
+      for (let k = 1; k < rows.length; k++) assert(rows[k - 1].row - rows[k].row >= 1 - 1e-9);
+    }
   }
 });
 test('portrait labels preserve numeric Claude family names and preview status', () => {

@@ -37,7 +37,7 @@ test('equal calendar gaps have equal film durations without release-date pauses'
   const scale = timeline.travelSeconds / (timeline.end - timeline.start);
   for (const event of data.releases) assert(Math.abs(timeline.onsets.get(event.id) - timeline.introSeconds - (day(event.date) - timeline.start) * scale) < 1e-8);
 });
-test('each name stays in its fixed four-slot lab ledger for at least 1.4 seconds', () => {
+test('each name stays among its lab\'s four newest ledger rows for at least 1.4 seconds', () => {
   for (const lab of data.labs) {
     const events = data.releases.filter(e => e.lab === lab.id);
     for (const [i, e] of events.entries()) {

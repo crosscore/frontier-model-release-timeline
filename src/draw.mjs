@@ -171,25 +171,41 @@ export function modelLabel(event, portrait = false) {
   const full = event.name + (event.stage === 'preview' ? ' *' : '');
   return portrait ? full.replace(/^Claude (?=[A-Za-z])/, '') : full;
 }
+// Newest first. An arrival enters at the top and pushes older names down one row; the fifth fades out.
+const PUSH_SECONDS = .28, easeOut = x => 1 - (1 - clamp(x)) ** 3;
+export function ledgerRows(events, timeline, time) {
+  const eased = events.map(e => easeOut((time - timeline.onsets.get(e.id)) / PUSH_SECONDS));
+  let below = Infinity;
+  // Oldest first: each name sits one row lower for every later arrival, and a newer name never
+  // comes closer than one row above the name below it, so rows cannot overlap mid-animation.
+  return events.map((event, k) => {
+    const row = Math.min(eased.slice(k + 1).reduce((sum, v) => sum + v, 0) - (1 - eased[k]), below - 1);
+    below = row;
+    return { event, row, alpha: Math.min(clamp((row + .5) / .5), clamp((3.25 - row) / .25)) };
+  });
+}
 function ledger(ctx, data, visible, timeline, state, year, w, portrait) {
   const n = data.labs.length, p = 64, gap = portrait ? (n > 2 ? 30 : 42) : (n > 2 ? 60 : 90), col = (w - 2 * p - gap * (n - 1)) / n, nameX = n > 2 ? 150 : 165;
-  const y = portrait ? 1262 : 767, rowH = portrait ? 91 : 49;
+  const y = portrait ? 1262 : 767, rowH = portrait ? 91 : 49, top = y + (portrait ? 54 : 58);
   data.labs.forEach((lab, i) => {
-    const x = p + i * (col + gap), all = visible.filter(e => e.lab === lab.id), events = all.slice(-4);
+    const x = p + i * (col + gap), all = visible.filter(e => e.lab === lab.id), newest = all.at(-1);
     circle(ctx, x + 5, y - 7, 5, lab.color);
     label(ctx, lab.name.toUpperCase(), x + 24, y, portrait ? 30 : 23, lab.color, 600);
-    if (!portrait || n === 2) label(ctx, 'RECENT LAUNCHES', x + col, y, portrait ? 21 : 19, C.dim, 500, 'right');
+    if (!portrait || n === 2) label(ctx, 'NEWEST FIRST', x + col, y, portrait ? 21 : 19, C.dim, 500, 'right');
     line(ctx, x, y + 16, x + col, y + 16);
-    events.forEach(event => {
-      // Four fixed slots: an arrival replaces only the oldest slot, never moves other labels.
-      const j = all.indexOf(event) % 4, yy = y + (portrait ? 54 : 58) + j * rowH;
-      const age = state.time - timeline.onsets.get(event.id), newest = event === all.at(-1);
+    ctx.save(); ctx.beginPath(); ctx.rect(x - 12, y + 17, col + 24, top - y - 17 + 3.25 * rowH + (portrait ? 61 : 12)); ctx.clip();
+    for (const { event, row, alpha } of ledgerRows(all.slice(-6), timeline, state.time)) {
+      if (alpha <= .01) continue;
+      const yy = top + row * rowH, age = state.time - timeline.onsets.get(event.id), latest = event === newest;
+      ctx.globalAlpha = alpha;
       if (age < 1.2) rect(ctx, x - 9, yy - (portrait ? 26 : 30), col + 18, portrait ? 82 : 44, rgba(lab.color, .1 * (1 - age / 1.2)));
-      label(ctx, event.date.replaceAll('-', '.'), x, yy, portrait ? 30 : 22, newest ? C.text : C.muted);
-      const model = modelLabel(event, portrait);
-      fit(ctx, model, portrait ? x : x + nameX, yy + (portrait ? 47 : 0), portrait ? col : col - nameX, portrait ? 43 : 34, C.text);
-      if (newest) circle(ctx, x + col - 5, yy - (portrait ? 9 : 12), 3, lab.color);
-    });
+      // Text that would sit above the list's clip edge stays undrawn until it slides into view.
+      const shown = (baseline, size) => baseline - size * .75 >= y + 17;
+      if (shown(yy, portrait ? 30 : 22)) label(ctx, event.date.replaceAll('-', '.'), x, yy, portrait ? 30 : 22, latest ? C.text : C.muted);
+      if (shown(yy + (portrait ? 47 : 0), portrait ? 43 : 34)) fit(ctx, modelLabel(event, portrait), portrait ? x : x + nameX, yy + (portrait ? 47 : 0), portrait ? col : col - nameX, portrait ? 43 : 34, C.text);
+      if (latest) circle(ctx, x + col - 5, yy - (portrait ? 9 : 12), 3, lab.color);
+    }
+    ctx.restore();
   });
 }
 function intro(ctx, data, timeline, state, w, h, portrait) {

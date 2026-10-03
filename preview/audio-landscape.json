@@ -1,5 +1,5 @@
 {
-  "title": "Ignition / 002",
+  "title": "Liftoff / 003",
   "bpm": 128,
   "sampleRate": 48000,
   "channels": 2,
@@ -11,12 +11,12 @@
   "samples": 1440000,
   "duration": 30,
   "samplePeakDbfs": -3.609120944016389,
-  "rmsDbfs": -16.88569358560447,
+  "rmsDbfs": -16.904543920001895,
   "cueCount": 51,
   "introEnd": 1.8729166666666666,
-  "integratedLufs": -16.11,
-  "truePeakDbtp": -1.81,
-  "loudnessRangeLu": 6.1,
+  "integratedLufs": -16.12,
+  "truePeakDbtp": -2.89,
+  "loudnessRangeLu": 5.6,
   "cues": [
     {
       "id": "anthropic-claude",
