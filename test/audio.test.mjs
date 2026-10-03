@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { loadDataset } from '../src/data.mjs';
-import { makeTimeline } from '../src/timeline.mjs';
+import { BAR_SECONDS, cuePoints, kickTimes, makeTimeline } from '../src/timeline.mjs';
 import { FIREWORK } from '../src/draw.mjs';
 import { SCORE, soundCues, synthesize, wavBuffer } from '../src/audio.mjs';
 const data = await loadDataset(), timeline = makeTimeline(data);
@@ -32,9 +32,19 @@ test('original stereo synthesis is finite, unclipped, reproducible and fades to 
     difference += Math.abs(a.left[i] - a.right[i]); mono += ((a.left[i] + a.right[i]) / 2) ** 2;
   }
   assert(peak > .5 && peak < .7); assert(difference > 1); assert(mono > 1);
-  assert.equal(a.left[0], 0); assert(Math.abs(a.left.at(-1)) < .001);
+  assert.equal(Math.abs(a.left[0]), 0); assert(Math.abs(a.left.at(-1)) < .001);
   assert.equal(a.metrics.bpm, SCORE.bpm);
 });
 test('invalid audio options fail before allocating buffers', () => {
   for (const opts of [{duration: -1}, {sampleRate: 0}, {duration: Infinity}, {timeScale: NaN}]) assert.throws(() => synthesize(data, timeline, opts));
+});
+test('the groove runs through the drop and fades out instead of resolving to a final chord', () => {
+  const sampleRate = 8000, a = synthesize(data, timeline, { sampleRate }), p = cuePoints(timeline);
+  const rms = (from, to) => { let s = 0; const i0 = Math.round(from * sampleRate), i1 = Math.round(to * sampleRate); for (let i = i0; i < i1; i++) s += a.left[i] ** 2 + a.right[i] ** 2; return 10 * Math.log10(s / (2 * (i1 - i0))); };
+  const drop = rms(p.drop, p.drop + BAR_SECONDS), travel = [];
+  for (let t = p.intro; t < p.build - 1e-6; t += BAR_SECONDS) travel.push(rms(t, t + BAR_SECONDS));
+  assert(drop > Math.max(...travel), 'the drop is the loudest bar');
+  assert(rms(p.outro, p.outro + .5) > drop - 3, 'the groove is still running when the summary appears');
+  assert(rms(timeline.duration - .25, timeline.duration) < drop - 30, 'the track fades out');
+  assert.equal(a.metrics.kicks, kickTimes(p).length);
 });

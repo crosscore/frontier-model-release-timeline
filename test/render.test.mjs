@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { loadDataset, day } from '../src/data.mjs';
-import { makeTimeline } from '../src/timeline.mjs';
+import { cuePoints, makeTimeline } from '../src/timeline.mjs';
+import { cameraAt, DIVE_SECONDS, REVEAL_SECONDS } from '../src/camera.mjs';
 import { activeFireworks, chartBox, chartScale, eventPose, ledgerRows, modelLabel, scoreOf, FIREWORK } from '../src/draw.mjs';
 import { makeRenderer } from '../src/node-renderer.mjs';
 import { captions, previewHtml } from '../src/artifacts.mjs';
@@ -25,7 +26,7 @@ test('both layouts keep text on canvas at every launch and in the intro/summary'
       }
       boxes.push(box); fillText(value, x, y);
     };
-    for (const seconds of [2, ...timeline.onsets.values()].map((t, i) => i ? t + .5 : t).concat(timeline.outroStart + 4)) { boxes = []; renderer.frame(seconds); }
+    for (const seconds of [1.2, 2, ...[...timeline.onsets.values()].flatMap(t => [t + .05, t + .5])].concat(timeline.outroStart + 4)) { boxes = []; renderer.frame(seconds); }
   }
 });
 test('frame rendering is deterministic and changes across time', () => {
@@ -104,4 +105,24 @@ test('portrait labels preserve numeric Claude family names and preview status', 
   assert.equal(modelLabel({name:'Claude 2.1',stage:'release'},true),'Claude 2.1');
   assert.equal(modelLabel({name:'Claude Opus 4.6',stage:'release'},true),'Opus 4.6');
   assert.equal(modelLabel({name:'GPT-4.5',stage:'preview'},true),'GPT-4.5 *');
+});
+test('the camera keeps every burst in the plot while it tracks, then reveals the whole chart after the drop', () => {
+  const p = cuePoints(timeline);
+  for (const format of ['landscape', 'portrait']) {
+    const box = chartBox(format);
+    for (const e of data.releases) for (const dt of [0, .35]) {
+      const t = timeline.onsets.get(e.id) + dt, cam = cameraAt(data, timeline, format, t), pose = eventPose(data, e, box), at = cam.toScreen(pose.bx, pose.by);
+      assert(at.x >= box.x && at.x <= box.x + box.w, `${format}: ${e.name} leaves the plot horizontally`);
+      if (pose.scored) assert(at.y >= box.top - 40 && at.y <= box.y, `${format}: ${e.name} leaves the plot vertically`);
+    }
+    const tracking = cameraAt(data, timeline, format, p.intro + DIVE_SECONDS + .5);
+    assert(tracking.s > 1.5, `${format}: the camera dives in after the intro`);
+    const wide = cameraAt(data, timeline, format, p.drop + REVEAL_SECONDS + .4);
+    assert(wide.s >= 1 && wide.s < 1.05, `${format}: the drop reveals the whole chart`);
+    assert(Math.abs(wide.toScreen(box.x, box.y).x - box.x) < box.w * .03, `${format}: the reveal frames the whole calendar`);
+    const intro = cameraAt(data, timeline, format, .5);
+    assert.deepEqual([intro.s, intro.cx, intro.cy], [1, intro.P.x, intro.P.y]);
+    const shot = t => { const c = cameraAt(data, timeline, format, t); return [c.s, c.cx, c.cy, c.dx, c.dy]; };
+    assert.deepEqual(shot(15.3), shot(15.3), 'the camera is a pure function of time');
+  }
 });

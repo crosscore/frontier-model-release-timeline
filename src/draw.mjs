@@ -1,5 +1,8 @@
 import { day, iso, yearOf, yearlyStats } from './data.mjs';
 import { clamp, smooth, stateAt, stateYear, visibleEvents } from './timeline.mjs';
+import { chartBox, chartScale, eventPose, scoreOf } from './chart.mjs';
+import { cameraAt } from './camera.mjs';
+export { chartBox, chartScale, eventPose, scoreOf };
 
 export const FORMATS = { landscape: { width: 1920, height: 1080 }, portrait: { width: 1080, height: 1920 } };
 export const FIREWORK = Object.freeze({ rise: .36, life: 1.9, rays: 68 });
@@ -8,6 +11,8 @@ const TAU = Math.PI * 2;
 const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const labIndex = (data, id) => data.labs.findIndex(lab => lab.id === id);
 const rgba = (hex, a) => `${hex}${Math.round(clamp(a) * 255).toString(16).padStart(2, '0')}`;
+const mixHex = (a, b, q) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - q) + parseInt(b.slice(i, i + 2), 16) * q).toString(16).padStart(2, '0')).join('');
+const easeOut = x => 1 - (1 - clamp(x)) ** 3;
 export function seeded(seed) {
   let a = typeof seed === 'number' ? seed : [...seed].reduce((n, c) => Math.imul(n ^ c.charCodeAt(0), 16777619), 2166136261);
   return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -33,14 +38,16 @@ function glow(ctx, x, y, radius, color, strength = .3) {
   g.addColorStop(0, rgba(color, strength)); g.addColorStop(.23, rgba(color, strength * .28)); g.addColorStop(1, rgba(color, 0));
   rect(ctx, x - radius, y - radius, radius * 2, radius * 2, g);
 }
-function background(ctx, w, h, t) {
+// Stars drift against the camera at two depths, so the sky moves with every pan and zoom.
+function background(ctx, w, h, t, cam) {
   rect(ctx, 0, 0, w, h, C.bg);
-  glow(ctx, w * .2, h * .43, w * .72, '#285879', .16);
-  glow(ctx, w * .85, h * .55, w * .6, '#523D69', .13);
-  const rng = seeded(40);
+  const ox = cam ? (cam.P.x - cam.cx) * cam.s : 0, oy = cam ? (cam.P.y - cam.cy) * cam.s : 0, zoom = cam ? cam.s : 1;
+  glow(ctx, w * .2 + ox * .02, h * .43 + oy * .02, w * .72, '#285879', .16);
+  glow(ctx, w * .85 + ox * .03, h * .55 + oy * .03, w * .6, '#523D69', .13);
+  const rng = seeded(40), wrap = (v, lo, span) => lo + ((v - lo) % span + span) % span;
   for (let i = 0; i < 95; i++) {
-    const x = 36 + rng() * (w - 72), y = 170 + rng() * (h * .49), r = .4 + rng() * .9;
-    circle(ctx, x, y, r, rgba('#ADCEEE', .09 + .13 * (1 + Math.sin(t * .5 + i)) / 2));
+    const depth = i % 2 ? .05 : .12, x = 36 + rng() * (w - 72), y = 170 + rng() * (h * .49), r = (.4 + rng() * .9) * (1 + (zoom - 1) * depth * 2);
+    circle(ctx, wrap(x + ox * depth, 36, w - 72), wrap(y + oy * depth, 170, h * .49), r, rgba('#ADCEEE', .09 + .13 * (1 + Math.sin(t * .5 + i)) / 2));
   }
 }
 function header(ctx, w, portrait, data) {
@@ -60,24 +67,6 @@ function footer(ctx, data, w, h, portrait) {
 }
 export function activeFireworks(data, timeline, time) {
   return data.releases.filter(e => { const age = time - timeline.onsets.get(e.id); return age >= -FIREWORK.rise && age < FIREWORK.life; });
-}
-// Shared chart geometry: x is the calendar date, y the launched model's ECI score. Every burst keeps the same radius.
-export function chartBox(format) {
-  return format === 'portrait' ? { x: 150, y: 1130, w: 866, top: 300, radius: 125 } : { x: 140, y: 650, w: 1716, top: 190, radius: 110 };
-}
-export const scoreOf = event => Number.isFinite(event.capability?.score) ? event.capability.score : null;
-export function chartScale(data, box) {
-  const scores = data.releases.map(scoreOf).filter(v => v !== null);
-  const lo = scores.length ? Math.floor((Math.min(...scores) - 4) / 10) * 10 : 100;
-  const hi = scores.length ? Math.ceil((Math.max(...scores) + 8) / 10) * 10 : 150;
-  const from = day(`${yearOf(data.startDate)}-01-01`), to = day(`${yearOf(data.endDate) + 1}-01-01`);
-  return { lo, hi, x: value => box.x + ((typeof value === 'string' ? day(value) : value) - from) / (to - from) * box.w,
-    y: score => box.y - (score - lo) / (hi - lo) * (box.y - box.top) };
-}
-// A scored launch climbs straight up from its date and bursts at its score; an unscored one stays on the axis.
-export function eventPose(data, event, box) {
-  const scale = chartScale(data, box), x = scale.x(event.date), score = scoreOf(event);
-  return { origin: x, bx: x, by: score === null ? box.y : scale.y(score), scored: score !== null };
 }
 function marker(ctx, data, event, box, opacity, size) {
   const { bx, by } = eventPose(data, event, box), c = data.labs.find(l => l.id === event.lab).color, shape = labIndex(data, event.lab) % 3;
@@ -106,19 +95,21 @@ function frontierLines(ctx, data, timeline, visible, box, time, nowX, opacity, w
     ctx.strokeStyle = rgba(lab.color, opacity); ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.stroke();
   }
 }
-function rocket(ctx, data, e, lab, age, box) {
+// Fireworks are drawn in world coordinates under the camera. `view` carries the camera-dependent parts:
+// the visible axis to launch from, the burst radius (it grows with zoom, but slower than the zoom) and a line-width factor.
+function rocket(ctx, data, e, lab, age, box, view) {
   // Style follows the lab, never the event: peony, glitter chrysanthemum, double ring.
   const rand = seeded(e.id), { origin, bx, by } = eventPose(data, e, box), style = labIndex(data, e.lab) % 3;
-  const height = box.y - by, radius = box.radius;
-  const flight = q => ({ x: origin + (bx - origin) * q, y: box.y - height * (1 - (1 - q) ** 1.7) });
+  const base = Math.max(view.baseY, by), height = base - by, radius = view.radius, px = view.px, fall = radius / box.radius;
+  const flight = q => ({ x: origin + (bx - origin) * q, y: base - height * (1 - (1 - q) ** 1.7) });
   const c = lab.color;
   if (age < FIREWORK.rise) {
     const q = clamp(age / FIREWORK.rise), head = flight(q);
     for (let j = 0; j < 24; j++) {
       const f = Math.max(0, q - j * .014), p1 = flight(f), p2 = flight(Math.max(0, f - .014));
-      line(ctx, p1.x, p1.y, p2.x, p2.y, rgba(c, (1 - j / 24) * .8), 2.5 * (1 - j / 30));
+      line(ctx, p1.x, p1.y, p2.x, p2.y, rgba(c, (1 - j / 24) * .8), 2.5 * (1 - j / 30) * px);
     }
-    glow(ctx, head.x, head.y, 30, c, .55); circle(ctx, head.x, head.y, 3, '#FFFFFF');
+    glow(ctx, head.x, head.y, 30 * px, c, .55); circle(ctx, head.x, head.y, 3 * px, '#FFFFFF');
     return;
   }
   const t = age - FIREWORK.rise, fade = (1 - clamp(t / FIREWORK.life)) ** 1.5;
@@ -126,104 +117,175 @@ function rocket(ctx, data, e, lab, age, box) {
   glow(ctx, bx, by, radius * 1.4, c, .25 * Math.exp(-t * 1.4));
   // Local bloom only, never a full-frame white flash.
   const impulse = Math.exp(-t * 10);
-  circle(ctx, bx, by, 4 + 11 * (1 - impulse), rgba('#FFF3DB', impulse * .65), true);
+  circle(ctx, bx, by, (4 + 11 * (1 - impulse)) * px, rgba('#FFF3DB', impulse * .65), true);
   for (let i = 0; i < FIREWORK.rays; i++) {
     const angle = i / FIREWORK.rays * TAU + (rand() - .5) * .08;
     const speed = style === 2 ? (i % 2 ? .94 + rand() * .05 : .5 + rand() * .05) : .76 + rand() * .25;
-    const gravity = 19 + rand() * 8, tail = style === 1 ? .17 + rand() * .08 : style === 2 ? .07 : .10 + rand() * .055;
+    const gravity = (19 + rand() * 8) * fall, tail = style === 1 ? .17 + rand() * .08 : style === 2 ? .07 : .10 + rand() * .055;
     const at = sec => {
       const r = radius * speed * (1 - Math.exp(-sec * 3.4));
       return { x: bx + Math.cos(angle) * r, y: by + Math.sin(angle) * r + gravity * sec * sec };
     };
     const head = at(t), prev = at(Math.max(0, t - tail));
     const sparkle = .68 + .32 * Math.sin(t * 13 + i * 2.3) ** 2;
-    line(ctx, prev.x, prev.y, head.x, head.y, rgba(c, fade * sparkle), i % 5 ? 2.4 : 3.2);
-    circle(ctx, head.x, head.y, i % 7 === 0 ? 2.1 : 1.4, rgba(i % 5 === 0 ? '#FFF3DB' : c, fade));
+    line(ctx, prev.x, prev.y, head.x, head.y, rgba(c, fade * sparkle), (i % 5 ? 2.4 : 3.2) * px);
+    circle(ctx, head.x, head.y, (i % 7 === 0 ? 2.1 : 1.4) * px, rgba(i % 5 === 0 ? '#FFF3DB' : c, fade));
     if (i % 3 === 0 && t > .32) {
       const extra = at(Math.max(0, t - .17));
-      circle(ctx, extra.x, extra.y, .75, rgba('#FCDFB1', fade * .5));
+      circle(ctx, extra.x, extra.y, .75 * px, rgba('#FCDFB1', fade * .5));
     }
     if (style === 1 && i % 2 === 0 && t > .22 && Math.sin(t * 47 + i * 1.9) > .2) {
       const glint = at(Math.max(0, t - .05));
-      circle(ctx, glint.x + Math.cos(i * 7.1) * 5, glint.y + Math.sin(i * 3.7) * 5, 1.3, rgba('#FFF3DB', fade * .85));
+      circle(ctx, glint.x + Math.cos(i * 7.1) * 5 * px, glint.y + Math.sin(i * 3.7) * 5 * px, 1.3 * px, rgba('#FFF3DB', fade * .85));
     }
   }
   const tailFade = Math.exp(-t * 3) * .4;
-  line(ctx, origin, box.y, bx, by, rgba(c, tailFade), 1);
+  line(ctx, origin, base, bx, by, rgba(c, tailFade), px);
 }
-// Launches without a published score spray a low fountain from their date instead of claiming a height.
-function fountain(ctx, e, lab, age, box, x) {
-  const rand = seeded(e.id), c = lab.color, r = box.radius;
+// Launches without a published score spray a low fountain from the date axis instead of claiming a height.
+function fountain(ctx, e, lab, age, x, view) {
+  const rand = seeded(e.id), c = lab.color, r = view.radius, y0 = view.baseY, px = view.px;
   if (age < FIREWORK.rise) {
     const q = clamp(age / FIREWORK.rise);
-    glow(ctx, x, box.y, 16 + 18 * q, c, .2 + .35 * q); circle(ctx, x, box.y - 2, 2.5, '#FFFFFF');
+    glow(ctx, x, y0, (16 + 18 * q) * px, c, .2 + .35 * q); circle(ctx, x, y0 - 2 * px, 2.5 * px, '#FFFFFF');
     return;
   }
   const t = age - FIREWORK.rise, fade = (1 - clamp(t / FIREWORK.life)) ** 1.3;
   if (fade <= 0) return;
-  glow(ctx, x, box.y, r * .7, c, .22 * Math.exp(-t * 1.6));
+  glow(ctx, x, y0, r * .7, c, .22 * Math.exp(-t * 1.6));
   for (let i = 0; i < 46; i++) {
     const birth = rand() * .95, angle = -Math.PI / 2 + (rand() - .5) * .75, speed = r * (2.3 + rand() * .7);
-    const at = s => ({ x: x + Math.cos(angle) * speed * s, y: box.y + Math.sin(angle) * speed * s + r * 3.6 * s * s });
+    const at = s => ({ x: x + Math.cos(angle) * speed * s, y: y0 + Math.sin(angle) * speed * s + r * 3.6 * s * s });
     const s = t - birth;
     if (s < 0 || s > .8) continue;
     const head = at(s), prev = at(Math.max(0, s - .07)), life = 1 - s / .8;
-    line(ctx, prev.x, prev.y, head.x, head.y, rgba(c, fade * life), 2);
-    circle(ctx, head.x, head.y, 1.4, rgba(i % 4 ? c : '#FFF3DB', fade * life));
+    line(ctx, prev.x, prev.y, head.x, head.y, rgba(c, fade * life), 2 * px);
+    circle(ctx, head.x, head.y, 1.4 * px, rgba(i % 4 ? c : '#FFF3DB', fade * life));
   }
 }
-function chart(ctx, data, timeline, state, year, box, visible, portrait) {
-  const scale = chartScale(data, box), nowX = scale.x(state.day), end = scale.x(iso(day(data.endDate) + 1));
-  for (let v = scale.lo; v <= scale.hi; v += 10) {
-    const y = scale.y(v);
-    line(ctx, box.x, y, box.x + box.w, y, v === scale.lo ? '#42506B' : '#17233A');
-    label(ctx, String(v), box.x - 16, y + (portrait ? 8 : 6), portrait ? 24 : 17, C.dim, 500, 'right');
+// The year counter punches up and flashes gold as each year begins; the launch count pops with each arrival.
+// Returns the counter's bounding box so the burst callout can keep clear of it.
+function counter(ctx, data, timeline, state, year, visible, box, portrait) {
+  const c = portrait ? { x: box.x + 30, y: 440, size: 124, sub: 490, subSize: 30, ytd: 532, ytdSize: 22 } : { x: box.x + 32, y: 302, size: 104, sub: 346, subSize: 25, ytd: 382, ytdSize: 20 };
+  const jan = timeline.introSeconds + (day(`${year}-01-01`) - timeline.start) / Math.max(1, timeline.end - timeline.start) * timeline.travelSeconds;
+  const turn = year > yearOf(data.startDate) ? Math.exp(-Math.max(0, state.time - jan) / .18) : 0, size = c.size * (1 + .16 * turn);
+  label(ctx, String(year), c.x, c.y, size, mixHex('#8394AB', C.gold, turn), 500);
+  let right = c.x + ctx.measureText(String(year)).width;
+  const thisYear = visible.filter(e => e.date.startsWith(String(year))), count = thisYear.length;
+  const pop = count ? Math.exp(-(state.time - timeline.onsets.get(thisYear.at(-1).id)) / .12) : 0;
+  label(ctx, `${months[Number(iso(state.day).slice(5, 7)) - 1]} · ${count} ${count === 1 ? 'LAUNCH' : 'LAUNCHES'}`, c.x + 4, c.sub, c.subSize * (1 + .12 * pop), C.text, 500);
+  right = Math.max(right, c.x + 4 + ctx.measureText('DEC · 00 LAUNCHES').width * (1 + .12 * pop));
+  let bottom = c.sub + 8;
+  if (year === yearOf(data.endDate)) { label(ctx, `YTD · THROUGH ${data.endDate.slice(5)}`, c.x + 4, c.ytd, c.ytdSize, C.gold); bottom = c.ytd + 8; }
+  return { left: c.x - 8, top: c.y - size * .78, right: right + 12, bottom };
+}
+// The newest launch's name tag rides next to its burst for just over a second, sliding in from the side.
+// Same-day launches share one stacked tag.
+function callout(ctx, data, timeline, state, cam, box, visible, portrait, avoid) {
+  const latest = visible.at(-1), life = 1.2;
+  if (!latest) return;
+  const onset = timeline.onsets.get(latest.id), age = state.time - onset;
+  if (age >= life) return;
+  const group = visible.filter(e => timeline.onsets.get(e.id) === onset).sort((a, b) => (scoreOf(b) ?? -1) - (scoreOf(a) ?? -1));
+  const pose = eventPose(data, group[0], box), point = cam.toScreen(pose.bx, pose.by);
+  const ax = point.x, ay = pose.scored ? point.y : box.y - (portrait ? 160 : 100);
+  const nameSize = portrait ? 40 : 34, subSize = portrait ? 23 : 19, rowH = nameSize + subSize + (portrait ? 26 : 20), gap = portrait ? 36 : 32;
+  const rows = group.map(e => ({ name: modelLabel(e, portrait), sub: scoreOf(e) === null ? 'NOT YET SCORED' : `ECI ${Math.round(scoreOf(e))}`, color: data.labs.find(l => l.id === e.lab).color }));
+  let width = 0;
+  for (const r of rows) { ctx.font = `600 ${nameSize}px Manrope600`; width = Math.max(width, ctx.measureText(r.name).width); ctx.font = `600 ${subSize}px Manrope600`; width = Math.max(width, ctx.measureText(r.sub).width); }
+  const height = rows.length * rowH - (portrait ? 18 : 14), right = box.x + box.w - 12;
+  let x = ax + gap > right - width ? ax - gap - width : ax + gap, top = ay - height / 2;
+  x = clamp(x, box.x + 12, right - width);
+  const fitY = v => clamp(v, box.top + 10, box.y - 16 - height);
+  top = fitY(top);
+  if (x < avoid.right && x + width > avoid.left && top < avoid.bottom && top + height > avoid.top) {
+    top = fitY(avoid.bottom + 14);
+    if (top < avoid.bottom) x = Math.min(right - width, avoid.right + 20);
+  }
+  const a = easeOut(age / .12) * clamp((life - age) / .3), slide = (1 - easeOut(age / .22)) * (x > ax ? 28 : -28);
+  ctx.save(); ctx.globalAlpha = a;
+  const edge = x > ax ? x - 10 : x + width + 10;
+  line(ctx, ax, ay, edge + slide, top + nameSize * .45, rgba(rows[0].color, .55), 1.5);
+  ctx.shadowColor = rgba(C.bg, .9); ctx.shadowBlur = 14;
+  rows.forEach((r, i) => {
+    const y = top + nameSize * .78 + i * rowH;
+    label(ctx, r.name, x + slide, y, nameSize, C.text, 600);
+    label(ctx, r.sub, x + slide, y + subSize + 10, subSize, r.color, 600);
+  });
+  ctx.restore();
+}
+function chart(ctx, data, timeline, state, year, box, visible, portrait, cam) {
+  const scale = chartScale(data, box), W = portrait ? 1080 : 1920, clipTop = portrait ? 250 : 150, right = box.x + box.w;
+  const sx = wx => cam.toScreen(wx, 0).x, sy = wy => cam.toScreen(0, wy).y;
+  const nowX = sx(scale.x(state.day)), end = sx(scale.x(iso(day(data.endDate) + 1)));
+  // Score grid in screen space: lines stay crisp at any zoom, and 5-point lines fade in once the camera is close.
+  const minor = clamp((cam.s - 1.3) / .4), top = scale.score(cam.toWorld(0, box.top).y), bottom = scale.score(cam.toWorld(0, box.y).y);
+  for (let v = Math.ceil(bottom / 5) * 5; v <= top; v += 5) {
+    const y = sy(scale.y(v)), a = v % 10 === 0 ? 1 : minor;
+    if (a < .02 || y < box.top - 1 || y > box.y + 1) continue;
+    line(ctx, box.x, y, right, y, rgba(v === scale.lo ? '#42506B' : '#17233A', a));
+    ctx.globalAlpha = a; label(ctx, String(v), box.x - 16, y + (portrait ? 8 : 6), portrait ? 24 : 17, C.dim, 500, 'right'); ctx.globalAlpha = 1;
   }
   label(ctx, `${data.capability.index.toUpperCase()} · HIGHER = MORE CAPABLE`, box.x, box.top - (portrait ? 18 : 16), portrait ? 21 : 17, C.gold, 600);
-  // Early scores sit low, so the upper left of the plot stays free for the year counter.
-  const counter = portrait ? { x: box.x + 30, y: 440, size: 124, sub: 490, ytd: 532 } : { x: box.x + 32, y: 302, size: 104, sub: 346, ytd: 382 };
-  label(ctx, String(year), counter.x, counter.y, counter.size, '#8394AB', 500);
-  const count = visible.filter(e => e.date.startsWith(String(year))).length;
-  label(ctx, `${months[Number(iso(state.day).slice(5, 7)) - 1]} · ${count} ${count === 1 ? 'LAUNCH' : 'LAUNCHES'}`, counter.x + 4, counter.sub, portrait ? 30 : 25, C.text, 500);
-  if (year === yearOf(data.endDate)) label(ctx, `YTD · THROUGH ${data.endDate.slice(5)}`, counter.x + 4, counter.ytd, portrait ? 22 : 20, C.gold);
   glow(ctx, box.x + box.w * .5, box.y, box.w * .7, '#407685', .15);
-  // The plot clips particles only; typography lives outside it.
-  ctx.save(); ctx.beginPath(); ctx.rect(0, portrait ? 250 : 150, portrait ? 1080 : 1920, box.y + 4 - (portrait ? 250 : 150)); ctx.clip();
+  const world = () => { ctx.translate(cam.P.x + cam.dx - cam.cx * cam.s, cam.P.y + cam.dy - cam.cy * cam.s); ctx.scale(cam.s, cam.s); };
+  // Step lines and markers stay inside the plot; their strokes thicken a little as the camera closes in.
+  const thin = cam.s ** -.7;
+  ctx.save(); ctx.beginPath(); ctx.rect(box.x, clipTop, box.w, box.y + 4 - clipTop); ctx.clip();
   line(ctx, nowX, box.top, nowX, box.y, rgba(C.gold, .16));
-  frontierLines(ctx, data, timeline, visible, box, state.time, nowX, .62, portrait ? 3 : 2.2);
+  world();
+  frontierLines(ctx, data, timeline, visible, box, state.time, scale.x(state.day), .62, (portrait ? 3 : 2.2) * thin);
   const latest = new Set(data.labs.map(lab => visible.filter(e => e.lab === lab.id && scoreOf(e) !== null).at(-1)));
   for (const e of visible) if (scoreOf(e) !== null) {
-    if (latest.has(e)) { const { bx, by } = eventPose(data, e, box); glow(ctx, bx, by, portrait ? 30 : 22, data.labs.find(l => l.id === e.lab).color, .35); }
-    marker(ctx, data, e, box, latest.has(e) ? .95 : .6, portrait ? 6.5 : 4.8);
-  }
-  for (const event of activeFireworks(data, timeline, state.time)) {
-    const age = state.time - timeline.onsets.get(event.id) + FIREWORK.rise, lab = data.labs.find(l => l.id === event.lab);
-    if (scoreOf(event) === null) fountain(ctx, event, lab, age, box, scale.x(event.date)); else rocket(ctx, data, event, lab, age, box);
+    if (latest.has(e)) { const { bx, by } = eventPose(data, e, box); glow(ctx, bx, by, (portrait ? 30 : 22) * thin, data.labs.find(l => l.id === e.lab).color, .35); }
+    marker(ctx, data, e, box, latest.has(e) ? .95 : .6, (portrait ? 6.5 : 4.8) * thin);
   }
   ctx.restore();
-  if (end < box.x + box.w) {
-    for (let x = end; x < box.x + box.w; x += 16) line(ctx, x, box.y - 4, x + 5, box.y + 4, C.dim);
-    label(ctx, 'UNOBSERVED', box.x + box.w, box.y + (portrait ? 74 : 61), portrait ? 22 : 17, C.muted, 500, 'right');
+  // Bursts may spill past the plot's sides; rockets launch from the visible axis.
+  const view = { baseY: Math.min(box.y, cam.toWorld(0, box.y).y), radius: box.radius * cam.s ** -.45, px: cam.s ** -.5 };
+  ctx.save(); ctx.beginPath(); ctx.rect(0, clipTop, W, box.y + 4 - clipTop); ctx.clip(); world();
+  for (const event of activeFireworks(data, timeline, state.time)) {
+    const age = state.time - timeline.onsets.get(event.id) + FIREWORK.rise, lab = data.labs.find(l => l.id === event.lab);
+    if (scoreOf(event) === null) fountain(ctx, event, lab, age, scale.x(event.date), view); else rocket(ctx, data, event, lab, age, box, view);
   }
+  ctx.restore();
+  // The date axis is pinned to the bottom of the plot; its ticks and labels slide and spread with the camera.
+  line(ctx, box.x, box.y, right, box.y, '#42506B');
+  if (end < right) {
+    for (let x = Math.max(box.x, end); x < right; x += 16) line(ctx, x, box.y - 4, Math.min(right, x + 5), box.y + 4, C.dim);
+    label(ctx, 'UNOBSERVED', right, box.y + (portrait ? 74 : 61), portrait ? 22 : 17, C.muted, 500, 'right');
+  }
+  const quarter = clamp((cam.s - 1.5) / .4);
   for (let y = yearOf(data.startDate); y <= yearOf(data.endDate) + 1; y++) {
-    const x = scale.x(`${y}-01-01`);
-    line(ctx, x, box.y, x, box.y + 12, '#697B93');
-    if (y <= yearOf(data.endDate)) label(ctx, String(y), x + 8, box.y + (portrait ? 40 : 35), portrait ? 26 : 18, C.muted);
-    if (y <= yearOf(data.endDate)) for (const m of [4, 7, 10]) { const q = scale.x(`${y}-${String(m).padStart(2, '0')}-01`); line(ctx, q, box.y, q, box.y + 6, '#3A4860'); }
+    const x = sx(scale.x(`${y}-01-01`)), size = portrait ? 26 : 18;
+    if (x >= box.x - .5 && x <= right + .5) {
+      line(ctx, x, box.y, x, box.y + 12, '#697B93');
+      if (y <= yearOf(data.endDate)) { ctx.font = `500 ${size}px Manrope500`; if (x + 8 + ctx.measureText(String(y)).width <= W - 8) label(ctx, String(y), x + 8, box.y + (portrait ? 40 : 35), size, C.muted); }
+    }
+    if (y > yearOf(data.endDate)) continue;
+    for (const m of [4, 7, 10]) {
+      const q = sx(scale.x(`${y}-${String(m).padStart(2, '0')}-01`));
+      if (q < box.x || q > right) continue;
+      line(ctx, q, box.y, q, box.y + 6, '#3A4860');
+      if (quarter > .02 && q + 40 < right) { ctx.globalAlpha = quarter; label(ctx, months[m - 1], q + 6, box.y + (portrait ? 40 : 35), portrait ? 19 : 14, C.dim); ctx.globalAlpha = 1; }
+    }
   }
   for (const e of visible) {
+    const x = sx(scale.x(e.date));
+    if (x < box.x || x > right) continue;
     const lab = data.labs.find(l => l.id === e.lab), offset = (labIndex(data, e.lab) - (data.labs.length - 1) / 2) * 8;
-    circle(ctx, scale.x(e.date), box.y + offset, 3.5, lab.color, e.stage === 'preview');
+    circle(ctx, x, box.y + offset, 3.5, lab.color, e.stage === 'preview');
   }
-  line(ctx, nowX, box.y - 19, nowX, box.y + 15, C.gold, 2);
-  circle(ctx, nowX, box.y, 3, C.text);
+  if (nowX >= box.x && nowX <= right) { line(ctx, nowX, box.y - 19, nowX, box.y + 15, C.gold, 2); circle(ctx, nowX, box.y, 3, C.text); }
+  const avoid = counter(ctx, data, timeline, state, year, visible, box, portrait);
+  callout(ctx, data, timeline, state, cam, box, visible, portrait, avoid);
 }
 export function modelLabel(event, portrait = false) {
   const full = event.name + (event.stage === 'preview' ? ' *' : '');
   return portrait ? full.replace(/^Claude (?=[A-Za-z])/, '') : full;
 }
 // Newest first. An arrival enters at the top and pushes older names down one row; the fifth fades out.
-const PUSH_SECONDS = .28, easeOut = x => 1 - (1 - clamp(x)) ** 3;
+const PUSH_SECONDS = .28;
 export function ledgerRows(events, timeline, time) {
   const eased = events.map(e => easeOut((time - timeline.onsets.get(e.id)) / PUSH_SECONDS));
   let below = Infinity;
@@ -259,41 +321,57 @@ function ledger(ctx, data, visible, timeline, state, year, w, portrait) {
     ctx.restore();
   });
 }
+// Scale the drawing about a point; text keeps its own coordinates, so layout checks still see the unscaled design.
+function zoomAbout(ctx, x, y, k) { ctx.translate(x, y); ctx.scale(k, k); ctx.translate(-x, -y); }
+// Title card: lines cascade in on the beat while the card drifts closer, then it zooms through into the chart.
 function intro(ctx, data, timeline, state, w, h, portrait) {
-  const progress = smooth(state.progress * 2.5), y = portrait ? 708 : 417;
-  ctx.save(); ctx.globalAlpha = progress;
-  label(ctx, 'NEW MODELS.', 64, y, portrait ? 106 : 120, C.text, 500);
-  label(ctx, 'LESS QUIET.', 64, y + (portrait ? 127 : 136), portrait ? 106 : 120, C.gold, 500);
-  label(ctx, 'One launch. One spark.', 69, y + (portrait ? 239 : 232), portrait ? 37 : 37, C.muted);
-  label(ctx, 'Each burst lands at its capability score.', 69, y + (portrait ? 302 : 290), portrait ? 29 : 30, C.muted);
-  const sy = portrait ? 1207 : 790;
-  const gx = 64 + (w - 128) * smooth(state.progress);
-  glow(ctx, gx, sy, portrait ? 200 : 270, data.labs[0].color, .35);
-  const g = ctx.createLinearGradient(64, sy, w - 64, sy);
-  data.labs.forEach((lab, i) => g.addColorStop(i / (data.labs.length - 1), lab.color));
-  line(ctx, 64, sy, w - 64, sy, '#364256'); line(ctx, 64, sy, gx, sy, g, 2);
-  circle(ctx, gx, sy, 4, C.text);
-  label(ctx, `${data.startDate.slice(0, 4)} — ${data.endDate.slice(0, 4)}`, 64, sy + 83, 34, C.text);
-  label(ctx, `${data.releases.length} selected launches · ${['', 'one', 'two', 'three'][data.labs.length]} labs · scores from ${data.capability.publisher}`, 64, sy + 134, portrait ? 27 : 29, C.muted);
+  const t = state.time, exit = clamp((t - (timeline.introSeconds - .24)) / .24), y = portrait ? 708 : 417;
+  const enter = at => easeOut((t - at) / .3), slide = (at, x) => x - (1 - enter(at)) * 90;
+  ctx.save(); zoomAbout(ctx, w * .3, h * .5, 1 + .035 * t / timeline.introSeconds + .25 * exit ** 2);
+  const show = (at, draw) => { ctx.globalAlpha = enter(at) * (1 - exit); draw(); };
+  show(0, () => label(ctx, 'NEW MODELS.', slide(0, 64), y, portrait ? 106 : 120, C.text, 500));
+  show(.12, () => label(ctx, 'LESS QUIET.', slide(.12, 64), y + (portrait ? 127 : 136), portrait ? 106 : 120, C.gold, 500));
+  show(.3, () => label(ctx, 'One launch. One spark.', slide(.3, 69), y + (portrait ? 239 : 232), 37, C.muted));
+  show(.4, () => label(ctx, 'Each burst lands at its capability score.', slide(.4, 69), y + (portrait ? 302 : 290), portrait ? 29 : 30, C.muted));
+  const sy = portrait ? 1207 : 790, gx = 64 + (w - 128) * smooth((t - .5) / (timeline.introSeconds - .7));
+  show(.5, () => {
+    glow(ctx, gx, sy, portrait ? 200 : 270, data.labs[0].color, .35);
+    const g = ctx.createLinearGradient(64, sy, w - 64, sy);
+    data.labs.forEach((lab, i) => g.addColorStop(i / (data.labs.length - 1), lab.color));
+    line(ctx, 64, sy, w - 64, sy, '#364256'); line(ctx, 64, sy, gx, sy, g, 2);
+    circle(ctx, gx, sy, 4, C.text);
+  });
+  show(.6, () => {
+    label(ctx, `${data.startDate.slice(0, 4)} — ${data.endDate.slice(0, 4)}`, slide(.6, 64), sy + 83, 34, C.text);
+    label(ctx, `${data.releases.length} selected launches · ${['', 'one', 'two', 'three'][data.labs.length]} labs · scores from ${data.capability.publisher}`, slide(.6, 64), sy + 134, portrait ? 27 : 29, C.muted);
+  });
   ctx.restore();
 }
+// Summary: the card eases in from slightly too close and keeps drifting; figures arrive in sequence and count to their values.
 function ending(ctx, data, timeline, state, w, h, portrait) {
-  const rows = yearlyStats(data), first = rows[0], last = rows.at(-1), p = 64;
+  const rows = yearlyStats(data), first = rows[0], last = rows.at(-1), p = 64, t = state.time - timeline.outroStart;
+  const enter = at => easeOut((t - at) / .35), show = at => { ctx.globalAlpha = enter(at); };
   const box = chartBox(portrait ? 'portrait' : 'landscape');
+  ctx.save(); zoomAbout(ctx, w / 2, h / 2, 1 + .03 * smooth(state.progress) + .06 * (1 - enter(0)));
+  show(0);
   frontierLines(ctx, data, timeline, data.releases, box, Infinity, chartScale(data, box).x(data.endDate), .09, portrait ? 3 : 2.2);
   for (const e of data.releases) if (scoreOf(e) !== null) marker(ctx, data, e, box, .1, portrait ? 6.5 : 4.8);
-  label(ctx, 'Shorter quiet. Higher ceiling.', p, portrait ? 363 : 285, portrait ? 49 : 58, C.text);
+  label(ctx, 'Shorter quiet. Higher ceiling.', p - (1 - enter(0)) * 60, portrait ? 363 : 285, portrait ? 49 : 58, C.text);
   const valueY = portrait ? 596 : 460, rightX = portrait ? 577 : 1002;
+  show(.1);
   label(ctx, first.daysPerLaunch?.toFixed(0) ?? '—', p, valueY, portrait ? 164 : 166, C.text);
   label(ctx, '→', portrait ? 403 : 640, valueY - 23, 76, C.dim);
-  label(ctx, last.daysPerLaunch?.toFixed(1) ?? '—', rightX, valueY, portrait ? 136 : 166, C.gold);
+  const count = Number.isFinite(first.daysPerLaunch) && Number.isFinite(last.daysPerLaunch) ? first.daysPerLaunch + (last.daysPerLaunch - first.daysPerLaunch) * easeOut((t - .15) / .9) : null;
+  label(ctx, count?.toFixed(1) ?? '—', rightX, valueY, portrait ? 136 : 166, C.gold);
   label(ctx, String(first.year), p + 5, valueY + 54, 27, C.muted);
   label(ctx, `${last.year}${last.partial ? ' YTD' : ''}`, rightX + 4, valueY + 54, 27, C.muted);
+  show(.2);
   label(ctx, 'CALENDAR DAYS / SELECTED LAUNCH', p, valueY + 118, portrait ? 23 : 25, C.gold);
   const best = year => Math.max(...data.releases.filter(e => yearOf(e.date) === year).map(scoreOf).filter(v => v !== null));
   const [low, high] = [best(first.year), best(last.year)];
   if (Number.isFinite(low) && Number.isFinite(high)) {
-    const reveal = smooth(state.progress * 3), shown = Math.round(low + (high - low) * reveal);
+    show(.35);
+    const shown = Math.round(low + (high - low) * easeOut((t - .35) / 1.1));
     if (portrait) {
       label(ctx, `HIGHEST SELECTED ECI · ${first.year} → ${last.year}${last.partial ? ' YTD' : ''}`, p, 1406, 23, C.gold);
       label(ctx, `${Math.round(low)} → ${shown}`, p, 1468, 56, C.text);
@@ -306,33 +384,50 @@ function ending(ctx, data, timeline, state, w, h, portrait) {
   const top = portrait ? 903 : 680, step = portrait ? Math.min(126, 680 / rows.length) : Math.min(55, 230 / rows.length);
   const max = Math.max(1, ...rows.map(r => r.daysPerLaunch ?? 0));
   for (const [i, row] of rows.entries()) {
-    const y = top + i * step, bx = portrait ? 278 : 315, bw = portrait ? 535 : 1040;
+    const y = top + i * step, bx = portrait ? 278 : 315, bw = portrait ? 535 : 1040, at = .25 + i * .08;
+    show(at);
     label(ctx, String(row.year) + (row.partial ? ' YTD' : ''), p, y + 18, portrait ? 27 : 24, C.muted);
     line(ctx, bx, y + 5, bx + bw, y + 5, '#1B293C', 7);
-    line(ctx, bx, y + 5, bx + bw * (row.daysPerLaunch ?? 0) / max * smooth(state.progress * 3), y + 5, i === rows.length - 1 ? C.gold : '#739EAD', 7);
+    line(ctx, bx, y + 5, bx + bw * (row.daysPerLaunch ?? 0) / max * easeOut((t - at) / .7), y + 5, i === rows.length - 1 ? C.gold : '#739EAD', 7);
     label(ctx, row.daysPerLaunch?.toFixed(1) ?? '—', bx + bw + 26, y + 18, portrait ? 30 : 28, C.text);
     if (portrait) label(ctx, `${row.observedDays} days / ${row.count} launches`, bx, y + 55, 22, C.dim);
     else label(ctx, `${row.observedDays} days / ${row.count} launches`, w - 64, y + 18, 21, C.dim, 500, 'right');
   }
   const ny = portrait ? 1575 : 952;
+  show(.7);
   label(ctx, 'Launch density, not development time.', p, ny, portrait ? 30 : 27, C.text);
   label(ctx, 'A curated sample. Changing the selection changes the result.', p, ny + 43, portrait ? 23 : 22, C.muted);
   if (portrait) { label(ctx, 'EDIT THE DATA. REPLAY THE SKY.', p, 1716, 29, C.gold); label(ctx, 'crosscore / frontier-model-release-timeline', p, 1763, 23, C.dim); }
+  ctx.restore();
 }
 export function drawFrame(ctx, data, timeline, seconds, format = 'landscape') {
   const { width: w, height: h } = FORMATS[format], portrait = format === 'portrait', state = stateAt(timeline, seconds);
-  background(ctx, w, h, seconds); header(ctx, w, portrait, data);
-  if (state.mode === 'intro') intro(ctx, data, timeline, state, w, h, portrait);
-  else if (state.mode === 'outro') ending(ctx, data, timeline, state, w, h, portrait);
-  else {
-    const year = stateYear(state), visible = visibleEvents(data, timeline, seconds);
-    chart(ctx, data, timeline, state, year, chartBox(format), visible, portrait);
+  const cam = state.mode === 'timeline' ? cameraAt(data, timeline, format, state.time) : null;
+  background(ctx, w, h, seconds, cam);
+  // Scenes dip through the background colour (never a white flash) while they zoom through.
+  let veil = 0;
+  if (state.mode === 'intro') {
+    intro(ctx, data, timeline, state, w, h, portrait);
+    veil = clamp((state.time - (timeline.introSeconds - .2)) / .2) * .9;
+  } else if (state.mode === 'outro') {
+    ending(ctx, data, timeline, state, w, h, portrait);
+    veil = 1 - clamp((state.time - timeline.outroStart) / .3);
+  } else {
+    const year = stateYear(state), visible = visibleEvents(data, timeline, seconds), box = chartBox(format);
+    const out = clamp((state.time - (timeline.outroStart - .24)) / .24);
+    veil = Math.max(1 - clamp((state.time - timeline.introSeconds) / .2), out);
+    ctx.save();
+    if (out > 0) { ctx.beginPath(); ctx.rect(0, portrait ? 160 : 140, w, h - (portrait ? 160 : 140) - 70); ctx.clip(); zoomAbout(ctx, cam.P.x, cam.P.y, 1 + .22 * out ** 2); }
+    chart(ctx, data, timeline, state, year, box, visible, portrait, cam);
     if (portrait) { label(ctx, '1 BURST = 1 LAUNCH · HEIGHT = ECI', 64, 1718, 30, C.muted); label(ctx, `ECI: ${data.capability.publisher}, ${data.capability.license} · retrieved ${data.capability.retrievedOn}`, 64, 1761, 26, C.muted); }
     else label(ctx, 'ONE BURST = ONE LAUNCH · HEIGHT = ECI SCORE · CONSTANT CALENDAR SPEED', 64, 709, 19, C.muted);
     ledger(ctx, data, visible, timeline, state, year, w, portrait);
     if (portrait) { label(ctx, '* PREVIEW · FOUNTAIN / — = NOT YET SCORED', 64, 1810, 24, C.muted); }
     else label(ctx, '* PREVIEW · FOUNTAIN ON THE AXIS / — = NOT YET SCORED BY EPOCH AI', 64, 1010, 19, C.muted);
+    ctx.restore();
   }
+  if (veil > 0) rect(ctx, 0, 0, w, h, rgba(C.bg, veil));
+  header(ctx, w, portrait, data);
   footer(ctx, data, w, h, portrait);
   rect(ctx, 0, h - 3, w * clamp(seconds / timeline.duration), 3, C.gold);
   return state;

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadDataset, day } from '../src/data.mjs';
-import { makeTimeline, stateAt, visibleEvents } from '../src/timeline.mjs';
+import { BAR_SECONDS, BEAT_SECONDS, cuePoints, kickTimes, makeTimeline, stateAt, visibleEvents } from '../src/timeline.mjs';
 const data = await loadDataset(), timeline = makeTimeline(data);
 test('every launch becomes visible exactly at its onset, including simultaneous labs', () => {
   for (const event of data.releases) {
@@ -39,4 +39,13 @@ test('each name stays among its lab\'s four newest ledger rows for at least 1.4 
       assert(end - timeline.onsets.get(e.id) >= 1.4, `${e.name} is replaced too quickly`);
     }
   }
+});
+test('cue points sit on the bar grid and the kick pattern leaves a breath before the drop', () => {
+  const p = cuePoints(timeline), kicks = kickTimes(p), on = t => kicks.some(k => Math.abs(k - t) < 1e-9);
+  for (const t of [p.intro, p.build, p.gap, p.drop, p.outro]) assert(Math.abs(t / BAR_SECONDS - Math.round(t / BAR_SECONDS)) < 1e-9);
+  assert(on(p.drop) && on(p.intro) && on(0) && !on(BEAT_SECONDS));
+  assert(on(p.gap + BEAT_SECONDS / 2), 'eighth-note kick roll');
+  assert(!kicks.some(k => k >= p.breath - 1e-9 && k < p.drop - 1e-9), 'no kick in the breath');
+  const scaled = cuePoints(timeline, 899 / 900);
+  assert.equal(scaled.drop, p.drop, 'a near-full-length render snaps the drop back onto the beat');
 });

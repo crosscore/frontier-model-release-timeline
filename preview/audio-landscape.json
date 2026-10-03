@@ -1,5 +1,5 @@
 {
-  "title": "Liftoff / 003",
+  "title": "Afterburn / 004",
   "bpm": 128,
   "sampleRate": 48000,
   "channels": 2,
@@ -10,13 +10,15 @@
   "synthesis": "Deterministic oscillators and seeded filtered noise",
   "samples": 1440000,
   "duration": 30,
-  "samplePeakDbfs": -3.609120944016389,
-  "rmsDbfs": -16.904543920001895,
+  "samplePeakDbfs": -5.419411813590692,
+  "rmsDbfs": -15.609121289128865,
   "cueCount": 51,
-  "introEnd": 1.8729166666666666,
-  "integratedLufs": -16.12,
-  "truePeakDbtp": -2.89,
-  "loudnessRangeLu": 5.6,
+  "introEnd": 1.875,
+  "drop": 24.375,
+  "kicks": 62,
+  "integratedLufs": -16.03,
+  "truePeakDbtp": -5.99,
+  "loudnessRangeLu": 2.4,
   "cues": [
     {
       "id": "anthropic-claude",

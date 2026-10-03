@@ -36,3 +36,25 @@ export function visibleEvents(data, timeline, seconds) {
   return data.releases.filter(event => seconds >= timeline.onsets.get(event.id));
 }
 export function stateYear(state) { return yearOf(iso(state.day)); }
+
+// Cue points shared by the camera and the score. `scale` maps film seconds to audio seconds for
+// compressed renders; a point within 60 ms of a beat snaps to it so the music stays on the grid.
+export const BEAT_SECONDS = BAR_SECONDS / 4;
+export function cuePoints(timeline, scale = 1) {
+  const snap = t => { const g = Math.round(t / BEAT_SECONDS) * BEAT_SECONDS; return Math.abs(t - g) < .06 ? g : t; };
+  const drop = snap((timeline.introSeconds + timeline.travelSeconds) * scale);
+  return { intro: snap(timeline.introSeconds * scale), build: drop - 2 * BAR_SECONDS, gap: drop - BAR_SECONDS, breath: drop - BAR_SECONDS / 2,
+    drop, outro: snap(timeline.outroStart * scale), end: timeline.duration * scale };
+}
+// The kick: a heartbeat in the intro, four on the floor, an eighth-note roll in the first half of the
+// bar before the drop, silence for the last two beats, then four on the floor again from the drop.
+export function kickTimes(points, until = points.end) {
+  const kicks = [];
+  for (let k = 0; k * BEAT_SECONDS < until - 1e-6; k++) {
+    const t = k * BEAT_SECONDS;
+    if (t < points.intro - 1e-6) { if (k % 2 === 0) kicks.push(t); }
+    else if (t < points.gap - 1e-6 || t >= points.drop - 1e-6) kicks.push(t);
+    else if (t < points.breath - 1e-6) kicks.push(t, t + BEAT_SECONDS / 2);
+  }
+  return kicks;
+}
