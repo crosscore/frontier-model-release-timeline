@@ -8,7 +8,8 @@ test('every launch becomes visible exactly at its onset, including simultaneous 
     const onset = timeline.onsets.get(event.id);
     assert(!visibleEvents(data, timeline, onset - .00001).includes(event));
     assert(visibleEvents(data, timeline, onset).includes(event));
-    assert.equal(stateAt(timeline, onset + .1).day, day(event.date));
+    assert(Math.abs(stateAt(timeline, onset).day - day(event.date)) < .000001);
+    assert(stateAt(timeline, onset + .1).day >= day(event.date));
   }
 });
 test('calendar never runs backward; start, final hold and ending remain exact', () => {
@@ -30,4 +31,18 @@ test('one-day datasets and simultaneous launches have a valid timeline', () => {
   const clock = makeTimeline(small);
   assert.equal(clock.onsets.get(small.releases[0].id), clock.onsets.get(small.releases[1].id));
   assert(Number.isFinite(clock.duration)); assert.equal(stateAt(clock, 3.1).day, day(small.startDate));
+});
+
+test('equal calendar gaps have equal film durations without release-date pauses', () => {
+  const scale = timeline.travelSeconds / (timeline.end - timeline.start);
+  for (const event of data.releases) assert(Math.abs(timeline.onsets.get(event.id) - timeline.introSeconds - (day(event.date) - timeline.start) * scale) < 1e-8);
+});
+test('each name stays in its fixed four-slot lab ledger for at least two seconds', () => {
+  for (const lab of data.labs) {
+    const events = data.releases.filter(e => e.lab === lab.id);
+    for (const [i, e] of events.entries()) {
+      const end = events[i + 4] ? timeline.onsets.get(events[i + 4].id) : timeline.outroStart;
+      assert(end - timeline.onsets.get(e.id) >= 2, `${e.name} is replaced too quickly`);
+    }
+  }
 });

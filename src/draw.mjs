@@ -2,207 +2,245 @@ import { day, iso, yearlyStats } from './data.mjs';
 import { clamp, smooth, stateAt, stateYear, visibleEvents, calendarPosition } from './timeline.mjs';
 
 export const FORMATS = { landscape: { width: 1920, height: 1080 }, portrait: { width: 1080, height: 1920 } };
-const C = { bg: '#0B1117', panel: '#101B24', line: '#263541', text: '#F2F1E9', muted: '#9DAFB9', dim: '#657984', accent: '#D5E4A5' };
+export const FIREWORK = Object.freeze({ rise: .46, life: 2.8, rays: 68 });
+const C = { bg: '#050A14', text: '#F4F3EE', muted: '#ABB7C9', dim: '#697C94', line: '#263348', gold: '#E5D9B4' };
+const TAU = Math.PI * 2;
 const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-function label(ctx, value, x, y, size = 26, color = C.text, weight = 500, align = 'left') {
-  ctx.font = `${Math.round(weight / 100) * 100} ${size}px Manrope`; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.fillText(value, x, y);
+const rgba = (hex, a) => `${hex}${Math.round(clamp(a) * 255).toString(16).padStart(2, '0')}`;
+export function seeded(seed) {
+  let a = typeof seed === 'number' ? seed : [...seed].reduce((n, c) => Math.imul(n ^ c.charCodeAt(0), 16777619), 2166136261);
+  return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
-function fit(ctx, value, x, y, width, size = 42, color = C.text, weight = 600) {
-  ctx.font = `${weight} ${size}px Manrope`;
-  while (ctx.measureText(value).width > width && size > 14) { size -= 1; ctx.font = `${weight} ${size}px Manrope`; }
-  label(ctx, value, x, y, size, color, weight);
+function label(ctx, value, x, y, size = 26, color = C.text, weight = 500, align = 'left') {
+  ctx.font = `${Math.round(weight / 100) * 100} ${size}px Manrope${weight >= 600 ? 600 : 500}`; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.fillText(value, x, y);
+}
+function fit(ctx, value, x, y, width, size = 30, color = C.text) {
+  ctx.font = `500 ${size}px Manrope500`;
+  while (ctx.measureText(value).width > width && size > 14) { size--; ctx.font = `500 ${size}px Manrope500`; }
+  label(ctx, value, x, y, size, color);
 }
 function line(ctx, x1, y1, x2, y2, color = C.line, width = 1) {
   ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
 }
-function rect(ctx, x, y, w, h, fill, radius = 0) {
-  ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect(x, y, w, h, radius); ctx.fill();
+function rect(ctx, x, y, w, h, fill) { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); }
+function circle(ctx, x, y, radius, color, hollow = false) {
+  ctx.beginPath(); ctx.arc(x, y, Math.max(0, radius), 0, TAU);
+  if (hollow) { ctx.strokeStyle = color; ctx.lineWidth = 1.7; ctx.stroke(); } else { ctx.fillStyle = color; ctx.fill(); }
 }
-function circle(ctx, x, y, r, color, stroke = false) {
-  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-  if (stroke) { ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke(); } else { ctx.fillStyle = color; ctx.fill(); }
+function glow(ctx, x, y, radius, color, strength = .3) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
+  g.addColorStop(0, rgba(color, strength)); g.addColorStop(.23, rgba(color, strength * .28)); g.addColorStop(1, rgba(color, 0));
+  rect(ctx, x - radius, y - radius, radius * 2, radius * 2, g);
 }
-function dateLabel(date) { return `${months[Number(date.slice(5, 7)) - 1]} ${date.slice(8)} · ${date.slice(0, 4)}`; }
-function background(ctx, w, h) {
+function background(ctx, w, h, t) {
   rect(ctx, 0, 0, w, h, C.bg);
-  const glow = ctx.createRadialGradient(w * .8, h * .1, 0, w * .8, h * .1, w * .9);
-  glow.addColorStop(0, '#18332D66'); glow.addColorStop(1, '#0B111700'); rect(ctx, 0, 0, w, h, glow);
-  for (let x = 36; x < w; x += 36) for (let y = 36; y < h; y += 36) circle(ctx, x, y, .8, '#50637124');
-}
-function brand(ctx, w, portrait, data) {
-  const p = 72;
-  circle(ctx, p + 4, 66, 5, C.accent);
-  label(ctx, 'FRONTIER OBSERVATORY', p + 24, 74, 22, C.accent, 650);
-  label(ctx, 'RELEASE STUDY / 001', w - p, 74, 20, C.muted, 500, 'right');
-  label(ctx, 'The release rhythm.', p, portrait ? 168 : 171, portrait ? 64 : 76, C.text, 650);
-  label(ctx, 'Selected OpenAI + Anthropic model launches', p, portrait ? 218 : 218, portrait ? 28 : 30, C.muted);
-  line(ctx, p, 255, w - p, 255);
-}
-function footer(ctx, w, h, data, portrait) {
-  const p = 72; line(ctx, p, h - 100, w - p, h - 100);
-  label(ctx, `CURATED SAMPLE · THROUGH ${data.endDate}`, p, h - 58, portrait ? 21 : 22, C.muted);
-  if (portrait) label(ctx, 'Official sources + methodology in repository', p, h - 28, 19, C.dim);
-  else label(ctx, 'Official sources + methodology in repository', w - p, h - 58, 21, C.dim, 500, 'right');
-}
-function miniMap(ctx, data, currentDay, x, y, w, height = 70) {
-  const firstYear = Number(data.startDate.slice(0, 4)), lastYear = Number(data.endDate.slice(0, 4));
-  const start = day(`${firstYear}-01-01`), end = day(`${lastYear + 1}-01-01`);
-  const position = value => x + (value - start) / (end - start) * w;
-  const center = y + height / 2;
-  line(ctx, x, center, x + w, center, C.dim);
-  for (let year = firstYear; year <= lastYear; year++) {
-    const xx = position(day(`${year}-01-01`));
-    label(ctx, String(year), xx, y - 17, 21, C.muted);
-    line(ctx, xx, y, xx, y + height, C.line);
+  glow(ctx, w * .2, h * .43, w * .72, '#285879', .16);
+  glow(ctx, w * .85, h * .55, w * .6, '#523D69', .13);
+  const rng = seeded(40);
+  for (let i = 0; i < 95; i++) {
+    const x = 36 + rng() * (w - 72), y = 170 + rng() * (h * .49), r = .4 + rng() * .9;
+    circle(ctx, x, y, r, rgba('#ADCEEE', .09 + .13 * (1 + Math.sin(t * .5 + i)) / 2));
   }
-  for (const event of data.releases) {
-    const d = day(event.date), labIndex = data.labs.findIndex(lab => lab.id === event.lab), color = data.labs[labIndex].color;
-    ctx.globalAlpha = d <= currentDay ? .85 : .13;
-    const xx = position(d); line(ctx, xx, center, xx, center + (labIndex ? 23 : -23), color, 3);
-  }
-  ctx.globalAlpha = 1;
-  const xx = position(currentDay); line(ctx, xx, y - 5, xx, y + height + 5, C.text, 2);
 }
-function timelineChart(ctx, data, timeline, state, box, year, visible) {
-  const { x, y, w, h } = box, center = y + h / 2, inset = 22, plotX = x + inset, plotW = w - inset * 2;
-  const xx = d => plotX + calendarPosition(d, year) * plotW;
-  const currentX = plotX + (state.day - day(`${year}-01-01`)) / (day(`${year + 1}-01-01`) - day(`${year}-01-01`)) * plotW;
-  rect(ctx, x, y, w, h, C.panel, 16);
-  // All years use the same Jan–Dec scale, including the unobserved end of 2026.
-  const cutoff = day(data.endDate), yearEnd = day(`${year + 1}-01-01`);
-  if (cutoff < yearEnd - 1) {
-    const cutX = xx(iso(cutoff + 1));
-    ctx.save(); ctx.beginPath(); ctx.rect(cutX, y, x + w - cutX, h); ctx.clip();
-    for (let a = cutX - h; a < x + w + h; a += 19) line(ctx, a, y + h, a + h, y, '#39444C55');
-    ctx.restore();
-    label(ctx, 'UNOBSERVED', x + w - 18, y + 35, 17, C.dim, 600, 'right');
+function header(ctx, w, portrait, data) {
+  label(ctx, 'FRONTIER OBSERVATORY', 64, 58, 18, C.gold, 600);
+  label(ctx, 'The frontier, ignited.', 64, portrait ? 137 : 127, portrait ? 62 : 58, C.text, 600);
+  const ly = portrait ? 204 : 84, lx = portrait ? 65 : 1410;
+  data.labs.forEach((lab, i) => {
+    circle(ctx, lx + i * (portrait ? 236 : 228), ly - 7, 5, lab.color);
+    label(ctx, lab.name, lx + 16 + i * (portrait ? 236 : 228), ly, 24, lab.color);
+  });
+  if (!portrait) label(ctx, `${data.releases.length} SELECTED LAUNCHES · ${data.startDate.slice(0, 4)}—${data.endDate.slice(0, 4)}`, 1848, 126, 19, C.muted, 500, 'right');
+}
+function footer(ctx, data, w, h, portrait) {
+  line(ctx, 64, h - 67, w - 64, h - 67);
+  label(ctx, `CURATED OPENAI + ANTHROPIC · THROUGH ${data.endDate}`, 64, h - 31, portrait ? 18 : 19, C.muted);
+  if (!portrait) label(ctx, 'Official sources & selection rules in repository', w - 64, h - 31, 19, C.dim, 500, 'right');
+}
+export function activeFireworks(data, timeline, time) {
+  return data.releases.filter(e => { const age = time - timeline.onsets.get(e.id); return age >= -FIREWORK.rise && age < FIREWORK.life; });
+}
+export function eventPose(data, event, box) {
+  const year = Number(event.date.slice(0, 4)), events = data.releases.filter(e => e.date.startsWith(String(year)));
+  const index = events.findIndex(e => e.id === event.id); let start = index, end = index;
+  while (start > 0 && day(events[start].date) - day(events[start - 1].date) <= 14) start--;
+  while (end < events.length - 1 && day(events[end + 1].date) - day(events[end].date) <= 14) end++;
+  const group = events.slice(start, end + 1), slot = index - start;
+  const origin = box.x + calendarPosition(event.date, year) * box.w;
+  const mean = group.reduce((n, e) => n + calendarPosition(e.date, year), 0) / group.length;
+  const span = Math.min(box.w - box.radius * 2, Math.max(0, group.length - 1) * box.radius * 1.16);
+  const center = clamp(box.x + mean * box.w, box.x + box.radius + span / 2, box.x + box.w - box.radius - span / 2);
+  const bx = center + (group.length > 1 ? slot / (group.length - 1) - .5 : 0) * span;
+  const by = box.y - box.riseHeight + (group.length > 1 ? slot % 2 * box.radius * .5 : 0);
+  return { origin, bx, by, slot };
+}
+function ember(ctx, data, event, box, opacity) {
+  const { bx, by } = eventPose(data, event, box), c = data.labs.find(l => l.id === event.lab).color;
+  glow(ctx, bx, by, 22, c, opacity * .35);
+  circle(ctx, bx, by, 2.3, rgba(c, opacity));
+  line(ctx, bx - 6, by, bx + 6, by, rgba(c, opacity * .5));
+  line(ctx, bx, by - 6, bx, by + 6, rgba(c, opacity * .5));
+}
+function rocket(ctx, data, e, lab, age, box) {
+  const rand = seeded(e.id), { origin, bx, by } = eventPose(data, e, box);
+  const height = box.y - by, radius = box.radius;
+  const flight = q => ({ x: origin + (bx - origin) * q, y: box.y - height * (1 - (1 - q) ** 1.7) });
+  const c = lab.color;
+  if (age < FIREWORK.rise) {
+    const q = clamp(age / FIREWORK.rise), head = flight(q);
+    for (let j = 0; j < 24; j++) {
+      const f = Math.max(0, q - j * .014), p1 = flight(f), p2 = flight(Math.max(0, f - .014));
+      line(ctx, p1.x, p1.y, p2.x, p2.y, rgba(c, (1 - j / 24) * .8), 2.5 * (1 - j / 30));
+    }
+    glow(ctx, head.x, head.y, 30, c, .55); circle(ctx, head.x, head.y, 3, '#FFFFFF');
+    return;
+  }
+  const t = age - FIREWORK.rise, fade = (1 - clamp(t / FIREWORK.life)) ** 1.5;
+  if (fade <= 0) return;
+  glow(ctx, bx, by, radius * 1.4, c, .25 * Math.exp(-t * 1.4));
+  // Local bloom only, never a full-frame white flash.
+  const impulse = Math.exp(-t * 10);
+  circle(ctx, bx, by, 4 + 11 * (1 - impulse), rgba('#FFF3DB', impulse * .65), true);
+  for (let i = 0; i < FIREWORK.rays; i++) {
+    const angle = i / FIREWORK.rays * TAU + (rand() - .5) * .08;
+    const speed = .76 + rand() * .25, gravity = 19 + rand() * 8, tail = .10 + rand() * .055;
+    const at = sec => {
+      const r = radius * speed * (1 - Math.exp(-sec * 2.4));
+      return { x: bx + Math.cos(angle) * r, y: by + Math.sin(angle) * r + gravity * sec * sec };
+    };
+    const head = at(t), prev = at(Math.max(0, t - tail));
+    const sparkle = .68 + .32 * Math.sin(t * 13 + i * 2.3) ** 2;
+    line(ctx, prev.x, prev.y, head.x, head.y, rgba(c, fade * sparkle), i % 5 ? 2.4 : 3.2);
+    circle(ctx, head.x, head.y, i % 7 === 0 ? 2.1 : 1.4, rgba(i % 5 === 0 ? '#FFF3DB' : c, fade));
+    if (i % 3 === 0 && t > .32) {
+      const extra = at(Math.max(0, t - .17));
+      circle(ctx, extra.x, extra.y, .75, rgba('#FCDFB1', fade * .5));
+    }
+  }
+  const tailFade = Math.exp(-t * 3) * .4;
+  line(ctx, origin, box.y, bx, by, rgba(c, tailFade), 1);
+}
+function sky(ctx, data, timeline, state, year, box, visible, portrait) {
+  const current = (state.day - day(`${year}-01-01`)) / (day(`${year + 1}-01-01`) - day(`${year}-01-01`));
+  label(ctx, String(year), 64, portrait ? 396 : 284, portrait ? 142 : 124, '#8394AB', 500);
+  const count = visible.filter(e => e.date.startsWith(String(year))).length;
+  label(ctx, `${String(count).padStart(2, '0')} launches`, portrait ? 1016 : 1848, portrait ? 333 : 214, portrait ? 34 : 30, C.text, 500, 'right');
+  label(ctx, `${months[Number(iso(state.day).slice(5, 7)) - 1]} ${year}`, portrait ? 1016 : 1848, portrait ? 378 : 256, 25, C.muted, 500, 'right');
+  if (year === Number(data.endDate.slice(0, 4))) label(ctx, `YTD · THROUGH ${data.endDate.slice(5)}`, 68, portrait ? 449 : 326, 20, C.gold);
+  glow(ctx, box.x + box.w * .5, box.y, box.w * .7, '#407685', .15);
+  // The stage clips particles only; typography lives outside it.
+  ctx.save(); ctx.beginPath(); ctx.rect(box.x - 50, portrait ? 480 : 205, box.w + 100, box.y - (portrait ? 480 : 205)); ctx.clip();
+  for (const e of visible) ember(ctx, data, e, box, e.date.startsWith(String(year)) ? .4 : .16);
+  for (const event of activeFireworks(data, timeline, state.time)) {
+    const age = state.time - timeline.onsets.get(event.id) + FIREWORK.rise;
+    rocket(ctx, data, event, data.labs.find(l => l.id === event.lab), age, box);
+  }
+  ctx.restore();
+  line(ctx, box.x, box.y, box.x + box.w, box.y, '#42506B');
+  const cut = calendarPosition(iso(day(data.endDate) + 1), year);
+  if (cut < 1) {
+    const from = box.x + Math.max(0, cut) * box.w;
+    for (let x = from; x < box.x + box.w; x += 16) line(ctx, x, box.y - 4, x + 5, box.y + 4, C.dim);
+    label(ctx, 'UNOBSERVED', box.x + box.w, box.y + 61, portrait ? 27 : 17, C.muted, 500, 'right');
   }
   for (let m = 0; m < 12; m++) {
-    const mx = xx(`${year}-${String(m + 1).padStart(2, '0')}-01`);
-    line(ctx, mx, y + 54, mx, y + h - 52, m % 3 === 0 ? '#344753' : '#20313C');
-    label(ctx, months[m], mx, y + h - 17, 17, C.muted);
+    const x = box.x + calendarPosition(`${year}-${String(m + 1).padStart(2, '0')}-01`, year) * box.w;
+    line(ctx, x, box.y, x, box.y + 9, '#697B93');
+    if (!portrait || m % 3 === 0) label(ctx, months[m], x, box.y + 35, portrait ? 30 : 18, C.muted);
   }
-  line(ctx, plotX, center, plotX + plotW, center, '#556B78', 2);
-  const labs = data.labs;
-  labs.forEach((lab, i) => {
-    circle(ctx, x + 24, y + 29 + i * (h - 105), 5, lab.color);
-    label(ctx, lab.name.toUpperCase(), x + 39, y + 36 + i * (h - 105), 20, lab.color, 600);
+  for (const e of visible.filter(e => e.date.startsWith(String(year)))) {
+    const x = box.x + calendarPosition(e.date, year) * box.w, lab = data.labs.find(l => l.id === e.lab), offset = e.lab === 'openai' ? -7 : 7;
+    circle(ctx, x, box.y + offset, 3.5, lab.color, e.stage === 'preview');
+  }
+  const cursor = box.x + clamp(current) * box.w;
+  line(ctx, cursor, box.y - 19, cursor, box.y + 15, C.gold, 2);
+  circle(ctx, cursor, box.y, 3, C.text);
+}
+export function modelLabel(event, portrait = false) {
+  const full = event.name + (event.stage === 'preview' ? ' *' : '');
+  return portrait ? full.replace(/^Claude (?=[A-Za-z])/, '') : full;
+}
+function ledger(ctx, data, visible, timeline, state, year, w, portrait) {
+  const p = 64, gap = portrait ? 42 : 90, col = (w - 2 * p - gap) / 2;
+  const y = portrait ? 1234 : 767, rowH = portrait ? 91 : 49;
+  data.labs.forEach((lab, i) => {
+    const x = p + i * (col + gap), all = visible.filter(e => e.lab === lab.id), events = all.slice(-4);
+    circle(ctx, x + 5, y - 7, 5, lab.color);
+    label(ctx, lab.name.toUpperCase(), x + 24, y, portrait ? 30 : 23, lab.color, 600);
+    label(ctx, 'RECENT LAUNCHES', x + col, y, portrait ? 21 : 19, C.dim, 500, 'right');
+    line(ctx, x, y + 16, x + col, y + 16);
+    events.forEach(event => {
+      // Four fixed slots: an arrival replaces only the oldest slot, never moves other labels.
+      const j = all.indexOf(event) % 4, yy = y + (portrait ? 54 : 58) + j * rowH;
+      const age = state.time - timeline.onsets.get(event.id), newest = event === all.at(-1);
+      if (age < 1.2) rect(ctx, x - 9, yy - (portrait ? 26 : 30), col + 18, portrait ? 82 : 44, rgba(lab.color, .1 * (1 - age / 1.2)));
+      label(ctx, event.date.replaceAll('-', '.'), x, yy, portrait ? 30 : 22, newest ? C.text : C.muted);
+      const model = modelLabel(event, portrait);
+      fit(ctx, model, portrait ? x : x + 165, yy + (portrait ? 47 : 0), portrait ? col : col - 165, portrait ? 43 : 34, C.text);
+      if (newest) circle(ctx, x + col - 5, yy - (portrait ? 9 : 12), 3, lab.color);
+    });
   });
-  const laneEvents = labs.map(lab => visible.filter(event => event.lab === lab.id && Number(event.date.slice(0, 4)) === year));
-  // Closely spaced stems keep true x positions; names stay in persistent lab cards.
-  laneEvents.forEach((events, labIndex) => events.forEach((event, index) => {
-    const onset = timeline.onsets.get(event.id), age = state.time - onset;
-    const amplitude = smooth(age / .32), dir = labIndex ? 1 : -1;
-    const height = Math.min(h * .27, 130) + (index % 3) * 15;
-    const xEvent = xx(event.date), yEnd = center + dir * height * amplitude, color = labs[labIndex].color;
-    line(ctx, xEvent, center, xEvent, yEnd, color, 3);
-    if (event.stage === 'preview') circle(ctx, xEvent, yEnd, 6, color, true);
-    else circle(ctx, xEvent, yEnd, 6, color);
-    if (age < .85) {
-      ctx.globalAlpha = (1 - clamp(age / .85)) * .65;
-      circle(ctx, xEvent, yEnd, 10 + age * 24, color, true); ctx.globalAlpha = 1;
-    }
-  }));
-  const grad = ctx.createLinearGradient(currentX - 70, 0, currentX, 0); grad.addColorStop(0, '#D5E4A500'); grad.addColorStop(1, '#D5E4A512');
-  rect(ctx, Math.max(x, currentX - 70), y + 50, Math.min(70, currentX - x), h - 104, grad);
-  line(ctx, currentX, y + 46, currentX, y + h - 49, C.accent, 2);
-  circle(ctx, currentX, center, 6, C.accent);
-}
-function eventCard(ctx, lab, event, x, y, w, h, state, timeline, portrait) {
-  rect(ctx, x, y, w, h, C.panel, 12); rect(ctx, x, y + 20, 3, h - 40, lab.color);
-  const pad = 27;
-  label(ctx, lab.name.toUpperCase(), x + pad, y + 36, 20, lab.color, 650);
-  if (!event) { label(ctx, 'Awaiting a selected launch', x + pad, y + 94, 26, C.dim); return; }
-  const age = state.time - timeline.onsets.get(event.id);
-  ctx.globalAlpha = .55 + .45 * smooth(age / .2);
-  fit(ctx, event.name, x + pad, y + 91, w - pad * 2, portrait ? 41 : 34);
-  label(ctx, dateLabel(event.date), x + pad, y + h - 27, 22, C.muted);
-  label(ctx, event.stage === 'preview' ? 'PREVIEW' : 'RELEASE', x + w - pad, y + h - 27, 17, lab.color, 650, 'right');
-  ctx.globalAlpha = 1;
-}
-function yearMetrics(ctx, data, year, revealed, box, portrait) {
-  const { x, y, w } = box, stats = yearlyStats(data).find(row => row.year === year);
-  label(ctx, String(year), x, y + 122, 148, C.text, 650);
-  label(ctx, stats.partial ? `YTD · THROUGH ${stats.end.slice(5)}` : 'JANUARY — DECEMBER', x + (portrait ? 390 : 0), y + (portrait ? 80 : 168), 22, C.muted);
-  const cy = y + (portrait ? 159 : 256);
-  label(ctx, String(revealed).padStart(2, '0'), x, cy + 70, 81, C.accent, 600);
-  label(ctx, 'selected launches', x + 128, cy + 32, 25, C.text);
-  label(ctx, 'revealed this year', x + 128, cy + 68, 21, C.muted);
-  if (!portrait) {
-    line(ctx, x, cy + 102, x + w, cy + 102);
-    label(ctx, 'SAME CALENDAR SCALE', x, cy + 142, 20, C.muted, 600);
-    label(ctx, 'Position shows release date.', x, cy + 181, 24, C.text);
-    label(ctx, 'Height separates the labs.', x, cy + 217, 24, C.text);
-    label(ctx, 'It does not measure capability.', x, cy + 253, 21, C.muted);
-  }
 }
 function intro(ctx, data, timeline, state, w, h, portrait) {
-  const p = 72, entrance = smooth(state.progress * 3);
-  ctx.save(); ctx.globalAlpha = entrance; ctx.translate(0, (1 - entrance) * 28);
-  label(ctx, 'A CALENDAR OF CAPABILITY', p, portrait ? 396 : 382, 25, C.accent, 650);
-  const lines = portrait ? ['New models.', 'Less quiet.'] : ['New models. Less quiet.'];
-  lines.forEach((s, i) => label(ctx, s, p, (portrait ? 521 : 505) + i * 116, portrait ? 94 : 104, C.text, 650));
-  const by = portrait ? 771 : 578;
-  label(ctx, `${data.startDate.slice(0, 4)} — ${data.endDate.slice(0, 4)}`, p, by, 40, C.muted);
-  label(ctx, `${data.releases.length} selected launches. Two frontier labs.`, p, by + 69, portrait ? 32 : 34, C.text);
-  label(ctx, 'Every date links to an official source.', p, by + 117, portrait ? 27 : 28, C.muted);
-  const my = portrait ? 1240 : 786;
-  miniMap(ctx, data, timeline.start + (timeline.end - timeline.start) * smooth(state.progress), p, my, w - p * 2, portrait ? 120 : 70);
-  data.labs.forEach((lab, i) => { circle(ctx, p + i * 235, my + 155, 6, lab.color); label(ctx, lab.name, p + 18 + i * 235, my + 162, 25, lab.color); });
+  const progress = smooth(state.progress * 2.5), y = portrait ? 708 : 417;
+  ctx.save(); ctx.globalAlpha = progress;
+  label(ctx, 'NEW MODELS.', 64, y, portrait ? 106 : 120, C.text, 500);
+  label(ctx, 'LESS QUIET.', 64, y + (portrait ? 127 : 136), portrait ? 106 : 120, C.gold, 500);
+  label(ctx, 'One launch. One spark.', 69, y + (portrait ? 239 : 232), portrait ? 37 : 37, C.muted);
+  label(ctx, 'Each release leaves an ember.', 69, y + (portrait ? 302 : 290), portrait ? 29 : 30, C.muted);
+  const sy = portrait ? 1207 : 790;
+  const gx = 64 + (w - 128) * smooth(state.progress);
+  glow(ctx, gx, sy, portrait ? 200 : 270, data.labs[0].color, .35);
+  const g = ctx.createLinearGradient(64, sy, w - 64, sy); g.addColorStop(0, data.labs[0].color); g.addColorStop(1, data.labs[1].color);
+  line(ctx, 64, sy, w - 64, sy, '#364256'); line(ctx, 64, sy, gx, sy, g, 2);
+  circle(ctx, gx, sy, 4, C.text);
+  label(ctx, `${data.startDate.slice(0, 4)} — ${data.endDate.slice(0, 4)}`, 64, sy + 83, 34, C.text);
+  label(ctx, `${data.releases.length} selected launches · two labs · official sources`, 64, sy + 134, portrait ? 27 : 29, C.muted);
   ctx.restore();
 }
-function summary(ctx, data, state, w, h, portrait) {
-  const p = 72, rows = yearlyStats(data), max = Math.max(...rows.map(r => r.daysPerLaunch ?? 0));
-  const startY = portrait ? 514 : 474, rowH = portrait ? Math.min(211, 930 / rows.length) : Math.min(88, 410 / rows.length);
-  label(ctx, 'How often did a launch land?', p, portrait ? 375 : 354, portrait ? 46 : 51, C.text, 650);
-  label(ctx, 'Calendar days per selected launch · lower = denser', p, portrait ? 426 : 403, portrait ? 26 : 27, C.muted);
-  rows.forEach((row, i) => {
-    const y = startY + i * rowH, barX = portrait ? p : p + 296, barW = portrait ? w - p * 2 - 182 : w - p * 2 - 720;
-    label(ctx, `${row.year}${row.partial ? ' YTD' : ''}`, p, y + 23, portrait ? 31 : 33, C.text, 650);
-    const yy = portrait ? y + Math.min(52, rowH * .29) : y - 5;
-    const fill = (row.daysPerLaunch ?? 0) / Math.max(1, max) * smooth(state.progress * 3 - i * .08);
-    rect(ctx, barX, yy, barW, 30, C.panel, 3); rect(ctx, barX, yy, barW * fill, 30, i === rows.length - 1 ? C.accent : '#658B85', 3);
-    label(ctx, row.daysPerLaunch === null ? '—' : row.daysPerLaunch.toFixed(1), barX + barW + 28, yy + 27, 35, i === rows.length - 1 ? C.accent : C.text, 650);
-    const detail = `${row.observedDays} days / ${row.count} launches`;
-    label(ctx, detail, portrait ? p : w - p, portrait ? y + Math.min(124, rowH * .78) : y + 20, portrait ? Math.min(25, rowH * .19) : 22, C.muted, 500, portrait ? 'left' : 'right');
-    if (portrait && row.partial && rowH > 180) label(ctx, `Observation ends ${row.end}`, p, y + 159, 21, C.dim);
-  });
-  const noteY = portrait ? 1532 : 916;
-  label(ctx, 'This is launch density, not a measured development cycle.', p, noteY, portrait ? 25 : 25, C.text);
-  label(ctx, 'The result changes when the selection changes.', p, noteY + 39, portrait ? 25 : 25, C.muted);
-  if (portrait) {
-    line(ctx, p, noteY + 91, w - p, noteY + 91);
-    label(ctx, 'EDIT THE DATA. REPLAY THE STORY.', p, noteY + 146, 26, C.accent, 650);
-    label(ctx, 'crosscore / frontier-model-release-timeline', p, noteY + 193, 23, C.muted);
+function ending(ctx, data, state, w, h, portrait) {
+  const rows = yearlyStats(data), first = rows[0], last = rows.at(-1), p = 64;
+  const skyBox = { x: 100, y: portrait ? 1164 : 653, w: w - 200, riseHeight: portrait ? 440 : 252, radius: portrait ? 218 : 168 };
+  for (const e of data.releases) ember(ctx, data, e, skyBox, .19);
+  label(ctx, 'The quiet is getting shorter.', p, portrait ? 363 : 285, portrait ? 49 : 58, C.text);
+  const valueY = portrait ? 596 : 460, rightX = portrait ? 577 : 1002;
+  label(ctx, first.daysPerLaunch?.toFixed(0) ?? '—', p, valueY, portrait ? 164 : 166, C.text);
+  label(ctx, '→', portrait ? 403 : 640, valueY - 23, 76, C.dim);
+  label(ctx, last.daysPerLaunch?.toFixed(1) ?? '—', rightX, valueY, portrait ? 136 : 166, C.gold);
+  label(ctx, String(first.year), p + 5, valueY + 54, 27, C.muted);
+  label(ctx, `${last.year}${last.partial ? ' YTD' : ''}`, rightX + 4, valueY + 54, 27, C.muted);
+  label(ctx, 'CALENDAR DAYS / SELECTED LAUNCH', p, valueY + 118, portrait ? 23 : 25, C.gold);
+  const top = portrait ? 903 : 680, step = portrait ? Math.min(126, 680 / rows.length) : Math.min(55, 230 / rows.length);
+  const max = Math.max(1, ...rows.map(r => r.daysPerLaunch ?? 0));
+  for (const [i, row] of rows.entries()) {
+    const y = top + i * step, bx = portrait ? 278 : 315, bw = portrait ? 535 : 1040;
+    label(ctx, String(row.year) + (row.partial ? ' YTD' : ''), p, y + 18, portrait ? 27 : 24, C.muted);
+    line(ctx, bx, y + 5, bx + bw, y + 5, '#1B293C', 7);
+    line(ctx, bx, y + 5, bx + bw * (row.daysPerLaunch ?? 0) / max * smooth(state.progress * 3), y + 5, i === rows.length - 1 ? C.gold : '#739EAD', 7);
+    label(ctx, row.daysPerLaunch?.toFixed(1) ?? '—', bx + bw + 26, y + 18, portrait ? 30 : 28, C.text);
+    if (portrait) label(ctx, `${row.observedDays} days / ${row.count} launches`, bx, y + 55, 22, C.dim);
+    else label(ctx, `${row.observedDays} days / ${row.count} launches`, w - 64, y + 18, 21, C.dim, 500, 'right');
   }
+  const ny = portrait ? 1540 : 952;
+  label(ctx, 'Launch density, not development time.', p, ny, portrait ? 30 : 27, C.text);
+  label(ctx, 'A curated sample. Changing the selection changes the result.', p, ny + 43, portrait ? 23 : 22, C.muted);
+  if (portrait) { label(ctx, 'EDIT THE DATA. REPLAY THE SKY.', p, 1716, 29, C.gold); label(ctx, 'crosscore / frontier-model-release-timeline', p, 1763, 23, C.dim); }
 }
-
 export function drawFrame(ctx, data, timeline, seconds, format = 'landscape') {
-  const { width: w, height: h } = FORMATS[format], portrait = format === 'portrait', p = 72;
-  const state = stateAt(timeline, seconds);
-  background(ctx, w, h); brand(ctx, w, portrait, data);
+  const { width: w, height: h } = FORMATS[format], portrait = format === 'portrait', state = stateAt(timeline, seconds);
+  background(ctx, w, h, seconds); header(ctx, w, portrait, data);
   if (state.mode === 'intro') intro(ctx, data, timeline, state, w, h, portrait);
-  else if (state.mode === 'outro') summary(ctx, data, state, w, h, portrait);
+  else if (state.mode === 'outro') ending(ctx, data, state, w, h, portrait);
   else {
-    const year = stateYear(state), visible = visibleEvents(data, timeline, seconds), current = visible.filter(e => Number(e.date.slice(0, 4)) === year);
-    if (portrait) {
-      yearMetrics(ctx, data, year, current.length, { x: p, y: 286, w: w - p * 2 }, true);
-      label(ctx, dateLabel(iso(state.day)), w - p, 588, 24, C.accent, 650, 'right');
-      timelineChart(ctx, data, timeline, state, { x: p, y: 627, w: w - p * 2, h: 550 }, year, visible);
-      data.labs.forEach((lab, i) => eventCard(ctx, lab, current.filter(e => e.lab === lab.id).at(-1), p, 1207 + i * 198, w - p * 2, 175, state, timeline, true));
-      label(ctx, 'POSITION = DATE · HEIGHT ≠ CAPABILITY', p, 1658, 22, C.muted);
-      miniMap(ctx, data, state.day, p, 1720, w - p * 2, 60);
-    } else {
-      const chartW = 1240;
-      label(ctx, dateLabel(iso(state.day)), p + chartW, 306, 24, C.accent, 650, 'right');
-      label(ctx, 'MODEL LAUNCHES / CALENDAR VIEW', p, 306, 21, C.muted, 650);
-      timelineChart(ctx, data, timeline, state, { x: p, y: 334, w: chartW, h: 395 }, year, visible);
-      yearMetrics(ctx, data, year, current.length, { x: 1374, y: 266, w: 474 }, false);
-      data.labs.forEach((lab, i) => eventCard(ctx, lab, current.filter(e => e.lab === lab.id).at(-1), p + i * 631, 750, 609, 164, state, timeline, false));
-      miniMap(ctx, data, state.day, 1374, 885, 474, 38);
-    }
+    const year = stateYear(state), visible = visibleEvents(data, timeline, seconds);
+    sky(ctx, data, timeline, state, year, { x: 100, y: portrait ? 1154 : 653, w: w - 200, riseHeight: portrait ? 440 : 252, radius: portrait ? 218 : 168 }, visible, portrait);
+    if (portrait) { label(ctx, '1 BURST = 1 LAUNCH', 64, 1718, 30, C.muted); label(ctx, 'Constant calendar speed · 2 selected labs', 64, 1761, 28, C.muted); }
+    else label(ctx, 'ONE BURST = ONE LAUNCH · CONSTANT CALENDAR SPEED', 64, 709, 19, C.muted);
+    ledger(ctx, data, visible, timeline, state, year, w, portrait);
+    if (portrait) { label(ctx, '* PREVIEW · SIZE / HEIGHT ≠ CAPABILITY', 64, 1810, 24, C.muted); }
+    else label(ctx, '* PREVIEW · SIZE / HEIGHT ≠ CAPABILITY', 64, 999, 19, C.muted);
   }
-  footer(ctx, w, h, data, portrait);
-  rect(ctx, 0, h - 4, w * clamp(seconds / timeline.duration), 4, C.accent);
+  footer(ctx, data, w, h, portrait);
+  rect(ctx, 0, h - 3, w * clamp(seconds / timeline.duration), 3, C.gold);
   return state;
 }

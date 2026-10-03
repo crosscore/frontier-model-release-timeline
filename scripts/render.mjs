@@ -8,6 +8,7 @@ import { makeTimeline } from '../src/timeline.mjs';
 import { makeRenderer } from '../src/node-renderer.mjs';
 import { buildArtifacts, captions } from '../src/artifacts.mjs';
 import { options } from './options.mjs';
+import { masterSoundtrack } from './audio-master.mjs';
 
 const args = options({ format: { type: 'string', default: 'landscape' }, width: { type: 'string' }, fps: { type: 'string', default: '30' }, duration: { type: 'string' }, 'no-gif': { type: 'boolean', default: false } });
 const fps = Number(args.fps);
@@ -21,8 +22,10 @@ const renderer = makeRenderer(data, timeline, args.format, args.width === undefi
 await buildArtifacts(data, timeline, args.out);
 await copyFile(new URL('../assets/fonts/Manrope.ttf', import.meta.url), join(args.out, 'Manrope.ttf'));
 await copyFile(new URL('../assets/fonts/OFL.txt', import.meta.url), join(args.out, 'OFL.txt'));
+console.log('Synthesizing and mastering original score + launch cues…');
+const soundtrack = await masterSoundtrack(data, timeline, { duration, timeScale: (frames - 1) / fps / timeline.duration, out: args.out, format: args.format });
 const filename = `frontier-${args.format}.mp4`, temp = join(args.out, `.render-${args.format}.tmp.mp4`);
-const command = ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'rawvideo', '-pixel_format', 'rgba', '-video_size', `${renderer.width}x${renderer.height}`, '-framerate', String(fps), '-i', 'pipe:0', '-an', '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-threads', '4', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', temp];
+const command = ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'rawvideo', '-pixel_format', 'rgba', '-video_size', `${renderer.width}x${renderer.height}`, '-framerate', String(fps), '-i', 'pipe:0', '-i', join(args.out, soundtrack.filename), '-map', '0:v:0', '-map', '1:a:0', '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-threads', '4', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', temp];
 const encoder = spawn('ffmpeg', command, { stdio: ['pipe', 'ignore', 'pipe'] });
 let errorText = '', streamError;
 encoder.stderr.on('data', chunk => { errorText = (errorText + chunk).slice(-16000); });
@@ -45,7 +48,7 @@ try {
 }
 await writeFile(join(args.out, `captions-${args.format}.vtt`), captions(data, timeline, duration));
 const hash = createHash('sha256').update(await readFile(args.data)).digest('hex');
-const manifest = { format: args.format, width: renderer.width, height: renderer.height, fps, frames, duration, datasetSha256: hash, events: data.releases.length, observationEnd: data.endDate, codec: 'h264', pixelFormat: 'yuv420p', audio: false };
+const manifest = { format: args.format, width: renderer.width, height: renderer.height, fps, frames, duration, datasetSha256: hash, events: data.releases.length, observationEnd: data.endDate, codec: 'h264', pixelFormat: 'yuv420p', audio: { codec: 'aac', sampleRate: 48000, channels: 2, title: soundtrack.report.title, integratedLufs: soundtrack.report.integratedLufs, truePeakDbtp: soundtrack.report.truePeakDbtp } };
 await writeFile(join(args.out, `manifest-${args.format}.json`), JSON.stringify(manifest, null, 2) + '\n');
 if (!args['no-gif'] && args.format === 'landscape') {
   const result = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-i', join(args.out, filename), '-vf', 'fps=8,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=96[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3', '-loop', '0', join(args.out, 'preview.gif')], { stdio: 'inherit' });

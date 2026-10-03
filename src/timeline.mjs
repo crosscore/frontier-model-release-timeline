@@ -3,29 +3,22 @@ import { day, iso, yearOf } from './data.mjs';
 export const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 export const smooth = x => { x = clamp(x); return x * x * (3 - 2 * x); };
 
-// Spatial positions are calendar-linear. Presentation time pauses on each date
-// so a burst of nearby releases does not flash unreadable labels.
-export function makeTimeline(data, { travelSeconds = 16, holdSeconds = 0.85, introSeconds = 3, outroSeconds = 6 } = {}) {
+// One continuous clock: a real-world day always has the same film duration.
+// Names accumulate in the ledger instead of stopping time at crowded launches.
+export function makeTimeline(data, { travelSeconds = 43.2, holdSeconds = 2.4, introSeconds = 2.4, outroSeconds = 8.4 } = {}) {
   for (const value of [travelSeconds, holdSeconds, introSeconds, outroSeconds]) {
     if (!Number.isFinite(value) || value <= 0) throw new Error('Timeline durations must be positive');
   }
   const start = day(data.startDate), end = day(data.endDate), segments = [], onsets = new Map();
-  const targets = new Set([end, ...data.releases.map(event => day(event.date))]);
-  for (let year = yearOf(data.startDate) + 1; year <= yearOf(data.endDate); year++) targets.add(day(`${year}-01-01`));
-  let at = introSeconds, previous = start;
+  let at = introSeconds;
   const append = (duration, from, to, type) => {
     if (duration <= 0) return;
     segments.push({ fromTime: at, toTime: at + duration, from, to, type }); at += duration;
   };
-  for (const target of [...targets].sort((a, b) => a - b)) {
-    append((target - previous) / Math.max(1, end - start) * travelSeconds, previous, target, 'travel');
-    const events = data.releases.filter(event => day(event.date) === target);
-    for (const event of events) onsets.set(event.id, at);
-    if (events.length) append(holdSeconds, target, target, 'hold');
-    previous = target;
-  }
-  append(0.9, end, end, 'hold');
-  return { segments, onsets, start, end, introSeconds, outroSeconds, outroStart: at, duration: at + outroSeconds };
+  for (const event of data.releases) onsets.set(event.id, introSeconds + (day(event.date) - start) / Math.max(1, end - start) * travelSeconds);
+  append(travelSeconds, start, end, 'travel');
+  append(holdSeconds, end, end, 'hold');
+  return { segments, onsets, start, end, travelSeconds, introSeconds, outroSeconds, outroStart: at, duration: at + outroSeconds };
 }
 
 export function stateAt(timeline, seconds) {

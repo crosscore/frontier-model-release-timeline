@@ -6,7 +6,7 @@ import { options } from './options.mjs';
 const args = options({ port: { type: 'string', default: '4173' } });
 const port = Number(args.port);
 if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Invalid port');
-const types = { '.html': 'text/html; charset=utf-8', '.mp4': 'video/mp4', '.png': 'image/png', '.gif': 'image/gif', '.json': 'application/json', '.vtt': 'text/vtt', '.ttf': 'font/ttf', '.csv': 'text/csv; charset=utf-8' };
+const types = { '.html': 'text/html; charset=utf-8', '.mp4': 'video/mp4', '.m4a': 'audio/mp4', '.png': 'image/png', '.gif': 'image/gif', '.json': 'application/json', '.vtt': 'text/vtt', '.ttf': 'font/ttf', '.csv': 'text/csv; charset=utf-8' };
 const server = createServer(async (req, res) => {
   try {
     if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405).end(); return; }

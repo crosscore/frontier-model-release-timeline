@@ -2,8 +2,10 @@ import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
 import { fileURLToPath } from 'node:url';
 import { drawFrame, FORMATS } from './draw.mjs';
 
-const font = fileURLToPath(new URL('../assets/fonts/Manrope.ttf', import.meta.url));
-if (!GlobalFonts.registerFromPath(font, 'Manrope')) throw new Error('Could not load bundled Manrope font');
+for (const weight of [500, 600]) {
+  const font = fileURLToPath(new URL(`../assets/fonts/Manrope-${weight}.ttf`, import.meta.url));
+  if (!GlobalFonts.registerFromPath(font, `Manrope${weight}`)) throw new Error('Could not load bundled Manrope font');
+}
 
 export function makeRenderer(data, timeline, format = 'landscape', width = FORMATS[format]?.width) {
   if (!FORMATS[format]) throw new Error(`Unknown format: ${format}`);

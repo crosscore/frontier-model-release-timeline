@@ -9,12 +9,12 @@
     {
       "id": "openai",
       "name": "OpenAI",
-      "color": "#92F1CE"
+      "color": "#76D3B2"
     },
     {
       "id": "anthropic",
       "name": "Anthropic",
-      "color": "#F1A27E"
+      "color": "#FFB547"
     }
   ],
   "releases": [

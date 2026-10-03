@@ -6,4 +6,6 @@ The public post text and embedded media were visible. The embedded player report
 
 The post discusses approximate rates of one major release per 73 days in 2023 and per 18 days in 2026, and explicitly notes that the result depends on what counts as major. Those estimates motivated investigating a sourced release calendar; they were not imported as data.
 
-This implementation independently creates the typography, dot-grid background, lab cards, year views, cursor, summary graphics, captions and player page. It adds source-linked editable records, consistent year scales, preview markers, a partial-year cutoff, and explicit density math. No source video, screenshots, audio, provider logos or other copied creative assets are redistributed.
+This implementation independently creates the typography, night-sky background, analytical fireworks, fixed model-name slots, year views, cursor, summary graphics, original synthesized soundtrack, captions and player page. It adds source-linked editable records, consistent year scales, preview markers, a partial-year cutoff, and explicit density math. No source video, screenshots, audio, provider logos or other copied creative assets are redistributed.
+
+The second edition responds to the request for a fireworks-like rhythm and original BGM. It preserves the date/source records while replacing the stop-and-go clock with continuous calendar time. It does not copy the reference soundtrack or claim an exact visual match.
