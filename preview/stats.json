@@ -4,13 +4,14 @@
     "start": "2023-01-01",
     "end": "2023-12-31",
     "observedDays": 365,
-    "count": 5,
+    "count": 6,
     "partial": false,
-    "daysPerLaunch": 73,
-    "meanGapDays": 63,
+    "daysPerLaunch": 60.833333333333336,
+    "meanGapDays": 53.4,
     "byLab": {
       "openai": 2,
-      "anthropic": 3
+      "anthropic": 3,
+      "google": 1
     }
   },
   {
@@ -18,13 +19,14 @@
     "start": "2024-01-01",
     "end": "2024-12-31",
     "observedDays": 366,
-    "count": 6,
+    "count": 9,
     "partial": false,
-    "daysPerLaunch": 61,
-    "meanGapDays": 55.2,
+    "daysPerLaunch": 40.666666666666664,
+    "meanGapDays": 38.375,
     "byLab": {
       "openai": 3,
-      "anthropic": 3
+      "anthropic": 3,
+      "google": 3
     }
   },
   {
@@ -32,13 +34,14 @@
     "start": "2025-01-01",
     "end": "2025-12-31",
     "observedDays": 365,
-    "count": 11,
+    "count": 14,
     "partial": false,
-    "daysPerLaunch": 33.18181818181818,
-    "meanGapDays": 29,
+    "daysPerLaunch": 26.071428571428573,
+    "meanGapDays": 23.76923076923077,
     "byLab": {
       "openai": 6,
-      "anthropic": 5
+      "anthropic": 5,
+      "google": 3
     }
   },
   {
@@ -46,13 +49,14 @@
     "start": "2026-01-01",
     "end": "2026-10-02",
     "observedDays": 275,
-    "count": 17,
+    "count": 22,
     "partial": true,
-    "daysPerLaunch": 16.176470588235293,
-    "meanGapDays": 14.75,
+    "daysPerLaunch": 12.5,
+    "meanGapDays": 11.238095238095237,
     "byLab": {
       "openai": 7,
-      "anthropic": 10
+      "anthropic": 10,
+      "google": 5
     }
   }
 ]

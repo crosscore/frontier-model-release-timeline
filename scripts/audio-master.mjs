@@ -17,7 +17,10 @@ export async function masterSoundtrack(data, timeline, { duration, timeScale, ou
   await writeFile(wav, wavBuffer(audio));
   try {
     const measured = loudness(wav);
-    const filter = `loudnorm=I=${SCORE.targetLufs}:TP=${SCORE.truePeakDb}:LRA=9:measured_I=${measured.input_i}:measured_TP=${measured.input_tp}:measured_LRA=${measured.input_lra}:measured_thresh=${measured.input_thresh}:offset=${measured.target_offset}:linear=true`;
+    // Linear gain only: if the target would push true peak past the ceiling, settle for a quieter target
+    // instead of letting loudnorm fall back to dynamic compression.
+    const target = Math.min(SCORE.targetLufs, Number(measured.input_i) + SCORE.truePeakDb - Number(measured.input_tp) - .2);
+    const filter = `loudnorm=I=${target.toFixed(2)}:TP=${SCORE.truePeakDb}:LRA=9:measured_I=${measured.input_i}:measured_TP=${measured.input_tp}:measured_LRA=${measured.input_lra}:measured_thresh=${measured.input_thresh}:offset=${measured.target_offset}:linear=true`;
     const result = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-i', wav, '-af', filter, '-ar', String(SCORE.sampleRate), '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-metadata', `title=${SCORE.title}`, '-metadata', 'artist=crosscore / procedural original', destination], { encoding: 'utf8' });
     if (result.status !== 0) throw new Error(`Audio mastering failed: ${result.stderr || result.error}`);
     const final = loudness(destination);

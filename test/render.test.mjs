@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { loadDataset, day } from '../src/data.mjs';
 import { makeTimeline } from '../src/timeline.mjs';
-import { activeFireworks, eventPose, modelLabel, FIREWORK } from '../src/draw.mjs';
+import { activeFireworks, eventPose, modelLabel, skyBox, FIREWORK } from '../src/draw.mjs';
 import { makeRenderer } from '../src/node-renderer.mjs';
 import { captions, previewHtml } from '../src/artifacts.mjs';
 const data = await loadDataset(), timeline = makeTimeline(data);
@@ -57,11 +57,20 @@ test('fireworks keep their full lifetime across the calendar year boundary', () 
 });
 test('simultaneous bursts have separate centers and true-date ground origins', () => {
   for (const date of ['2023-03-14', '2026-09-22']) {
-    const events = data.releases.filter(e => e.date === date), box = {x:100,y:1154,w:880,radius:218,riseHeight:440};
+    const events = data.releases.filter(e => e.date === date), box = skyBox('portrait');
     const [a,b] = events.map(e => eventPose(data,e,box));
     assert.equal(a.origin,b.origin);
     assert(Math.hypot(a.bx-b.bx,a.by-b.by) > box.radius * .7);
     for (const pose of [a,b]) assert(pose.bx >= box.x + box.radius && pose.bx <= box.x + box.w - box.radius);
+  }
+});
+test('each lab bursts in its own altitude lane, above the ground line in both layouts', () => {
+  for (const format of ['landscape', 'portrait']) {
+    const box = skyBox(format), heights = data.labs.map(lab => new Set(data.releases.filter(e => e.lab === lab.id).map(e => eventPose(data, e, box).by)));
+    for (const set of heights) assert.equal(set.size, 1);
+    const lanes = heights.map(set => [...set][0]);
+    for (let i = 1; i < lanes.length; i++) assert(lanes[i] - lanes[i - 1] >= box.radius * .3);
+    assert(lanes.at(-1) + box.radius < box.y);
   }
 });
 test('portrait labels preserve numeric Claude family names and preview status', () => {

@@ -1,14 +1,14 @@
 # Dataset and calculation policy
 
-This is a manually curated launch calendar for **OpenAI and Anthropic**, observed from 2023-01-01 through **2026-10-02**, inclusive. The snapshot was researched on 2026-10-02. It is not a live feed, an exhaustive industry inventory, or a benchmark-based definition of the frontier. Other labs are outside this edition's scope.
+This is a manually curated launch calendar for **OpenAI, Anthropic and Google (Gemini)**, observed from 2023-01-01 through **2026-10-02**, inclusive. The OpenAI and Anthropic records were researched on 2026-10-02; the Google records were researched for the same window on 2026-10-03. It is not a live feed, an exhaustive industry inventory, or a benchmark-based definition of the frontier. Other labs are outside this edition's scope.
 
 ## Unit and inclusion
 
 One event is a selected, publicly announced launch or rollout from one lab on one calendar date. Same-day model variants from that lab are grouped, rather than counted as separate points. Events from different labs on the same date remain separate. Dates use the publisher's stated calendar date and are represented internally at UTC midnight; exact launch times and regional rollouts are not inferred.
 
-The sample follows general-purpose GPT / o-series and Claude main model releases and explicitly announced major revisions. Public previews are included and marked. It includes Sonnet, Opus and publicly available Fable releases, alongside the relevant general-purpose OpenAI families. It does not assert that every included model was the top-scoring frontier model at its launch.
+The sample follows general-purpose GPT / o-series and Claude main model releases and explicitly announced major revisions. Public previews are included and marked. It includes Sonnet, Opus and publicly available Fable releases, alongside the relevant general-purpose OpenAI families. For Google, it follows the Gemini line: each new generation or version number (1.0, 1.5, 2.0, 2.5, 3, 3.1, 3.5–3.8) and the first public release of the Ultra tier. A Flash model counts only when it opens a new version number; Gemini 3.6, 3.7 and 3.8 Flash were Google's main general-purpose releases after 3.1 Pro and are included. It does not assert that every included model was the top-scoring frontier model at its launch.
 
-Excluded categories: standalone mini/nano/Haiku/Instant-small variants, coding-specific Codex variants, open-weight GPT-oss, image/audio/video models, product and tool launches, pricing or prompt-only updates, compute-only pro modes, routine same-name API snapshots, and later availability on additional platforms. “GPT-5.3 Instant” is a newly named general-purpose release and is included; the older lightweight Claude Instant line is excluded. Closed partner evaluations and restricted Mythos releases are excluded. Announced but unreleased models are excluded.
+Excluded categories: standalone mini/nano/Haiku/Instant-small variants, coding-specific Codex variants, open-weight GPT-oss, image/audio/video models, product and tool launches, pricing or prompt-only updates, compute-only pro modes, routine same-name API snapshots, and later availability on additional platforms. “GPT-5.3 Instant” is a newly named general-purpose release and is included; the older lightweight Claude Instant line is excluded. Closed partner evaluations and restricted Mythos releases are excluded. Announced but unreleased models are excluded. For Google this excludes Flash-Lite, Live and TTS audio models, image and video models (Nano Banana, Omni), open-weight Gemma, Deep Think modes, dated experimental snapshots, restricted Cyber / Fairwind Program releases (including Gemini 4 Argon, announced 2026-09-30), the announced but unreleased Gemini 3.5 Pro, and pre-Gemini Bard / PaLM models.
 
 This is an editorial sample, not a rule that guarantees completeness. Its value is a traceable, editable visualization. A comparison of the entire market would require a broader, separately reviewed selection.
 
@@ -24,9 +24,12 @@ This is an editorial sample, not a rule that guarantees completeness. Its value 
 | GPT-5.5 | April 23 ChatGPT/Codex rollout is the event; April 24 API availability is not a second event. [Announcement](https://openai.com/index/introducing-gpt-5-5/) |
 | GPT-5.6 | July 9 general release is the event; earlier closed evaluation is excluded. Sol/Terra/Luna are grouped. [Announcement](https://openai.com/index/gpt-5-6/) |
 | Fable / Mythos | Only public Fable is included on June 9 and September 1, 2026; restricted Mythos access does not add events. [Official log](https://platform.claude.com/docs/en/release-notes/overview) |
+| Gemini 1.0 | Use the 2023-12-06 announcement, when Pro reached Bard and Nano reached Pixel 8 Pro; API access on December 13 is in the note, not a second event. [Announcement](https://blog.google/innovation-and-ai/technology/ai/google-gemini-ai/) |
+| Gemini Ultra 1.0 / 1.5 Pro | Ultra was announced on December 6 but first released on 2024-02-08. Gemini 1.5 Pro uses its 2024-02-15 limited-preview introduction, following the Claude precedent for request-based access; the April public preview and May GA are not counted again. [Ultra](https://blog.google/products-and-platforms/products/gemini/bard-gemini-advanced-app/), [1.5 Pro](https://blog.google/innovation-and-ai/products/google-gemini-next-generation-model-february-2024/) |
+| Gemini 3 Pro | Marked preview: the developer post and API name it `gemini-3-pro-preview`, although the Gemini app rollout was broad. [Announcement](https://blog.google/products-and-platforms/products/gemini/gemini-3/) |
 | GPT-6 Astra / Sol / 6.1 Sol | September 3, 22 and 29 rollout dates, corroborated by the dated related-article listings and update notices on the official posts. [Astra](https://openai.com/index/gpt-6-astra/), [Sol/Luna](https://openai.com/index/introducing-gpt-6-sol-and-luna/), [6.1 Sol](https://openai.com/index/introducing-gpt-6-1-sol/) |
 
-All 39 records carry primary evidence in [the source JSON](../data/releases.json). The generated [CSV ledger](../preview/sources.csv) preserves every URL and note. Titles and short notes are editorial summaries; publisher articles are not copied into this repository. Source pages may change after verification.
+All 51 records carry primary evidence in [the source JSON](../data/releases.json). The generated [CSV ledger](../preview/sources.csv) preserves every URL and note. Titles and short notes are editorial summaries; publisher articles are not copied into this repository. Source pages may change after verification.
 
 ## Metrics
 
@@ -42,22 +45,22 @@ The film presents **days per launch**, a density measure. It is not the mean adj
 
 | Observation | Days | Events | Days / event |
 | --- | ---: | ---: | ---: |
-| 2023 | 365 | 5 | 73.0 |
-| 2024 | 366 | 6 | 61.0 |
-| 2025 | 365 | 11 | 33.2 |
-| 2026-01-01–2026-10-02 | 275 | 17 | 16.2 |
+| 2023 | 365 | 6 | 60.8 |
+| 2024 | 366 | 9 | 40.7 |
+| 2025 | 365 | 14 | 26.1 |
+| 2026-01-01–2026-10-02 | 275 | 22 | 12.5 |
 
 The 2026 result is year-to-date, so it is not directly interchangeable with a completed year's cadence. The original post's “18 days” is not treated as verified evidence and is not hard-coded. The rendering and generated statistics always recompute values from the JSON.
 
 ## Visual time
 
-The main stage preserves a full Jan–Dec horizontal scale every year. Dates after the observation cutoff are hatched. Ground markers encode the exact date. Each burst has the same 68 rays, radius and 2.8-second lifetime; these are decorative, not performance scores. Launches at most 14 days apart form a visual crowd group. Bloom centers fan out horizontally and alternate between two decorative heights by chronological slot, not by company or performance. Ground positions never move. A thin trajectory connects it to the true date. Previews retain an asterisk and hollow ground marker.
+The main stage preserves a full Jan–Dec horizontal scale every year. Dates after the observation cutoff are hatched. Ground markers encode the exact date. Each burst has the same 68 rays, radius and 1.9-second lifetime; these are decorative, not performance scores. Each lab bursts at its own fixed altitude (OpenAI highest, then Anthropic, then Google) and with its own shape (plain peony, long-tailed glitter, double ring), so simultaneous launches stay distinguishable without relying on color. Altitude and shape identify the company, not performance. Launches at most 14 days apart form a visual crowd group whose bloom centers fan out horizontally. Ground positions never move. A thin trajectory connects it to the true date. Previews retain an asterisk and hollow ground marker.
 
-The playback clock has 43.2 seconds of continuous, linear calendar travel, a 2.4-second introduction, a 2.4-second final hold, and an 8.4-second conclusion (56.4 seconds total before frame rounding). A calendar day always has the same film duration, including across leap years. The clock stops at the observation cutoff. There are no release-date pauses or late-film speedups. Active bursts retain their full lifetime across year transitions, using their own event year for geometry. Faint embers persist as visual memory and remain behind the conclusion; they are not additional launches. The burst and its sound occur at the date's onset; the upward trail and sound start 0.46 seconds earlier. Same-day labs burst simultaneously. Intro/outro are presentation sections outside the calendar clock.
+The playback clock has 22.5 seconds of continuous, linear calendar travel, a 1.875-second introduction, a 1.875-second final hold, and a 3.75-second conclusion: 30 seconds, exactly 16 bars of the 128 BPM score. A calendar day always has the same film duration, including across leap years. The clock stops at the observation cutoff. There are no release-date pauses or late-film speedups. Active bursts retain their full lifetime across year transitions, using their own event year for geometry. Faint embers persist as visual memory and remain behind the conclusion; they are not additional launches. The burst and its sound occur at the date's onset; the upward trail and sound start 0.36 seconds earlier. Same-day labs burst simultaneously. Intro/outro are presentation sections outside the calendar clock.
 
-Four fixed slots per lab retain the latest events across year transitions. A new arrival replaces the oldest slot without moving other labels, so slot order cycles. Each current record remains visible for at least two seconds; a test checks this against the dataset. Dates remain on the cards. Portrait cards omit the repetitive Claude prefix before alphabetic family names (Opus/Sonnet/Fable), while numeric names such as Claude 2.1 remain intact; the source ledger and captions preserve full model names. Future denser datasets that break the two-second minimum will fail the test, requiring a longer calendar travel duration or more slots.
+Four fixed slots per lab retain the latest events across year transitions. A new arrival replaces the oldest slot without moving other labels, so slot order cycles. Each current record remains visible for at least 1.4 seconds; a test checks this against the dataset. The newest names stay on screen through the final hold. Dates remain on the cards. Portrait cards omit the repetitive Claude prefix before alphabetic family names (Opus/Sonnet/Fable), while numeric names such as Claude 2.1 remain intact; the source ledger and captions preserve full model names. Future denser datasets that break the 1.4-second minimum will fail the test, requiring a longer calendar travel duration or more slots.
 
-Audio and video share the same logical clock. The renderer maps the last video frame to the logical ending; audio cue times use exactly the same `(frames - 1) / fps / logical_duration` scale. Intro/outro frame rounding does not accumulate drift. The background music stays at 100 BPM and is not quantized to the launch dates. See [audio synthesis and mastering](audio.md).
+Audio and video share the same logical clock. The renderer maps the last video frame to the logical ending; audio cue times use exactly the same `(frames - 1) / fps / logical_duration` scale. Intro/outro frame rounding does not accumulate drift. The 128 BPM score's sections (intro, travel, arrival, conclusion) start on bar lines; launch cues are not quantized to the beat. See [audio synthesis and mastering](audio.md).
 
 ## Updating and verification
 

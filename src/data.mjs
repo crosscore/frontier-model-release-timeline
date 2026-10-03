@@ -9,7 +9,7 @@ export function day(date) {
 }
 export const iso = value => new Date(Math.floor(value) * DAY).toISOString().slice(0, 10);
 export const yearOf = date => Number(date.slice(0, 4));
-const hosts = { openai: ['openai.com', 'help.openai.com'], anthropic: ['anthropic.com', 'www.anthropic.com', 'platform.claude.com'] };
+const hosts = { openai: ['openai.com', 'help.openai.com'], anthropic: ['anthropic.com', 'www.anthropic.com', 'platform.claude.com'], google: ['blog.google', 'deepmind.google', 'developers.googleblog.com', 'ai.google.dev', 'cloud.google.com'] };
 function requireThat(condition, message) { if (!condition) throw new Error(message); }
 function keys(object, allowed, context) {
   requireThat(object && typeof object === 'object' && !Array.isArray(object), `${context} must be an object`);
@@ -27,7 +27,7 @@ export function validateDataset(data) {
   requireThat(start <= end, 'startDate must not follow endDate');
   requireThat(day(data.verifiedOn) >= end, 'verifiedOn must cover endDate');
   requireThat(yearOf(data.endDate) - yearOf(data.startDate) < 8, 'This layout supports at most 8 calendar years');
-  requireThat(Array.isArray(data.labs) && data.labs.length === 2, 'The mirrored layout requires exactly two labs');
+  requireThat(Array.isArray(data.labs) && data.labs.length >= 2 && data.labs.length <= 3, 'The layout supports two or three labs');
   const labs = new Set();
   for (const lab of data.labs) {
     keys(lab, ['id', 'name', 'color'], 'Lab');

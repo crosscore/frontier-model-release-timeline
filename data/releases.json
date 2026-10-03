@@ -4,7 +4,7 @@
   "startDate": "2023-01-01",
   "endDate": "2026-10-02",
   "verifiedOn": "2026-10-02",
-  "scope": "Selected public model launch events from OpenAI and Anthropic. Not a complete industry census or a benchmark ranking.",
+  "scope": "Selected public model launch events from OpenAI, Anthropic and Google (Gemini). Not a complete industry census or a benchmark ranking.",
   "labs": [
     {
       "id": "openai",
@@ -15,6 +15,11 @@
       "id": "anthropic",
       "name": "Anthropic",
       "color": "#FFB547"
+    },
+    {
+      "id": "google",
+      "name": "Google",
+      "color": "#9AA5FF"
     }
   ],
   "releases": [
@@ -83,6 +88,48 @@
           "title": "Claude 2.1 — official announcement"
         }
       ]
+    },
+    {
+      "id": "google-gemini-1",
+      "date": "2023-12-06",
+      "lab": "google",
+      "name": "Gemini 1.0",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/technology/ai/google-gemini-ai/",
+          "title": "Gemini 1.0 — official announcement"
+        }
+      ],
+      "note": "Pro in Bard and Nano on Pixel 8 Pro from launch day; Gemini API followed Dec 13. Ultra was announced here but released later."
+    },
+    {
+      "id": "google-gemini-ultra-1",
+      "date": "2024-02-08",
+      "lab": "google",
+      "name": "Gemini Ultra 1.0",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://blog.google/products-and-platforms/products/gemini/bard-gemini-advanced-app/",
+          "title": "Gemini Ultra 1.0 — official announcement"
+        }
+      ],
+      "note": "First public availability of the Ultra tier, via the paid Gemini Advanced plan; the same-day Bard rename is not counted."
+    },
+    {
+      "id": "google-gemini-1-5-pro",
+      "date": "2024-02-15",
+      "lab": "google",
+      "name": "Gemini 1.5 Pro",
+      "stage": "preview",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/products/google-gemini-next-generation-model-february-2024/",
+          "title": "Gemini 1.5 Pro — official announcement"
+        }
+      ],
+      "note": "Limited preview by sign-up in AI Studio and Vertex AI; public API preview Apr 9 and GA May 23, 2024 are not counted again."
     },
     {
       "id": "anthropic-claude-3",
@@ -167,6 +214,34 @@
       "note": "Production o1 replaces the separately named o1-preview; pro compute mode is not counted again."
     },
     {
+      "id": "google-gemini-2-0-flash",
+      "date": "2024-12-11",
+      "lab": "google",
+      "name": "Gemini 2.0 Flash",
+      "stage": "preview",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/models-and-research/google-deepmind/google-gemini-ai-update-december-2024/",
+          "title": "Gemini 2.0 — official announcement"
+        }
+      ],
+      "note": "New generation opened with experimental Flash; its API general availability on Feb 5, 2025 is not counted again."
+    },
+    {
+      "id": "google-gemini-2-0-pro",
+      "date": "2025-02-05",
+      "lab": "google",
+      "name": "Gemini 2.0 Pro",
+      "stage": "preview",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-model-updates-february-2025/",
+          "title": "Gemini 2.0 Pro — official announcement"
+        }
+      ],
+      "note": "Experimental 2.0 Pro; same-day 2.0 Flash GA and 2.0 Flash-Lite preview are grouped here, not counted separately."
+    },
+    {
       "id": "anthropic-claude-3-7-sonnet",
       "date": "2025-02-24",
       "lab": "anthropic",
@@ -191,6 +266,20 @@
           "title": "GPT-4.5 — official announcement"
         }
       ]
+    },
+    {
+      "id": "google-gemini-2-5-pro",
+      "date": "2025-03-25",
+      "lab": "google",
+      "name": "Gemini 2.5 Pro",
+      "stage": "preview",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-model-thinking-updates-march-2025/",
+          "title": "Gemini 2.5 Pro — official announcement"
+        }
+      ],
+      "note": "Experimental at launch; updated previews on May 6 and Jun 5 and stable GA on Jun 17, 2025 are not counted again."
     },
     {
       "id": "openai-gpt-4-1",
@@ -288,6 +377,24 @@
       "note": "Instant and Thinking grouped as one launch event."
     },
     {
+      "id": "google-gemini-3-pro",
+      "date": "2025-11-18",
+      "lab": "google",
+      "name": "Gemini 3 Pro",
+      "stage": "preview",
+      "sources": [
+        {
+          "url": "https://blog.google/products-and-platforms/products/gemini/gemini-3/",
+          "title": "Gemini 3 — official announcement"
+        },
+        {
+          "url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemini-3-developers/",
+          "title": "Gemini 3 for developers — official announcement"
+        }
+      ],
+      "note": "API model labelled preview and never made GA; Gemini app rollout began the same day. Deep Think mode is excluded."
+    },
+    {
       "id": "anthropic-claude-opus-4-5",
       "date": "2025-11-24",
       "lab": "anthropic",
@@ -338,6 +445,20 @@
           "title": "Claude Platform release notes"
         }
       ]
+    },
+    {
+      "id": "google-gemini-3-1-pro",
+      "date": "2026-02-19",
+      "lab": "google",
+      "name": "Gemini 3.1 Pro",
+      "stage": "preview",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-1-pro/",
+          "title": "Gemini 3.1 Pro — official announcement"
+        }
+      ],
+      "note": "Released in preview in the API and Gemini app; no GA entry in the Gemini API release notes through Oct 2, 2026."
     },
     {
       "id": "openai-gpt-5-3-instant",
@@ -391,6 +512,20 @@
         }
       ],
       "note": "ChatGPT/Codex rollout; the API followed April 24."
+    },
+    {
+      "id": "google-gemini-3-5-flash",
+      "date": "2026-05-19",
+      "lab": "google",
+      "name": "Gemini 3.5 Flash",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-5/",
+          "title": "Gemini 3.5 — official announcement"
+        }
+      ],
+      "note": "Gemini 3.5 family opened with GA Flash; 3.5 Pro, promised for the next month, was still unreleased on Oct 2, 2026."
     },
     {
       "id": "anthropic-claude-opus-4-8",
@@ -447,6 +582,20 @@
       "note": "Sol/Terra/Luna grouped at general release; earlier closed partner preview excluded."
     },
     {
+      "id": "google-gemini-3-6-flash",
+      "date": "2026-07-21",
+      "lab": "google",
+      "name": "Gemini 3.6 Flash",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-6-flash-3-5-flash-lite-3-5-flash-cyber/",
+          "title": "Gemini 3.6 Flash — official announcement"
+        }
+      ],
+      "note": "Counted as a new version number; same-day 3.5 Flash-Lite and restricted 3.5 Flash Cyber are outside scope."
+    },
+    {
       "id": "anthropic-claude-opus-5",
       "date": "2026-07-24",
       "lab": "anthropic",
@@ -458,6 +607,20 @@
           "title": "Claude Platform release notes"
         }
       ]
+    },
+    {
+      "id": "google-gemini-3-7-flash",
+      "date": "2026-08-13",
+      "lab": "google",
+      "name": "Gemini 3.7 Flash",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-3-7-flash/",
+          "title": "Gemini 3.7 Flash — official announcement"
+        }
+      ],
+      "note": "Counted as a new version number; GA in the Gemini API on the announcement date."
     },
     {
       "id": "anthropic-claude-fable-5-1",
@@ -472,6 +635,20 @@
         }
       ],
       "note": "Public Fable model counted; restricted Mythos counterpart excluded."
+    },
+    {
+      "id": "google-gemini-3-8-flash",
+      "date": "2026-09-02",
+      "lab": "google",
+      "name": "Gemini 3.8 Flash",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/",
+          "title": "Gemini 3.8 Flash — official announcement"
+        }
+      ],
+      "note": "Counted as a new version number; restricted 3.8 Flash Cyber (Fairwind Program) is not counted."
     },
     {
       "id": "openai-gpt-6-astra",

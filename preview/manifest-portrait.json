@@ -3,10 +3,10 @@
   "width": 1080,
   "height": 1920,
   "fps": 30,
-  "frames": 1692,
-  "duration": 56.4,
-  "datasetSha256": "b6392ae255a64fcacfae78a0283dc2770cb23f7d8d7bc547b3376653648a1988",
-  "events": 39,
+  "frames": 900,
+  "duration": 30,
+  "datasetSha256": "a026ac47a29ea5557b46217d84b50e60bdde3fca9df533a727186181a7c6cf07",
+  "events": 51,
   "observationEnd": "2026-10-02",
   "codec": "h264",
   "pixelFormat": "yuv420p",
@@ -14,8 +14,8 @@
     "codec": "aac",
     "sampleRate": 48000,
     "channels": 2,
-    "title": "Afterglow / 001",
-    "integratedLufs": -18.04,
-    "truePeakDbtp": -4.96
+    "title": "Ignition / 002",
+    "integratedLufs": -16.11,
+    "truePeakDbtp": -1.81
   }
 }

@@ -5,7 +5,9 @@ export const smooth = x => { x = clamp(x); return x * x * (3 - 2 * x); };
 
 // One continuous clock: a real-world day always has the same film duration.
 // Names accumulate in the ledger instead of stopping time at crowded launches.
-export function makeTimeline(data, { travelSeconds = 43.2, holdSeconds = 2.4, introSeconds = 2.4, outroSeconds = 8.4 } = {}) {
+// Defaults fill exactly 16 bars at 128 BPM (30 s): 1 intro, 12 travel, 1 hold, 2 outro.
+export const BAR_SECONDS = 60 / 128 * 4;
+export function makeTimeline(data, { travelSeconds = 12 * BAR_SECONDS, holdSeconds = BAR_SECONDS, introSeconds = BAR_SECONDS, outroSeconds = 2 * BAR_SECONDS } = {}) {
   for (const value of [travelSeconds, holdSeconds, introSeconds, outroSeconds]) {
     if (!Number.isFinite(value) || value <= 0) throw new Error('Timeline durations must be positive');
   }

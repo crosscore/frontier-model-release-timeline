@@ -2,6 +2,10 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { yearlyStats } from './data.mjs';
 import { makeRenderer } from './node-renderer.mjs';
+import { FIREWORK } from './draw.mjs';
+import { SCORE } from './audio.mjs';
+
+const labList = data => new Intl.ListFormat('en', { type: 'conjunction' }).format(data.labs.map(lab => lab.name));
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const csv = value => `"${String(value).replaceAll('"', '""')}"`;
@@ -14,7 +18,7 @@ export function captions(data, timeline, duration = timeline.duration) {
     return `${String(Math.floor(ms / 3600000)).padStart(2, '0')}:${String(Math.floor(ms / 60000) % 60).padStart(2, '0')}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}.${String(ms % 1000).padStart(3, '0')}`;
   };
   const dates = [...new Set(data.releases.map(e => e.date))];
-  const cues = [{ start: 0, end: timeline.introSeconds, text: `${data.releases.length} selected OpenAI and Anthropic model launches. ${data.startDate} through ${data.endDate}.` },
+  const cues = [{ start: 0, end: timeline.introSeconds, text: `${data.releases.length} selected ${labList(data)} model launches. ${data.startDate} through ${data.endDate}.` },
     ...dates.map((date, i) => {
       const events = data.releases.filter(e => e.date === date);
       return { start: timeline.onsets.get(events[0].id), end: i + 1 < dates.length ? timeline.onsets.get(data.releases.find(e => e.date === dates[i + 1]).id) : timeline.outroStart,
@@ -33,7 +37,7 @@ export function previewHtml(data) {
 <h2>Landscape film</h2><video controls playsinline preload="metadata" poster="poster-landscape.png"><source src="frontier-landscape.mp4" type="video/mp4"><track kind="captions" src="captions-landscape.vtt" srclang="en" label="Release dates">Your browser cannot play this video.</video>
 <p><a href="frontier-landscape.mp4" download>Download MP4</a> · <a href="preview.gif">Animated GIF</a></p>
 <details><summary>Portrait film · 9:16</summary><video class="portrait" controls playsinline preload="none" poster="poster-portrait.png"><source src="frontier-portrait.mp4" type="video/mp4"><track kind="captions" src="captions-portrait.vtt" srclang="en" label="Release dates"></video><p><a href="frontier-portrait.mp4" download>Download portrait MP4</a></p></details>
-<h2>Original soundtrack</h2><p>“Afterglow / 001” — a 100 BPM electronic score made entirely from code, plus date-synchronized launch sounds. No recorded samples or existing music. Stereo AAC, mastered to about −18 LUFS. Playback starts only when you press play.</p><audio controls preload="none" src="soundtrack-landscape.m4a"></audio><p><a href="soundtrack-landscape.m4a" download>Download soundtrack</a> · <a href="audio-landscape.json">Audio measurements and cue times</a></p><h2>Read the rhythm</h2><p>Every burst represents one selected launch. The calendar moves at constant speed; the burst and its sound coincide with the release date. Launch trajectories begin 0.46 seconds earlier. Ground markers keep the true date, while bloom positions may shift sideways for legibility. Four fixed slots per lab retain each name for at least two seconds. Burst size and height do not measure capability; an asterisk and hollow ground marker identify previews.</p>
+<h2>Original soundtrack</h2><p>“${e(SCORE.title)}” — a ${SCORE.bpm} BPM electronic score made entirely from code, plus date-synchronized launch sounds. No recorded samples or existing music. Stereo AAC, mastered to about ${String(SCORE.targetLufs).replace('-', '−')} LUFS. Playback starts only when you press play.</p><audio controls preload="none" src="soundtrack-landscape.m4a"></audio><p><a href="soundtrack-landscape.m4a" download>Download soundtrack</a> · <a href="audio-landscape.json">Audio measurements and cue times</a></p><h2>Read the rhythm</h2><p>Every burst represents one selected launch. The calendar moves at constant speed; the burst and its sound coincide with the release date. Launch trajectories begin ${FIREWORK.rise} seconds earlier. Each lab bursts at its own fixed altitude with its own burst shape; ground markers keep the true date, while bloom positions may shift sideways for legibility. Four fixed slots per lab keep each name on screen for at least 1.4 seconds. Burst size and altitude do not measure capability; an asterisk and hollow ground marker identify previews.</p>
 <div class="scroll"><table><thead><tr><th>Window</th><th>Observed days</th><th>Launches</th><th>Days / launch</th><th>Mean adjacent gap</th></tr></thead><tbody>${stats.map(r => `<tr><td>${r.year}${r.partial ? ' YTD' : ''}</td><td>${r.observedDays}</td><td>${r.count}</td><td>${r.daysPerLaunch?.toFixed(1) ?? '—'}</td><td>${r.meanGapDays?.toFixed(1) ?? '—'}</td></tr>`).join('')}</tbody></table></div>
 <p class="muted">Days per launch = inclusive calendar days observed / selected launch events. It is not the mean gap or a lab's internal development time. Same-day launches by different labs are separate events. ${e(data.endDate.slice(0, 4))} is a partial year. Changing the selection changes the result.</p>
 <h2>Source ledger</h2><p><a href="releases.json">Editable JSON snapshot</a> · <a href="sources.csv">CSV</a> · <a href="https://github.com/crosscore/frontier-model-release-timeline/blob/main/docs/methodology.md">Full methodology</a></p>

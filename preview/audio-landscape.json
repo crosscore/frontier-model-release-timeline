@@ -1,295 +1,430 @@
 {
-  "title": "Afterglow / 001",
-  "bpm": 100,
+  "title": "Ignition / 002",
+  "bpm": 128,
   "sampleRate": 48000,
   "channels": 2,
-  "targetLufs": -18,
-  "truePeakDb": -2.5,
+  "targetLufs": -16,
+  "truePeakDb": -1.5,
   "original": true,
   "recordedSamplesUsed": false,
   "synthesis": "Deterministic oscillators and seeded filtered noise",
-  "samples": 2707200,
-  "duration": 56.4,
-  "samplePeakDbfs": -4.152166210034922,
-  "rmsDbfs": -18.944465742122823,
-  "cueCount": 39,
-  "introEnd": 2.398581560283688,
-  "integratedLufs": -18.04,
-  "truePeakDbtp": -4.96,
-  "loudnessRangeLu": 3.2,
+  "samples": 1440000,
+  "duration": 30,
+  "samplePeakDbfs": -3.609120944016389,
+  "rmsDbfs": -16.88569358560447,
+  "cueCount": 51,
+  "introEnd": 1.8729166666666666,
+  "integratedLufs": -16.11,
+  "truePeakDbtp": -1.81,
+  "loudnessRangeLu": 6.1,
   "cues": [
     {
       "id": "anthropic-claude",
       "lab": "anthropic",
-      "launch": 4.207876568135149,
-      "burst": 4.667604700522856,
-      "pan": 0.3
+      "launch": 2.6944845498783456,
+      "burst": 3.0540845498783455,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-gpt-4",
       "lab": "openai",
-      "launch": 4.207876568135149,
-      "burst": 4.667604700522856,
-      "pan": -0.3
+      "launch": 2.6944845498783456,
+      "burst": 3.0540845498783455,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "anthropic-claude-2",
       "lab": "anthropic",
-      "launch": 7.958067591585995,
-      "burst": 8.417795723973702,
-      "pan": 0.3
+      "launch": 4.646692579075425,
+      "burst": 5.006292579075425,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-gpt-4-turbo",
       "lab": "openai",
-      "launch": 11.676744404755743,
-      "burst": 12.136472537143451,
-      "pan": -0.3
+      "launch": 6.582495498783454,
+      "burst": 6.942095498783455,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "anthropic-claude-2-1",
       "lab": "anthropic",
-      "launch": 12.149457558972237,
-      "burst": 12.609185691359945,
-      "pan": 0.3
+      "launch": 6.828572141119221,
+      "burst": 7.188172141119221,
+      "pan": 0.45,
+      "tone": 3
+    },
+    {
+      "id": "google-gemini-1",
+      "lab": "google",
+      "launch": 7.074648783454987,
+      "burst": 7.434248783454987,
+      "pan": 0,
+      "tone": 1
+    },
+    {
+      "id": "google-gemini-ultra-1",
+      "lab": "google",
+      "launch": 8.124575790754257,
+      "burst": 8.484175790754257,
+      "pan": 0,
+      "tone": 1
+    },
+    {
+      "id": "google-gemini-1-5-pro",
+      "lab": "google",
+      "launch": 8.239411557177615,
+      "burst": 8.599011557177615,
+      "pan": 0,
+      "tone": 1
     },
     {
       "id": "anthropic-claude-3",
       "lab": "anthropic",
-      "launch": 15.42693542820659,
-      "burst": 15.886663560594299,
-      "pan": 0.3
+      "launch": 8.534703527980536,
+      "burst": 8.894303527980536,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-gpt-4o",
       "lab": "openai",
-      "launch": 17.63293014788356,
-      "burst": 18.092658280271266,
-      "pan": -0.3
+      "launch": 9.683061192214112,
+      "burst": 10.042661192214112,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "anthropic-claude-3-5-sonnet",
       "lab": "anthropic",
-      "launch": 18.830470138565342,
-      "burst": 19.29019827095305,
-      "pan": 0.3
+      "launch": 10.306455352798054,
+      "burst": 10.666055352798052,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-o1-preview",
       "lab": "openai",
-      "launch": 21.4776638021777,
-      "burst": 21.937391934565408,
-      "pan": -0.3
+      "launch": 11.684484549878345,
+      "burst": 12.044084549878344,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "anthropic-claude-3-5-sonnet-v2",
       "lab": "anthropic",
-      "launch": 22.738232213421686,
-      "burst": 23.197960345809392,
-      "pan": 0.3
+      "launch": 12.34068892944039,
+      "burst": 12.700288929440388,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-o1",
       "lab": "openai",
-      "launch": 24.12485746579007,
-      "burst": 24.584585598177775,
-      "pan": -0.3
+      "launch": 13.062513746958638,
+      "burst": 13.422113746958637,
+      "pan": -0.45,
+      "tone": 2
+    },
+    {
+      "id": "google-gemini-2-0-flash",
+      "lab": "google",
+      "launch": 13.160944403892945,
+      "burst": 13.520544403892943,
+      "pan": 0,
+      "tone": 1
+    },
+    {
+      "id": "google-gemini-2-0-pro",
+      "lab": "google",
+      "launch": 14.079630535279804,
+      "burst": 14.439230535279805,
+      "pan": 0,
+      "tone": 1
     },
     {
       "id": "anthropic-claude-3-7-sonnet",
       "lab": "anthropic",
-      "launch": 26.67750849855913,
-      "burst": 27.137236630946838,
-      "pan": 0.3
+      "launch": 14.391327615571775,
+      "burst": 14.750927615571776,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-gpt-4-5",
       "lab": "openai",
-      "launch": 26.772051129402428,
-      "burst": 27.231779261790134,
-      "pan": -0.3
+      "launch": 14.44054294403893,
+      "burst": 14.80014294403893,
+      "pan": -0.45,
+      "tone": 2
+    },
+    {
+      "id": "google-gemini-2-5-pro",
+      "lab": "google",
+      "launch": 14.867075790754258,
+      "burst": 15.226675790754259,
+      "pan": 0,
+      "tone": 1
     },
     {
       "id": "openai-gpt-4-1",
       "lab": "openai",
-      "launch": 28.221704802333008,
-      "burst": 28.681432934720714,
-      "pan": -0.3
+      "launch": 15.195177980535279,
+      "burst": 15.55477798053528,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "openai-o3",
       "lab": "openai",
-      "launch": 28.28473322289521,
-      "burst": 28.744461355282915,
-      "pan": -0.3
+      "launch": 15.227988199513382,
+      "burst": 15.587588199513382,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "anthropic-claude-4",
       "lab": "anthropic",
-      "launch": 29.419244793014794,
-      "burst": 29.8789729254025,
-      "pan": 0.3
+      "launch": 15.81857214111922,
+      "burst": 16.17817214111922,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "anthropic-claude-opus-4-1",
       "lab": "anthropic",
-      "launch": 31.78281056409726,
-      "burst": 32.24253869648497,
-      "pan": 0.3
+      "launch": 17.048955352798053,
+      "burst": 17.408555352798054,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-gpt-5",
       "lab": "openai",
-      "launch": 31.845838984659455,
-      "burst": 32.30556711704716,
-      "pan": -0.3
+      "launch": 17.081765571776153,
+      "burst": 17.441365571776153,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "anthropic-claude-sonnet-4-5",
       "lab": "anthropic",
-      "launch": 33.516092129557734,
-      "burst": 33.975820261945444,
-      "pan": 0.3
+      "launch": 17.951236374695863,
+      "burst": 18.310836374695864,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-gpt-5-1",
       "lab": "openai",
-      "launch": 34.90271738192612,
-      "burst": 35.36244551431382,
-      "pan": -0.3
+      "launch": 18.67306119221411,
+      "burst": 19.03266119221411,
+      "pan": -0.45,
+      "tone": 2
+    },
+    {
+      "id": "google-gemini-3-pro",
+      "lab": "google",
+      "launch": 18.77149184914842,
+      "burst": 19.13109184914842,
+      "pan": 0,
+      "tone": 1
     },
     {
       "id": "anthropic-claude-opus-4-5",
       "lab": "anthropic",
-      "launch": 35.28088790529931,
-      "burst": 35.74061603768702,
-      "pan": 0.3
+      "launch": 18.869922506082723,
+      "burst": 19.229522506082724,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-gpt-5-2",
       "lab": "openai",
-      "launch": 35.816629480078,
-      "burst": 36.2763576124657,
-      "pan": -0.3
+      "launch": 19.148809367396595,
+      "burst": 19.508409367396595,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "anthropic-claude-opus-4-6",
       "lab": "anthropic",
-      "launch": 37.581425255819575,
-      "burst": 38.041153388207285,
-      "pan": 0.3
+      "launch": 20.067495498783455,
+      "burst": 20.42709549878345,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "anthropic-claude-sonnet-4-6",
       "lab": "anthropic",
-      "launch": 37.95959577919277,
-      "burst": 38.41932391158047,
-      "pan": 0.3
+      "launch": 20.264356812652068,
+      "burst": 20.623956812652064,
+      "pan": 0.45,
+      "tone": 3
+    },
+    {
+      "id": "google-gemini-3-1-pro",
+      "lab": "google",
+      "launch": 20.29716703163017,
+      "burst": 20.656767031630167,
+      "pan": 0,
+      "tone": 1
     },
     {
       "id": "openai-gpt-5-3-instant",
       "lab": "openai",
-      "launch": 38.400794723128165,
-      "burst": 38.860522855515875,
-      "pan": -0.3
+      "launch": 20.494028345498783,
+      "burst": 20.85362834549878,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "openai-gpt-5-4",
       "lab": "openai",
-      "launch": 38.46382314369036,
-      "burst": 38.92355127607807,
-      "pan": -0.3
+      "launch": 20.526838564476886,
+      "burst": 20.886438564476883,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "anthropic-claude-opus-4-7",
       "lab": "anthropic",
-      "launch": 39.78741997549655,
-      "burst": 40.24714810788425,
-      "pan": 0.3
+      "launch": 21.215853163017034,
+      "burst": 21.57545316301703,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-gpt-5-5",
       "lab": "openai",
-      "launch": 40.00801944746424,
-      "burst": 40.46774757985195,
-      "pan": -0.3
+      "launch": 21.330688929440388,
+      "burst": 21.69028892944039,
+      "pan": -0.45,
+      "tone": 2
+    },
+    {
+      "id": "google-gemini-3-5-flash",
+      "lab": "google",
+      "launch": 21.757221776155717,
+      "burst": 22.116821776155717,
+      "pan": 0,
+      "tone": 1
     },
     {
       "id": "anthropic-claude-opus-4-8",
       "lab": "anthropic",
-      "launch": 41.111016807302725,
-      "burst": 41.570744939690435,
-      "pan": 0.3
+      "launch": 21.904867761557178,
+      "burst": 22.264467761557174,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "anthropic-claude-fable-5",
       "lab": "anthropic",
-      "launch": 41.489187330675925,
-      "burst": 41.948915463063635,
-      "pan": 0.3
+      "launch": 22.101729075425794,
+      "burst": 22.46132907542579,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "anthropic-claude-sonnet-5",
       "lab": "anthropic",
-      "launch": 42.15098574657901,
-      "burst": 42.61071387896672,
-      "pan": 0.3
+      "launch": 22.446236374695864,
+      "burst": 22.805836374695865,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-gpt-5-6",
       "lab": "openai",
-      "launch": 42.4346136391089,
-      "burst": 42.89434177149661,
-      "pan": -0.3
+      "launch": 22.593882360097325,
+      "burst": 22.953482360097322,
+      "pan": -0.45,
+      "tone": 2
+    },
+    {
+      "id": "google-gemini-3-6-flash",
+      "lab": "google",
+      "launch": 22.790743673965938,
+      "burst": 23.150343673965935,
+      "pan": 0,
+      "tone": 1
     },
     {
       "id": "anthropic-claude-opus-5",
       "lab": "anthropic",
-      "launch": 42.907326793325396,
-      "burst": 43.367054925713106,
-      "pan": 0.3
+      "launch": 22.839959002433087,
+      "burst": 23.199559002433087,
+      "pan": 0.45,
+      "tone": 3
+    },
+    {
+      "id": "google-gemini-3-7-flash",
+      "lab": "google",
+      "launch": 23.16806119221411,
+      "burst": 23.52766119221411,
+      "pan": 0,
+      "tone": 1
     },
     {
       "id": "anthropic-claude-fable-5-1",
       "lab": "anthropic",
-      "launch": 44.13638099428828,
-      "burst": 44.596109126675984,
-      "pan": 0.3
+      "launch": 23.47975827250608,
+      "burst": 23.83935827250608,
+      "pan": 0.45,
+      "tone": 3
+    },
+    {
+      "id": "google-gemini-3-8-flash",
+      "lab": "google",
+      "launch": 23.496163381995135,
+      "burst": 23.855763381995136,
+      "pan": 0,
+      "tone": 1
     },
     {
       "id": "openai-gpt-6-astra",
       "lab": "openai",
-      "launch": 44.19940941485048,
-      "burst": 44.65913754723819,
-      "pan": -0.3
+      "launch": 23.51256849148418,
+      "burst": 23.87216849148418,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "anthropic-claude-opus-5-5",
       "lab": "anthropic",
-      "launch": 44.79817941019137,
-      "burst": 45.257907542579076,
-      "pan": 0.3
+      "launch": 23.824265571776156,
+      "burst": 24.183865571776156,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-gpt-6-sol",
       "lab": "openai",
-      "launch": 44.79817941019137,
-      "burst": 45.257907542579076,
-      "pan": -0.3
+      "launch": 23.824265571776156,
+      "burst": 24.183865571776156,
+      "pan": -0.45,
+      "tone": 2
     },
     {
       "id": "anthropic-claude-sonnet-5-5",
       "lab": "anthropic",
-      "launch": 44.98726467187797,
-      "burst": 45.44699280426568,
-      "pan": 0.3
+      "launch": 23.92269622871046,
+      "burst": 24.28229622871046,
+      "pan": 0.45,
+      "tone": 3
     },
     {
       "id": "openai-gpt-6-1-sol",
       "lab": "openai",
-      "launch": 45.01877888215907,
-      "burst": 45.47850701454678,
-      "pan": -0.3
+      "launch": 23.93910133819951,
+      "burst": 24.29870133819951,
+      "pan": -0.45,
+      "tone": 2
     }
   ]
 }
