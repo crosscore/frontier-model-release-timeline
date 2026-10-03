@@ -1,0 +1,557 @@
+{
+  "schemaVersion": 1,
+  "title": "Frontier / Release rhythm",
+  "startDate": "2023-01-01",
+  "endDate": "2026-10-02",
+  "verifiedOn": "2026-10-02",
+  "scope": "Selected public model launch events from OpenAI and Anthropic. Not a complete industry census or a benchmark ranking.",
+  "labs": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "color": "#92F1CE"
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic",
+      "color": "#F1A27E"
+    }
+  ],
+  "releases": [
+    {
+      "id": "anthropic-claude",
+      "date": "2023-03-14",
+      "lab": "anthropic",
+      "name": "Claude",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/introducing-claude",
+          "title": "Claude — official announcement"
+        }
+      ],
+      "note": "Initial public introduction; access initially offered via partners and requests."
+    },
+    {
+      "id": "openai-gpt-4",
+      "date": "2023-03-14",
+      "lab": "openai",
+      "name": "GPT-4",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-4-research/",
+          "title": "GPT-4 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "anthropic-claude-2",
+      "date": "2023-07-11",
+      "lab": "anthropic",
+      "name": "Claude 2",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-2",
+          "title": "Claude 2 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-4-turbo",
+      "date": "2023-11-06",
+      "lab": "openai",
+      "name": "GPT-4 Turbo",
+      "stage": "preview",
+      "sources": [
+        {
+          "url": "https://openai.com/index/new-models-and-developer-products-announced-at-devday/",
+          "title": "GPT-4 Turbo — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "anthropic-claude-2-1",
+      "date": "2023-11-21",
+      "lab": "anthropic",
+      "name": "Claude 2.1",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-2-1",
+          "title": "Claude 2.1 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "anthropic-claude-3",
+      "date": "2024-03-04",
+      "lab": "anthropic",
+      "name": "Claude 3",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-3-family",
+          "title": "Claude 3 — official announcement"
+        }
+      ],
+      "note": "Opus and Sonnet grouped as one launch event; Haiku arrived later."
+    },
+    {
+      "id": "openai-gpt-4o",
+      "date": "2024-05-13",
+      "lab": "openai",
+      "name": "GPT-4o",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/hello-gpt-4o/",
+          "title": "GPT-4o — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "anthropic-claude-3-5-sonnet",
+      "date": "2024-06-20",
+      "lab": "anthropic",
+      "name": "Claude 3.5 Sonnet",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/release-notes/overview#june-20th-2024",
+          "title": "Claude Platform release notes"
+        }
+      ],
+      "note": "API release log dates availability June 20; the news page currently displays June 21."
+    },
+    {
+      "id": "openai-o1-preview",
+      "date": "2024-09-12",
+      "lab": "openai",
+      "name": "o1-preview",
+      "stage": "preview",
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-openai-o1-preview/",
+          "title": "o1-preview — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "anthropic-claude-3-5-sonnet-v2",
+      "date": "2024-10-22",
+      "lab": "anthropic",
+      "name": "Claude 3.5 Sonnet v2",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/3-5-models-and-computer-use",
+          "title": "Claude 3.5 Sonnet v2 — official announcement"
+        }
+      ],
+      "note": "v2 is an editorial label for the explicitly announced upgraded Sonnet."
+    },
+    {
+      "id": "openai-o1",
+      "date": "2024-12-05",
+      "lab": "openai",
+      "name": "o1",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-chatgpt-pro/",
+          "title": "o1 — official announcement"
+        }
+      ],
+      "note": "Production o1 replaces the separately named o1-preview; pro compute mode is not counted again."
+    },
+    {
+      "id": "anthropic-claude-3-7-sonnet",
+      "date": "2025-02-24",
+      "lab": "anthropic",
+      "name": "Claude 3.7 Sonnet",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-3-7-sonnet",
+          "title": "Claude 3.7 Sonnet — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-4-5",
+      "date": "2025-02-27",
+      "lab": "openai",
+      "name": "GPT-4.5",
+      "stage": "preview",
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-4-5/",
+          "title": "GPT-4.5 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-4-1",
+      "date": "2025-04-14",
+      "lab": "openai",
+      "name": "GPT-4.1",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-4-1/",
+          "title": "GPT-4.1 — official announcement"
+        }
+      ],
+      "note": "API launch; later ChatGPT availability is not counted again."
+    },
+    {
+      "id": "openai-o3",
+      "date": "2025-04-16",
+      "lab": "openai",
+      "name": "o3",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-o3-and-o4-mini/",
+          "title": "o3 — official announcement"
+        }
+      ],
+      "note": "o4-mini announced alongside o3 is outside this sample's smaller-model scope."
+    },
+    {
+      "id": "anthropic-claude-4",
+      "date": "2025-05-22",
+      "lab": "anthropic",
+      "name": "Claude 4",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-4",
+          "title": "Claude 4 — official announcement"
+        }
+      ],
+      "note": "Opus 4 and Sonnet 4 grouped as one launch event."
+    },
+    {
+      "id": "anthropic-claude-opus-4-1",
+      "date": "2025-08-05",
+      "lab": "anthropic",
+      "name": "Claude Opus 4.1",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-opus-4-1",
+          "title": "Claude Opus 4.1 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-5",
+      "date": "2025-08-07",
+      "lab": "openai",
+      "name": "GPT-5",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-5/",
+          "title": "GPT-5 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "anthropic-claude-sonnet-4-5",
+      "date": "2025-09-29",
+      "lab": "anthropic",
+      "name": "Claude Sonnet 4.5",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-sonnet-4-5",
+          "title": "Claude Sonnet 4.5 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-5-1",
+      "date": "2025-11-12",
+      "lab": "openai",
+      "name": "GPT-5.1",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-5-1/",
+          "title": "GPT-5.1 — official announcement"
+        }
+      ],
+      "note": "Instant and Thinking grouped as one launch event."
+    },
+    {
+      "id": "anthropic-claude-opus-4-5",
+      "date": "2025-11-24",
+      "lab": "anthropic",
+      "name": "Claude Opus 4.5",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-opus-4-5",
+          "title": "Claude Opus 4.5 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-5-2",
+      "date": "2025-12-11",
+      "lab": "openai",
+      "name": "GPT-5.2",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-5-2/",
+          "title": "GPT-5.2 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "anthropic-claude-opus-4-6",
+      "date": "2026-02-05",
+      "lab": "anthropic",
+      "name": "Claude Opus 4.6",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/release-notes/overview#february-5-2026",
+          "title": "Claude Platform release notes"
+        }
+      ]
+    },
+    {
+      "id": "anthropic-claude-sonnet-4-6",
+      "date": "2026-02-17",
+      "lab": "anthropic",
+      "name": "Claude Sonnet 4.6",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/release-notes/overview#february-17-2026",
+          "title": "Claude Platform release notes"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-5-3-instant",
+      "date": "2026-03-03",
+      "lab": "openai",
+      "name": "GPT-5.3 Instant",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-5-3-instant/",
+          "title": "GPT-5.3 Instant — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-5-4",
+      "date": "2026-03-05",
+      "lab": "openai",
+      "name": "GPT-5.4",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-5-4/",
+          "title": "GPT-5.4 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "anthropic-claude-opus-4-7",
+      "date": "2026-04-16",
+      "lab": "anthropic",
+      "name": "Claude Opus 4.7",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/release-notes/overview#april-16-2026",
+          "title": "Claude Platform release notes"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-5-5",
+      "date": "2026-04-23",
+      "lab": "openai",
+      "name": "GPT-5.5",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-5-5/",
+          "title": "GPT-5.5 — official announcement"
+        }
+      ],
+      "note": "ChatGPT/Codex rollout; the API followed April 24."
+    },
+    {
+      "id": "anthropic-claude-opus-4-8",
+      "date": "2026-05-28",
+      "lab": "anthropic",
+      "name": "Claude Opus 4.8",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/release-notes/overview#may-28-2026",
+          "title": "Claude Platform release notes"
+        }
+      ]
+    },
+    {
+      "id": "anthropic-claude-fable-5",
+      "date": "2026-06-09",
+      "lab": "anthropic",
+      "name": "Claude Fable 5",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/release-notes/overview#june-9-2026",
+          "title": "Claude Platform release notes"
+        }
+      ],
+      "note": "Public Fable model counted; restricted Mythos counterpart excluded."
+    },
+    {
+      "id": "anthropic-claude-sonnet-5",
+      "date": "2026-06-30",
+      "lab": "anthropic",
+      "name": "Claude Sonnet 5",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/release-notes/overview#june-30-2026",
+          "title": "Claude Platform release notes"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-5-6",
+      "date": "2026-07-09",
+      "lab": "openai",
+      "name": "GPT-5.6",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-5-6/",
+          "title": "GPT-5.6 — official announcement"
+        }
+      ],
+      "note": "Sol/Terra/Luna grouped at general release; earlier closed partner preview excluded."
+    },
+    {
+      "id": "anthropic-claude-opus-5",
+      "date": "2026-07-24",
+      "lab": "anthropic",
+      "name": "Claude Opus 5",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/release-notes/overview#july-24-2026",
+          "title": "Claude Platform release notes"
+        }
+      ]
+    },
+    {
+      "id": "anthropic-claude-fable-5-1",
+      "date": "2026-09-01",
+      "lab": "anthropic",
+      "name": "Claude Fable 5.1",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/release-notes/overview#september-1-2026",
+          "title": "Claude Platform release notes"
+        }
+      ],
+      "note": "Public Fable model counted; restricted Mythos counterpart excluded."
+    },
+    {
+      "id": "openai-gpt-6-astra",
+      "date": "2026-09-03",
+      "lab": "openai",
+      "name": "GPT-6 Astra",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-6-astra/",
+          "title": "GPT-6 Astra — official announcement"
+        },
+        {
+          "url": "https://openai.com/index/introducing-gpt-6-1-sol/",
+          "title": "Official related-article date: September 3, 2026"
+        }
+      ],
+      "note": "Official start of staged rollout; date also listed in the GPT-6.1 Sol article."
+    },
+    {
+      "id": "anthropic-claude-opus-5-5",
+      "date": "2026-09-22",
+      "lab": "anthropic",
+      "name": "Claude Opus 5.5",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/claude-opus-5-5",
+          "title": "Claude Opus 5.5 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-6-sol",
+      "date": "2026-09-22",
+      "lab": "openai",
+      "name": "GPT-6 Sol",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
+          "title": "GPT-6 Sol — official announcement"
+        },
+        {
+          "url": "https://openai.com/index/introducing-gpt-6-1-sol/",
+          "title": "Official related-article date: September 22, 2026"
+        }
+      ],
+      "note": "Sol counted as one launch event; accompanying Luna is not a separate event."
+    },
+    {
+      "id": "anthropic-claude-sonnet-5-5",
+      "date": "2026-09-28",
+      "lab": "anthropic",
+      "name": "Claude Sonnet 5.5",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/claude-sonnet-5-5",
+          "title": "Claude Sonnet 5.5 — official announcement"
+        }
+      ]
+    },
+    {
+      "id": "openai-gpt-6-1-sol",
+      "date": "2026-09-29",
+      "lab": "openai",
+      "name": "GPT-6.1 Sol",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-6-1-sol/",
+          "title": "GPT-6.1 Sol — official announcement"
+        },
+        {
+          "url": "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
+          "title": "Official September 29 update and related-article date"
+        }
+      ],
+      "note": "Date confirmed by the GPT-6 Sol and Luna article's September 29 update."
+    }
+  ]
+}

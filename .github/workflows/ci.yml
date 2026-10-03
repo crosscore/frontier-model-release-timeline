@@ -1,0 +1,39 @@
+name: Validate and render
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run validate
+      - run: npm test
+      - run: npm run build
+      - name: Install FFmpeg for Linux smoke render
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Encode and decode both layouts
+        if: runner.os == 'Linux'
+        run: |
+          npm run render -- --width 640 --fps 10 --duration 3 --no-gif
+          npm run verify:media
+          npm run render -- --format portrait --width 360 --fps 10 --duration 3 --no-gif
+          npm run verify:media -- --format portrait
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: runner.os == 'Linux'
+        with:
+          name: render-smoke-preview
+          path: dist/
+          retention-days: 7

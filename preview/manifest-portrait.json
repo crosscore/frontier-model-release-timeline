@@ -1,0 +1,14 @@
+{
+  "format": "portrait",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "frames": 1721,
+  "duration": 57.36666666666667,
+  "datasetSha256": "d51c75cba3d75a9ae4961102cbea6689f7158303b48eb3d609f900e684d9c16a",
+  "events": 39,
+  "observationEnd": "2026-10-02",
+  "codec": "h264",
+  "pixelFormat": "yuv420p",
+  "audio": false
+}

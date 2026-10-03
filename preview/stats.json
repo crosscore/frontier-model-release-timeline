@@ -1,0 +1,58 @@
+[
+  {
+    "year": 2023,
+    "start": "2023-01-01",
+    "end": "2023-12-31",
+    "observedDays": 365,
+    "count": 5,
+    "partial": false,
+    "daysPerLaunch": 73,
+    "meanGapDays": 63,
+    "byLab": {
+      "openai": 2,
+      "anthropic": 3
+    }
+  },
+  {
+    "year": 2024,
+    "start": "2024-01-01",
+    "end": "2024-12-31",
+    "observedDays": 366,
+    "count": 6,
+    "partial": false,
+    "daysPerLaunch": 61,
+    "meanGapDays": 55.2,
+    "byLab": {
+      "openai": 3,
+      "anthropic": 3
+    }
+  },
+  {
+    "year": 2025,
+    "start": "2025-01-01",
+    "end": "2025-12-31",
+    "observedDays": 365,
+    "count": 11,
+    "partial": false,
+    "daysPerLaunch": 33.18181818181818,
+    "meanGapDays": 29,
+    "byLab": {
+      "openai": 6,
+      "anthropic": 5
+    }
+  },
+  {
+    "year": 2026,
+    "start": "2026-01-01",
+    "end": "2026-10-02",
+    "observedDays": 275,
+    "count": 17,
+    "partial": true,
+    "daysPerLaunch": 16.176470588235293,
+    "meanGapDays": 14.75,
+    "byLab": {
+      "openai": 7,
+      "anthropic": 10
+    }
+  }
+]
