@@ -35,7 +35,4 @@ export function stateAt(timeline, seconds) {
 export function visibleEvents(data, timeline, seconds) {
   return data.releases.filter(event => seconds >= timeline.onsets.get(event.id));
 }
-export function calendarPosition(date, year) {
-  return (day(date) - day(`${year}-01-01`)) / (day(`${year + 1}-01-01`) - day(`${year}-01-01`));
-}
 export function stateYear(state) { return yearOf(iso(state.day)); }

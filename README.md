@@ -2,7 +2,7 @@
 
 [![Validate and render](https://github.com/crosscore/frontier-model-release-timeline/actions/workflows/ci.yml/badge.svg)](https://github.com/crosscore/frontier-model-release-timeline/actions/workflows/ci.yml)
 
-Frontier AIモデルの発表が重なっていく様子を、編集可能なJSONから動画にするローカル生成ツールです。OpenAI / Anthropic / Google（Gemini）の**51件の選定イベント（2023-01-01〜2026-10-02）**を、公式出典付きで収録しています。業界全体を網羅したデータではありません。
+Frontier AIモデルの発表が重なっていく様子を、編集可能なJSONから動画にするローカル生成ツールです。OpenAI / Anthropic / Google（Gemini）の**51件の選定イベント（2023-01-01〜2026-10-02）**を、公式出典付きで収録しています。業界全体を網羅したデータではありません。花火は横軸＝発表日、縦軸＝[Epoch AIのEpoch Capabilities Index（ECI）](https://epoch.ai/benchmarks/eci)の2次元グラフ上で、各モデルのスコアの高さで開きます。
 
 [横長MP4](https://github.com/crosscore/frontier-model-release-timeline/raw/refs/heads/main/preview/frontier-landscape.mp4) · [縦長MP4](https://github.com/crosscore/frontier-model-release-timeline/raw/refs/heads/main/preview/frontier-portrait.mp4) · [全出典CSV](preview/sources.csv) · [集計方法](docs/methodology.md)
 
@@ -49,7 +49,8 @@ npm run render -- --out preview --format portrait
 1. [data/releases.json](data/releases.json) の `releases` に日付順で追加します。`sources` には公式発表または公式リリースノートのHTTPS URLを入れます。
 2. 同じ会社・同じ日の同時発表は1件にまとめます。プレビューは `stage: "preview"` で明示します。
 3. [選定ルール](docs/methodology.md) に照らして対象を確認し、必要に応じて `endDate` と `verifiedOn` を更新します。
-4. `npm run validate && npm test` を実行してから再生成します。日付の正しさ・採否の判断は人が一次情報で確認してください。CIは出典本文の自動事実確認を行いません。
+4. 能力スコアを付ける場合は `capability.model` にEpoch AIのECI一覧でのモデル名を入れ、`npm run scores` でEpochの公開CSVからスコアを取り込みます（ネット接続が必要。未採点のモデルは `score: null` のまま地上の噴き出し花火になります）。対応づけの規則は[集計方法](docs/methodology.md#capability-scores)を参照してください。
+5. `npm run validate && npm test` を実行してから再生成します。日付の正しさ・採否の判断は人が一次情報で確認してください。CIは出典本文の自動事実確認を行いません。
 
 最小イベント例（既存行を編集する形で利用）:
 
@@ -60,6 +61,7 @@ npm run render -- --out preview --format portrait
   "lab": "openai",
   "name": "GPT-4",
   "stage": "release",
+  "capability": { "model": "GPT-4 (Mar 2023)", "score": 125.89 },
   "sources": [{
     "url": "https://openai.com/index/gpt-4-research/",
     "title": "GPT-4 — official announcement"
@@ -70,10 +72,12 @@ npm run render -- --out preview --format portrait
 ## 映像の読み方
 
 - 1つの開花＝1件の選定イベント。日付は一定速度で進み、開花と破裂音が公開日の時刻に一致します。上昇は0.36秒前から始まります。
-- 地平線の点が発表日の正確な位置です。各年を同じ1月〜12月の幅で表示します。開花の横位置は端や同日の重なりを避けるため少し移動します。
-- MintがOpenAI、AmberがAnthropic、青紫がGoogle。会社ごとに開花の高さ（OpenAIが最上段、Anthropic、Googleの順）と形（牡丹・長い尾のきらめき・二重の輪）が決まっていて、色に頼らず同日の発表を見分けられます。半径・粒子数・寿命は全発表で同じで、高さも形も性能を表しません。近い発表の開花位置は左右に分けます。プレビューはモデル名の `*` と中空の地上マークで区別します。
-- モデル名の一覧は会社ごとに常に最新が一番上です。新着は上から入り、古い名前を1行ずつ押し下げます（5件目はフェードアウト）。各名前は最新4件の中に最低1.4秒残り、最新の名前は最後の静止区間まで表示されます。縦長はOpus/Sonnet/Fableの前のClaude接頭辞を省略します（Claude 2等の数字だけの名前は維持）。全正式名は字幕と出典一覧に残ります。
-- 最後の棒グラフは **観測日数 ÷ 選定イベント数**。平均発表間隔や開発期間とは異なります。2026年は275日分の途中集計です。
+- 横軸は2023年1月〜2026年12月の通しの暦（観測終了日より後は斜線）、縦軸はECIスコアです。花火は発表日の位置から真上に上がり、そのモデルのECIの高さで開きます。開いた点はマーカーとして残り、会社ごとの「その時点の最高スコア」を階段状の線で結ぶので、能力が上がっていく様子がグラフとして積み上がります。
+- Epoch AIがまだ採点していない発表（初代Claude、Gemini Ultra 1.0、Gemini 1.5 Proの2月版、GPT-5.3 Instant、GPT-6 Sol、GPT-6.1 Sol）は高さを持たず、横軸の上で低い噴き出し花火になります。一覧のスコア欄は「—」です。
+- MintがOpenAI、AmberがAnthropic、青紫がGoogle。会社ごとに開花の形（牡丹・長い尾のきらめき・二重の輪）とマーカーの形（丸・ひし形・四角）が決まっていて、色に頼らず見分けられます。半径・粒子数・寿命は全発表で同じです。プレビューはモデル名の `*` と中空のマーカーで区別します。
+- ECIは多数のベンチマークを1つの尺度にまとめた指数で、各スコアには数ポイント幅の不確かさがあります。数点の差は順位の根拠になりません。同時発表の複数モデルをまとめたイベントでは、最上位の階層（Claude 3ならOpus、GPT-5.6ならSol）のスコアを使います。
+- モデル名の一覧は会社ごとに常に最新が一番上で、右端にECIスコア（整数に丸め）を表示します。新着は上から入り、古い名前を1行ずつ押し下げます（5件目はフェードアウト）。各名前は最新4件の中に最低1.4秒残り、最新の名前は最後の静止区間まで表示されます。縦長はOpus/Sonnet/Fableの前のClaude接頭辞を省略します（Claude 2等の数字だけの名前は維持）。全正式名は字幕と出典一覧に残ります。
+- 最後の棒グラフは **観測日数 ÷ 選定イベント数**。平均発表間隔や開発期間とは異なります。2026年は275日分の途中集計です。右側（縦長では下）には、初年と最終年それぞれで選定イベント中の最高ECI（126 → 167）を表示します。
 
 このデータでは年ごとに **60.8 / 40.7 / 26.1 / 12.5日／件** となります。数値は描画時に計算され、選定を変えると結果も変わります。参考投稿の「18日」はコピーしていません。
 
@@ -83,6 +87,7 @@ npm run render -- --out preview --format portrait
 | --- | --- |
 | `data/releases.json` | 更新する原本。日付・モデル名・注記・一次出典 |
 | `src/data.mjs` | データ検証、UTC日付処理、年別集計 |
+| `src/capability.mjs` | Epoch AIのECI CSVの読み込みとスコアの反映（`npm run scores`） |
 | `src/timeline.mjs` | 等速の再生時計と正確な開花時刻 |
 | `src/audio.mjs` | オリジナル楽曲・発表効果音の決定的な合成 |
 | `src/draw.mjs` | 2つのアスペクト比の独自Canvasデザイン（2〜3社に対応） |
@@ -103,5 +108,7 @@ CIはmacOS / Linuxでテスト・ビルドし、Linuxでは横長・縦長を実
 ## 参考とライセンス
 
 [MoniiiiのX投稿](https://x.com/miniii_codes/status/2103938407558947265)を実際に確認し、日付の密度が増していく着想を参考にしました。確認内容・独自化した点は [docs/reference.md](docs/reference.md) に記載しています。元動画・画像・音声・ロゴは含めていません。
+
+能力スコアはEpoch AIの[Epoch Capabilities Index](https://epoch.ai/benchmarks/eci)（[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)、2026-10-03取得）です。映像のフッター・字幕・出典一覧ページにクレジットを表示しています。本プロジェクトはEpoch AIと提携・承認関係にありません。
 
 生成コード・独自グラフィック・オリジナル音楽と効果音は [MIT](LICENSE)。同梱のManropeは [SIL Open Font License](assets/fonts/OFL.txt) です。[フォントの取得元](assets/fonts/README.md)を参照してください。リンク先の発表記事は各権利者に帰属します。

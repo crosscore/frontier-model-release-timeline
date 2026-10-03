@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { loadDataset, day } from '../src/data.mjs';
 import { makeTimeline } from '../src/timeline.mjs';
-import { activeFireworks, eventPose, ledgerRows, modelLabel, skyBox, FIREWORK } from '../src/draw.mjs';
+import { activeFireworks, chartBox, chartScale, eventPose, ledgerRows, modelLabel, scoreOf, FIREWORK } from '../src/draw.mjs';
 import { makeRenderer } from '../src/node-renderer.mjs';
 import { captions, previewHtml } from '../src/artifacts.mjs';
 const data = await loadDataset(), timeline = makeTimeline(data);
@@ -55,23 +55,32 @@ test('fireworks keep their full lifetime across the calendar year boundary', () 
   assert(activeFireworks(data, timeline, timeline.onsets.get(event.id) + FIREWORK.life - .001).includes(event));
   assert(!activeFireworks(data, timeline, timeline.onsets.get(event.id) + FIREWORK.life + .001).includes(event));
 });
-test('simultaneous bursts have separate centers and true-date ground origins', () => {
-  for (const date of ['2023-03-14', '2026-09-22']) {
-    const events = data.releases.filter(e => e.date === date), box = skyBox('portrait');
-    const [a,b] = events.map(e => eventPose(data,e,box));
-    assert.equal(a.origin,b.origin);
-    assert(Math.hypot(a.bx-b.bx,a.by-b.by) > box.radius * .7);
-    for (const pose of [a,b]) assert(pose.bx >= box.x + box.radius && pose.bx <= box.x + box.w - box.radius);
+test('each burst climbs straight up from its date and opens at its ECI score; unscored launches stay on the axis', () => {
+  for (const format of ['landscape', 'portrait']) {
+    const box = chartBox(format), scale = chartScale(data, box), clipTop = format === 'portrait' ? 250 : 150;
+    for (const e of data.releases) {
+      const pose = eventPose(data, e, box);
+      assert.equal(pose.origin, scale.x(e.date)); assert.equal(pose.bx, pose.origin);
+      if (scoreOf(e) === null) { assert.equal(pose.by, box.y); assert(!pose.scored); continue; }
+      assert.equal(pose.by, scale.y(scoreOf(e)));
+      assert(pose.by - box.radius >= clipTop, `${format}: ${e.name} burst is cut off at the top`);
+      assert(pose.bx >= box.x && pose.bx <= box.x + box.w);
+    }
+    const scored = data.releases.filter(e => scoreOf(e) !== null).sort((a, b) => scoreOf(a) - scoreOf(b));
+    for (let i = 1; i < scored.length; i++) assert(eventPose(data, scored[i], box).by <= eventPose(data, scored[i - 1], box).by);
   }
 });
-test('each lab bursts in its own altitude lane, above the ground line in both layouts', () => {
-  for (const format of ['landscape', 'portrait']) {
-    const box = skyBox(format), heights = data.labs.map(lab => new Set(data.releases.filter(e => e.lab === lab.id).map(e => eventPose(data, e, box).by)));
-    for (const set of heights) assert.equal(set.size, 1);
-    const lanes = heights.map(set => [...set][0]);
-    for (let i = 1; i < lanes.length; i++) assert(lanes[i] - lanes[i - 1] >= box.radius * .3);
-    assert(lanes.at(-1) + box.radius < box.y);
-  }
+test('the date axis spans whole calendar years, so the observation cutoff falls short of its end', () => {
+  const box = chartBox('landscape'), scale = chartScale(data, box);
+  assert.equal(scale.x('2023-01-01'), box.x); assert.equal(scale.x('2027-01-01'), box.x + box.w);
+  assert(Math.abs(scale.x('2025-01-01') - (box.x + box.w * (day('2025-01-01') - day('2023-01-01')) / (day('2027-01-01') - day('2023-01-01')))) < 1e-9);
+  assert(scale.x(data.endDate) < box.x + box.w * .95);
+});
+test('the score axis spans every published score and leaves headroom for the highest burst', () => {
+  const scores = data.releases.map(scoreOf).filter(v => v !== null), scale = chartScale(data, chartBox('landscape'));
+  assert(scores.length >= 40, 'most selected launches should carry an ECI score');
+  assert(scale.lo <= Math.min(...scores) - 4 && scale.hi >= Math.max(...scores) + 8);
+  assert.equal(scale.lo % 10, 0); assert.equal(scale.hi % 10, 0);
 });
 test('ledger shows the newest name on top and pushes older rows down smoothly without overlap', () => {
   const clock = { onsets: new Map([['a', 0], ['b', 1], ['c', 1.03], ['d', 3]]) }, events = ['a', 'b', 'c', 'd'].map(id => ({ id }));

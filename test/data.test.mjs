@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { day, loadDataset, validateDataset, yearlyStats } from '../src/data.mjs';
+import { applyEciScores, parseCsv } from '../src/capability.mjs';
 const original = await loadDataset();
 const copy = () => structuredClone(original);
 
@@ -19,6 +20,10 @@ for (const [name, mutate, expected] of [
   ['unsorted dates', d => { d.releases.reverse(); }, /chronological/],
   ['unverified observation windows', d => { d.verifiedOn = '2020-01-01'; }, /verifiedOn/],
   ['unsupported stage', d => { d.releases[0].stage = 'rumor'; }, /invalid stage/],
+  ['non-numeric capability scores', d => { d.releases[1].capability.score = '125.9'; }, /capability.score/],
+  ['negative capability scores', d => { d.releases[1].capability.score = -1; }, /capability.score/],
+  ['unknown capability fields', d => { d.releases[1].capability.rank = 1; }, /unknown field/],
+  ['capability data hosted outside Epoch AI', d => { d.capability.data = 'https://example.com/eci.csv'; }, /epoch.ai/],
 ]) test(`validation rejects ${name}`, () => { const data = copy(); mutate(data); assert.throws(() => validateDataset(data), expected); });
 
 test('density and adjacent gaps use different denominators; partial years and leap years are correct', () => {
@@ -42,4 +47,17 @@ test('all sample events reconcile to annual and lab totals', () => {
   const stats = yearlyStats(original);
   assert.equal(stats.reduce((total, row) => total + row.count, 0), original.releases.length);
   for (const row of stats) assert.equal(Object.values(row.byLab).reduce((a, b) => a + b, 0), row.count);
+});
+
+test('ECI refresh copies scores by mapped model name and reports models Epoch has not scored', () => {
+  const csv = 'Model,Display name,eci,Organization\nGPT-4 (Mar 2023),GPT-4 (Mar 2023),125.891,OpenAI\n"Gemini 1.0 Pro","Gemini 1.0 Pro",117.05,"Google DeepMind,Google"\nClaude 2,Claude 2,,Anthropic\n';
+  assert.equal(parseCsv(csv)[1].Organization, 'Google DeepMind,Google');
+  const { data, missing, changed } = applyEciScores(copy(), csv, '2026-10-04');
+  const byId = id => data.releases.find(e => e.id === id).capability;
+  assert.equal(byId('openai-gpt-4').score, 125.89); assert.equal(byId('google-gemini-1').score, 117.05);
+  assert.equal(byId('anthropic-claude-2').score, null); assert(missing.includes('Claude 2'));
+  assert(changed.some(c => c.id === 'anthropic-claude-2' && c.to === null));
+  assert.equal(data.capability.retrievedOn, '2026-10-04'); assert.equal(data.releases.find(e => e.id === 'anthropic-claude').capability, undefined);
+  validateDataset(data);
+  assert.throws(() => applyEciScores(copy(), 'name,score\nx,1\n', '2026-10-04'), /Model and eci/);
 });

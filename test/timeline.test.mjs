@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadDataset, day } from '../src/data.mjs';
-import { makeTimeline, stateAt, visibleEvents, calendarPosition } from '../src/timeline.mjs';
+import { makeTimeline, stateAt, visibleEvents } from '../src/timeline.mjs';
 const data = await loadDataset(), timeline = makeTimeline(data);
 test('every launch becomes visible exactly at its onset, including simultaneous labs', () => {
   for (const event of data.releases) {
@@ -19,12 +19,6 @@ test('calendar never runs backward; start, final hold and ending remain exact', 
   assert.equal(stateAt(timeline, timeline.outroStart - .1).day, day(data.endDate));
   assert.equal(stateAt(timeline, timeline.duration + 100).mode, 'outro');
   assert.equal(visibleEvents(data, timeline, timeline.duration).length, data.releases.length);
-});
-test('x position uses full calendar years even for partial observation windows', () => {
-  assert.equal(calendarPosition('2024-07-02', 2024), .5);
-  assert.equal(calendarPosition('2026-01-01', 2026), 0);
-  assert.equal(calendarPosition('2027-01-01', 2026), 1);
-  assert(calendarPosition('2026-10-02', 2026) < .76);
 });
 test('one-day datasets and simultaneous launches have a valid timeline', () => {
   const small = structuredClone(data); small.releases = small.releases.slice(0, 2); small.startDate = small.endDate = small.releases[0].date;

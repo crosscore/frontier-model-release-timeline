@@ -1,10 +1,18 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "title": "Frontier / Release rhythm",
   "startDate": "2023-01-01",
   "endDate": "2026-10-02",
   "verifiedOn": "2026-10-02",
-  "scope": "Selected public model launch events from OpenAI, Anthropic and Google (Gemini). Not a complete industry census or a benchmark ranking.",
+  "scope": "Selected public model launch events from OpenAI, Anthropic and Google (Gemini). Not a complete industry census or a benchmark ranking; burst heights use Epoch AI's Epoch Capabilities Index where Epoch has scored the launched model.",
+  "capability": {
+    "index": "Epoch Capabilities Index (ECI)",
+    "publisher": "Epoch AI",
+    "url": "https://epoch.ai/benchmarks/eci",
+    "data": "https://epoch.ai/data/eci_scores.csv",
+    "license": "CC BY 4.0",
+    "retrievedOn": "2026-10-03"
+  },
   "labs": [
     {
       "id": "openai",
@@ -43,6 +51,10 @@
       "lab": "openai",
       "name": "GPT-4",
       "stage": "release",
+      "capability": {
+        "model": "GPT-4 (Mar 2023)",
+        "score": 125.89
+      },
       "sources": [
         {
           "url": "https://openai.com/index/gpt-4-research/",
@@ -56,6 +68,10 @@
       "lab": "anthropic",
       "name": "Claude 2",
       "stage": "release",
+      "capability": {
+        "model": "Claude 2",
+        "score": 120.14
+      },
       "sources": [
         {
           "url": "https://www.anthropic.com/news/claude-2",
@@ -69,6 +85,10 @@
       "lab": "openai",
       "name": "GPT-4 Turbo",
       "stage": "preview",
+      "capability": {
+        "model": "GPT-4 Turbo (Nov 2023)",
+        "score": 126.47
+      },
       "sources": [
         {
           "url": "https://openai.com/index/new-models-and-developer-products-announced-at-devday/",
@@ -82,6 +102,10 @@
       "lab": "anthropic",
       "name": "Claude 2.1",
       "stage": "release",
+      "capability": {
+        "model": "Claude 2.1",
+        "score": 119.28
+      },
       "sources": [
         {
           "url": "https://www.anthropic.com/news/claude-2-1",
@@ -95,6 +119,10 @@
       "lab": "google",
       "name": "Gemini 1.0",
       "stage": "release",
+      "capability": {
+        "model": "Gemini 1.0 Pro",
+        "score": 117.05
+      },
       "sources": [
         {
           "url": "https://blog.google/innovation-and-ai/technology/ai/google-gemini-ai/",
@@ -137,6 +165,10 @@
       "lab": "anthropic",
       "name": "Claude 3",
       "stage": "release",
+      "capability": {
+        "model": "Claude 3 Opus",
+        "score": 126.91
+      },
       "sources": [
         {
           "url": "https://www.anthropic.com/news/claude-3-family",
@@ -151,6 +183,10 @@
       "lab": "openai",
       "name": "GPT-4o",
       "stage": "release",
+      "capability": {
+        "model": "GPT-4o (May 2024)",
+        "score": 128.97
+      },
       "sources": [
         {
           "url": "https://openai.com/index/hello-gpt-4o/",
@@ -164,6 +200,10 @@
       "lab": "anthropic",
       "name": "Claude 3.5 Sonnet",
       "stage": "release",
+      "capability": {
+        "model": "Claude 3.5 Sonnet",
+        "score": 130
+      },
       "sources": [
         {
           "url": "https://platform.claude.com/docs/en/release-notes/overview#june-20th-2024",
@@ -178,6 +218,10 @@
       "lab": "openai",
       "name": "o1-preview",
       "stage": "preview",
+      "capability": {
+        "model": "o1-preview",
+        "score": 134.78
+      },
       "sources": [
         {
           "url": "https://openai.com/index/introducing-openai-o1-preview/",
@@ -191,6 +235,10 @@
       "lab": "anthropic",
       "name": "Claude 3.5 Sonnet v2",
       "stage": "release",
+      "capability": {
+        "model": "Claude 3.5 Sonnet (October 2024)",
+        "score": 133.54
+      },
       "sources": [
         {
           "url": "https://www.anthropic.com/news/3-5-models-and-computer-use",
@@ -205,6 +253,10 @@
       "lab": "openai",
       "name": "o1",
       "stage": "release",
+      "capability": {
+        "model": "o1",
+        "score": 141.9
+      },
       "sources": [
         {
           "url": "https://openai.com/index/introducing-chatgpt-pro/",
@@ -219,6 +271,10 @@
       "lab": "google",
       "name": "Gemini 2.0 Flash",
       "stage": "preview",
+      "capability": {
+        "model": "Gemini 2.0 Flash (Dec 2024)",
+        "score": 134.69
+      },
       "sources": [
         {
           "url": "https://blog.google/innovation-and-ai/models-and-research/google-deepmind/google-gemini-ai-update-december-2024/",
@@ -233,6 +289,10 @@
       "lab": "google",
       "name": "Gemini 2.0 Pro",
       "stage": "preview",
+      "capability": {
+        "model": "Gemini 2.0 Pro",
+        "score": 135.06
+      },
       "sources": [
         {
           "url": "https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-model-updates-february-2025/",
@@ -247,6 +307,10 @@
       "lab": "anthropic",
       "name": "Claude 3.7 Sonnet",
       "stage": "release",
+      "capability": {
+        "model": "Claude 3.7 Sonnet",
+        "score": 141.16
+      },
       "sources": [
         {
           "url": "https://www.anthropic.com/news/claude-3-7-sonnet",
@@ -260,6 +324,10 @@
       "lab": "openai",
       "name": "GPT-4.5",
       "stage": "preview",
+      "capability": {
+        "model": "GPT-4.5",
+        "score": 136.74
+      },
       "sources": [
         {
           "url": "https://openai.com/index/introducing-gpt-4-5/",
@@ -273,6 +341,10 @@
       "lab": "google",
       "name": "Gemini 2.5 Pro",
       "stage": "preview",
+      "capability": {
+        "model": "Gemini 2.5 Pro (Mar 2025)",
+        "score": 144.15
+      },
       "sources": [
         {
           "url": "https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-model-thinking-updates-march-2025/",
@@ -287,6 +359,10 @@
       "lab": "openai",
       "name": "GPT-4.1",
       "stage": "release",
+      "capability": {
+        "model": "GPT-4.1",
+        "score": 136.78
+      },
       "sources": [
         {
           "url": "https://openai.com/index/gpt-4-1/",
@@ -301,6 +377,10 @@
       "lab": "openai",
       "name": "o3",
       "stage": "release",
+      "capability": {
+        "model": "o3",
+        "score": 146.86
+      },
       "sources": [
         {
           "url": "https://openai.com/index/introducing-o3-and-o4-mini/",
@@ -315,6 +395,10 @@
       "lab": "anthropic",
       "name": "Claude 4",
       "stage": "release",
+      "capability": {
+        "model": "Claude Opus 4",
+        "score": 142.67
+      },
       "sources": [
         {
           "url": "https://www.anthropic.com/news/claude-4",
@@ -329,6 +413,10 @@
       "lab": "anthropic",
       "name": "Claude Opus 4.1",
       "stage": "release",
+      "capability": {
+        "model": "Claude Opus 4.1",
+        "score": 144.11
+      },
       "sources": [
         {
           "url": "https://www.anthropic.com/news/claude-opus-4-1",
@@ -342,6 +430,10 @@
       "lab": "openai",
       "name": "GPT-5",
       "stage": "release",
+      "capability": {
+        "model": "GPT-5",
+        "score": 150
+      },
       "sources": [
         {
           "url": "https://openai.com/index/introducing-gpt-5/",
@@ -355,6 +447,10 @@
       "lab": "anthropic",
       "name": "Claude Sonnet 4.5",
       "stage": "release",
+      "capability": {
+        "model": "Claude Sonnet 4.5",
+        "score": 146.84
+      },
       "sources": [
         {
           "url": "https://www.anthropic.com/news/claude-sonnet-4-5",
@@ -368,6 +464,10 @@
       "lab": "openai",
       "name": "GPT-5.1",
       "stage": "release",
+      "capability": {
+        "model": "GPT-5.1",
+        "score": 149.65
+      },
       "sources": [
         {
           "url": "https://openai.com/index/gpt-5-1/",
@@ -382,6 +482,10 @@
       "lab": "google",
       "name": "Gemini 3 Pro",
       "stage": "preview",
+      "capability": {
+        "model": "Gemini 3 Pro",
+        "score": 152.95
+      },
       "sources": [
         {
           "url": "https://blog.google/products-and-platforms/products/gemini/gemini-3/",
@@ -400,6 +504,10 @@
       "lab": "anthropic",
       "name": "Claude Opus 4.5",
       "stage": "release",
+      "capability": {
+        "model": "Claude Opus 4.5",
+        "score": 150.1
+      },
       "sources": [
         {
           "url": "https://www.anthropic.com/news/claude-opus-4-5",
@@ -413,6 +521,10 @@
       "lab": "openai",
       "name": "GPT-5.2",
       "stage": "release",
+      "capability": {
+        "model": "GPT-5.2",
+        "score": 153.49
+      },
       "sources": [
         {
           "url": "https://openai.com/index/introducing-gpt-5-2/",
@@ -426,6 +538,10 @@
       "lab": "anthropic",
       "name": "Claude Opus 4.6",
       "stage": "release",
+      "capability": {
+        "model": "Claude Opus 4.6",
+        "score": 155.31
+      },
       "sources": [
         {
           "url": "https://platform.claude.com/docs/en/release-notes/overview#february-5-2026",
@@ -439,6 +555,10 @@
       "lab": "anthropic",
       "name": "Claude Sonnet 4.6",
       "stage": "release",
+      "capability": {
+        "model": "Claude Sonnet 4.6",
+        "score": 152.26
+      },
       "sources": [
         {
           "url": "https://platform.claude.com/docs/en/release-notes/overview#february-17-2026",
@@ -452,6 +572,10 @@
       "lab": "google",
       "name": "Gemini 3.1 Pro",
       "stage": "preview",
+      "capability": {
+        "model": "Gemini 3.1 Pro",
+        "score": 154.84
+      },
       "sources": [
         {
           "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-1-pro/",
@@ -466,6 +590,10 @@
       "lab": "openai",
       "name": "GPT-5.3 Instant",
       "stage": "release",
+      "capability": {
+        "model": "GPT-5.3 Instant",
+        "score": null
+      },
       "sources": [
         {
           "url": "https://openai.com/index/gpt-5-3-instant/",
@@ -479,6 +607,10 @@
       "lab": "openai",
       "name": "GPT-5.4",
       "stage": "release",
+      "capability": {
+        "model": "GPT-5.4",
+        "score": 156.91
+      },
       "sources": [
         {
           "url": "https://openai.com/index/introducing-gpt-5-4/",
@@ -492,6 +624,10 @@
       "lab": "anthropic",
       "name": "Claude Opus 4.7",
       "stage": "release",
+      "capability": {
+        "model": "Claude Opus 4.7",
+        "score": 156.35
+      },
       "sources": [
         {
           "url": "https://platform.claude.com/docs/en/release-notes/overview#april-16-2026",
@@ -505,6 +641,10 @@
       "lab": "openai",
       "name": "GPT-5.5",
       "stage": "release",
+      "capability": {
+        "model": "GPT-5.5",
+        "score": 159.22
+      },
       "sources": [
         {
           "url": "https://openai.com/index/introducing-gpt-5-5/",
@@ -519,6 +659,10 @@
       "lab": "google",
       "name": "Gemini 3.5 Flash",
       "stage": "release",
+      "capability": {
+        "model": "Gemini 3.5 Flash",
+        "score": 154.51
+      },
       "sources": [
         {
           "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-5/",
@@ -533,6 +677,10 @@
       "lab": "anthropic",
       "name": "Claude Opus 4.8",
       "stage": "release",
+      "capability": {
+        "model": "Claude Opus 4.8",
+        "score": 158.34
+      },
       "sources": [
         {
           "url": "https://platform.claude.com/docs/en/release-notes/overview#may-28-2026",
@@ -546,6 +694,10 @@
       "lab": "anthropic",
       "name": "Claude Fable 5",
       "stage": "release",
+      "capability": {
+        "model": "Claude Fable 5",
+        "score": 162.22
+      },
       "sources": [
         {
           "url": "https://platform.claude.com/docs/en/release-notes/overview#june-9-2026",
@@ -560,6 +712,10 @@
       "lab": "anthropic",
       "name": "Claude Sonnet 5",
       "stage": "release",
+      "capability": {
+        "model": "Claude Sonnet 5",
+        "score": 156.34
+      },
       "sources": [
         {
           "url": "https://platform.claude.com/docs/en/release-notes/overview#june-30-2026",
@@ -573,6 +729,10 @@
       "lab": "openai",
       "name": "GPT-5.6",
       "stage": "release",
+      "capability": {
+        "model": "GPT-5.6 Sol",
+        "score": 161.8
+      },
       "sources": [
         {
           "url": "https://openai.com/index/gpt-5-6/",
@@ -587,6 +747,10 @@
       "lab": "google",
       "name": "Gemini 3.6 Flash",
       "stage": "release",
+      "capability": {
+        "model": "Gemini 3.6 Flash",
+        "score": 154.32
+      },
       "sources": [
         {
           "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-6-flash-3-5-flash-lite-3-5-flash-cyber/",
@@ -601,6 +765,10 @@
       "lab": "anthropic",
       "name": "Claude Opus 5",
       "stage": "release",
+      "capability": {
+        "model": "Claude Opus 5",
+        "score": 162.94
+      },
       "sources": [
         {
           "url": "https://platform.claude.com/docs/en/release-notes/overview#july-24-2026",
@@ -614,6 +782,10 @@
       "lab": "google",
       "name": "Gemini 3.7 Flash",
       "stage": "release",
+      "capability": {
+        "model": "Gemini 3.7 Flash",
+        "score": 157.44
+      },
       "sources": [
         {
           "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-3-7-flash/",
@@ -628,6 +800,10 @@
       "lab": "anthropic",
       "name": "Claude Fable 5.1",
       "stage": "release",
+      "capability": {
+        "model": "Claude Fable 5.1",
+        "score": 164.82
+      },
       "sources": [
         {
           "url": "https://platform.claude.com/docs/en/release-notes/overview#september-1-2026",
@@ -642,6 +818,10 @@
       "lab": "google",
       "name": "Gemini 3.8 Flash",
       "stage": "release",
+      "capability": {
+        "model": "Gemini 3.8 Flash",
+        "score": 156.93
+      },
       "sources": [
         {
           "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/",
@@ -656,6 +836,10 @@
       "lab": "openai",
       "name": "GPT-6 Astra",
       "stage": "release",
+      "capability": {
+        "model": "GPT-6 Astra",
+        "score": 166.51
+      },
       "sources": [
         {
           "url": "https://openai.com/index/gpt-6-astra/",
@@ -674,6 +858,10 @@
       "lab": "anthropic",
       "name": "Claude Opus 5.5",
       "stage": "release",
+      "capability": {
+        "model": "Claude Opus 5.5",
+        "score": 167.35
+      },
       "sources": [
         {
           "url": "https://www.anthropic.com/claude-opus-5-5",
@@ -687,6 +875,10 @@
       "lab": "openai",
       "name": "GPT-6 Sol",
       "stage": "release",
+      "capability": {
+        "model": "GPT-6 Sol",
+        "score": null
+      },
       "sources": [
         {
           "url": "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
@@ -705,6 +897,10 @@
       "lab": "anthropic",
       "name": "Claude Sonnet 5.5",
       "stage": "release",
+      "capability": {
+        "model": "Claude Sonnet 5.5",
+        "score": 165.2
+      },
       "sources": [
         {
           "url": "https://www.anthropic.com/claude-sonnet-5-5",
@@ -718,6 +914,10 @@
       "lab": "openai",
       "name": "GPT-6.1 Sol",
       "stage": "release",
+      "capability": {
+        "model": "GPT-6.1 Sol",
+        "score": null
+      },
       "sources": [
         {
           "url": "https://openai.com/index/introducing-gpt-6-1-sol/",

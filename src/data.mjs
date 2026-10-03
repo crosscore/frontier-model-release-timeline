@@ -20,9 +20,16 @@ function text(value, context, max = 600) {
 }
 
 export function validateDataset(data) {
-  keys(data, ['schemaVersion', 'title', 'startDate', 'endDate', 'verifiedOn', 'scope', 'labs', 'releases'], 'Dataset');
-  requireThat(data.schemaVersion === 1, 'Unsupported schemaVersion');
+  keys(data, ['schemaVersion', 'title', 'startDate', 'endDate', 'verifiedOn', 'scope', 'capability', 'labs', 'releases'], 'Dataset');
+  requireThat(data.schemaVersion === 2, 'Unsupported schemaVersion');
   text(data.title, 'title'); text(data.scope, 'scope');
+  keys(data.capability, ['index', 'publisher', 'url', 'data', 'license', 'retrievedOn'], 'Capability index');
+  for (const field of ['index', 'publisher', 'license']) text(data.capability[field], `capability.${field}`, 80);
+  for (const field of ['url', 'data']) {
+    const url = new URL(data.capability[field]);
+    requireThat(url.protocol === 'https:' && url.hostname === 'epoch.ai', `capability.${field} must be an https://epoch.ai URL`);
+  }
+  day(data.capability.retrievedOn);
   const start = day(data.startDate), end = day(data.endDate);
   requireThat(start <= end, 'startDate must not follow endDate');
   requireThat(day(data.verifiedOn) >= end, 'verifiedOn must cover endDate');
@@ -40,7 +47,7 @@ export function validateDataset(data) {
   const ids = new Set(), labDates = new Set();
   let previous = '';
   for (const event of data.releases) {
-    keys(event, ['id', 'date', 'lab', 'name', 'stage', 'sources', 'note'], 'Release');
+    keys(event, ['id', 'date', 'lab', 'name', 'stage', 'capability', 'sources', 'note'], 'Release');
     requireThat(typeof event.id === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(event.id) && !ids.has(event.id), `Invalid or duplicate ID: ${event.id}`);
     ids.add(event.id);
     text(event.name, `${event.id}: name`, 80);
@@ -54,6 +61,11 @@ export function validateDataset(data) {
     labDates.add(key);
     requireThat(['release', 'preview'].includes(event.stage), `${event.id}: invalid stage`);
     if (event.note !== undefined) text(event.note, `${event.id}: note`);
+    if (event.capability !== undefined) {
+      keys(event.capability, ['model', 'score'], `${event.id}: capability`); text(event.capability.model, `${event.id}: capability.model`, 80);
+      const { score } = event.capability;
+      requireThat(score === null || (Number.isFinite(score) && score > 0 && score < 1000), `${event.id}: capability.score must be null or a finite positive number`);
+    }
     requireThat(Array.isArray(event.sources) && event.sources.length > 0, `${event.id}: missing sources`);
     for (const source of event.sources) {
       keys(source, ['url', 'title'], 'Source'); text(source.title, 'Source title');
