@@ -2,6 +2,7 @@ import { day, iso, yearOf, yearlyStats } from './data.mjs';
 import { clamp, smooth, stateAt, stateYear, visibleEvents } from './timeline.mjs';
 import { chartBox, chartScale, eventPose, scoreOf } from './chart.mjs';
 import { cameraAt } from './camera.mjs';
+import { launchesOf, paceAt, pacePeak, PACE_TAU_DAYS } from './pace.mjs';
 export { chartBox, chartScale, eventPose, scoreOf };
 
 export const FORMATS = { landscape: { width: 1920, height: 1080 }, portrait: { width: 1080, height: 1920 } };
@@ -214,6 +215,54 @@ function callout(ctx, data, timeline, state, cam, box, visible, portrait, avoid)
   });
   ctx.restore();
 }
+// Launch pace under the chart, like an indicator under a price chart: it shares the camera's calendar, and its
+// scale widens whenever the pace sets a new high, so the gridlines crowd in as launches speed up. Each launch kicks
+// the line up as it bursts.
+function pacePanel(ctx, data, timeline, state, box, visible, portrait, cam) {
+  const pb = box.pace, scale = chartScale(data, box), right = box.x + box.w, sx = d => cam.toScreen(scale.x(d), 0).x;
+  const launches = launchesOf(visible, e => easeOut((state.time - timeline.onsets.get(e.id)) / .3));
+  const top = Math.max(1.5, 1.35 * pacePeak(launches)), py = v => pb.bottom - v / top * (pb.bottom - pb.top);
+  const every = (pb.bottom - pb.top) / top < (portrait ? 30 : 22) ? 2 : 1;
+  for (let v = 1; v < top; v++) {
+    const a = clamp((top - v) / .35);
+    line(ctx, box.x, py(v), right, py(v), rgba('#1A273D', a));
+    if (v % every === 0) { ctx.globalAlpha = a; label(ctx, String(v), box.x - 16, py(v) + (portrait ? 7 : 5), portrait ? 20 : 15, C.dim, 500, 'right'); ctx.globalAlpha = 1; }
+  }
+  line(ctx, box.x, pb.bottom, right, pb.bottom, '#42506B');
+  ctx.save(); ctx.beginPath(); ctx.rect(box.x, pb.top - 14, box.w, pb.bottom - pb.top + 14); ctx.clip();
+  for (let y = yearOf(data.startDate) + 1; y <= yearOf(data.endDate) + 1; y++) { const x = sx(day(`${y}-01-01`)); line(ctx, x, pb.top, x, pb.bottom, '#17233A'); }
+  const nowX = sx(state.day);
+  line(ctx, nowX, pb.top, nowX, pb.bottom, rgba(C.gold, .16));
+  // Sample the visible stretch every few pixels, plus both sides of each launch so the kicks stay vertical.
+  const d0 = Math.max(scale.from, scale.day(cam.toWorld(box.x, 0).x)), d1 = Math.min(state.day, scale.day(cam.toWorld(right, 0).x));
+  if (d1 > d0) {
+    const n = Math.max(1, Math.ceil((sx(d1) - sx(d0)) / 3)), days = Array.from({ length: n + 1 }, (_, k) => d0 + (d1 - d0) * k / n);
+    for (const l of launches) if (l.day > d0 && l.day <= d1) days.push(l.day - 1e-6, l.day);
+    const pts = days.sort((a, b) => a - b).map(d => ({ x: sx(d), y: py(paceAt(launches, d)) }));
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pb.bottom); for (const p of pts) ctx.lineTo(p.x, p.y); ctx.lineTo(pts.at(-1).x, pb.bottom); ctx.closePath();
+    const fill = ctx.createLinearGradient(0, pb.top, 0, pb.bottom); fill.addColorStop(0, rgba(C.gold, .3)); fill.addColorStop(1, rgba(C.gold, .02));
+    ctx.fillStyle = fill; ctx.fill();
+    ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+    ctx.strokeStyle = C.gold; ctx.lineWidth = portrait ? 3 : 2.4; ctx.lineJoin = 'round'; ctx.stroke();
+  }
+  // A ring in the lab's colour opens where each launch kicks the line.
+  for (const e of visible) {
+    const age = state.time - timeline.onsets.get(e.id), d = day(e.date);
+    if (age < .6) circle(ctx, sx(d), py(paceAt(launches, d)), (4 + 24 * easeOut(age / .6)) * (portrait ? 1.2 : 1), rgba(data.labs.find(l => l.id === e.lab).color, 1 - age / .6), true);
+  }
+  ctx.restore();
+  label(ctx, `LAUNCH PACE · LAUNCHES PER 30 DAYS · ${PACE_TAU_DAYS}-DAY EMA`, box.x + 10, pb.top + (portrait ? 20 : 16), portrait ? 19 : 15, C.gold, 600);
+  // The head carries its live value, like the last price on a trading chart, and pops with each launch.
+  if (nowX < box.x || nowX > right) return;
+  const value = paceAt(launches, state.day), y = py(value), last = visible.at(-1);
+  const pop = last ? Math.exp(-(state.time - timeline.onsets.get(last.id)) / .14) : 0, size = (portrait ? 26 : 21) * (1 + .25 * pop);
+  ctx.setLineDash([3, 6]); line(ctx, nowX, y, right, y, rgba(C.gold, .4)); ctx.setLineDash([]);
+  glow(ctx, nowX, y, 20 + 14 * pop, C.gold, .45 + .3 * pop); circle(ctx, nowX, y, 3.5, C.text);
+  ctx.font = `600 ${Math.round(size)}px Manrope600`;
+  const text = value.toFixed(1), width = ctx.measureText(text).width;
+  const tx = nowX + 14 + width > right - 4 ? nowX - 14 - width : nowX + 14;
+  label(ctx, text, tx, clamp(y + size * .36, pb.top + size * .8, pb.bottom - 5), size, mixHex(C.gold, '#FFFFFF', pop * .6), 600);
+}
 function chart(ctx, data, timeline, state, year, box, visible, portrait, cam) {
   const scale = chartScale(data, box), W = portrait ? 1080 : 1920, clipTop = portrait ? 250 : 150, right = box.x + box.w;
   const sx = wx => cam.toScreen(wx, 0).x, sy = wy => cam.toScreen(0, wy).y;
@@ -249,25 +298,28 @@ function chart(ctx, data, timeline, state, year, box, visible, portrait, cam) {
     if (scoreOf(event) === null) fountain(ctx, event, lab, age, scale.x(event.date), view); else rocket(ctx, data, event, lab, age, box, view);
   }
   ctx.restore();
-  // The date axis is pinned to the bottom of the plot; its ticks and labels slide and spread with the camera.
+  pacePanel(ctx, data, timeline, state, box, visible, portrait, cam);
+  // The date axis is pinned to the bottom of the plot and repeated under the pace panel, where its labels sit;
+  // ticks and labels slide and spread with the camera.
+  const pb = box.pace, labelY = pb.bottom + (portrait ? 40 : 28);
   line(ctx, box.x, box.y, right, box.y, '#42506B');
   if (end < right) {
-    for (let x = Math.max(box.x, end); x < right; x += 16) line(ctx, x, box.y - 4, Math.min(right, x + 5), box.y + 4, C.dim);
-    label(ctx, 'UNOBSERVED', right, box.y + (portrait ? 74 : 61), portrait ? 22 : 17, C.muted, 500, 'right');
+    for (const base of [box.y, pb.bottom]) for (let x = Math.max(box.x, end); x < right; x += 16) line(ctx, x, base - 4, Math.min(right, x + 5), base + 4, C.dim);
+    label(ctx, 'UNOBSERVED', right, pb.bottom + (portrait ? 70 : 56), portrait ? 22 : 17, C.muted, 500, 'right');
   }
   const quarter = clamp((cam.s - 1.5) / .4);
   for (let y = yearOf(data.startDate); y <= yearOf(data.endDate) + 1; y++) {
     const x = sx(scale.x(`${y}-01-01`)), size = portrait ? 26 : 18;
     if (x >= box.x - .5 && x <= right + .5) {
-      line(ctx, x, box.y, x, box.y + 12, '#697B93');
-      if (y <= yearOf(data.endDate)) { ctx.font = `500 ${size}px Manrope500`; if (x + 8 + ctx.measureText(String(y)).width <= W - 8) label(ctx, String(y), x + 8, box.y + (portrait ? 40 : 35), size, C.muted); }
+      line(ctx, x, box.y, x, box.y + 12, '#697B93'); line(ctx, x, pb.bottom, x, pb.bottom + 10, '#697B93');
+      if (y <= yearOf(data.endDate)) { ctx.font = `500 ${size}px Manrope500`; if (x + 8 + ctx.measureText(String(y)).width <= W - 8) label(ctx, String(y), x + 8, labelY, size, C.muted); }
     }
     if (y > yearOf(data.endDate)) continue;
     for (const m of [4, 7, 10]) {
       const q = sx(scale.x(`${y}-${String(m).padStart(2, '0')}-01`));
       if (q < box.x || q > right) continue;
-      line(ctx, q, box.y, q, box.y + 6, '#3A4860');
-      if (quarter > .02 && q + 40 < right) { ctx.globalAlpha = quarter; label(ctx, months[m - 1], q + 6, box.y + (portrait ? 40 : 35), portrait ? 19 : 14, C.dim); ctx.globalAlpha = 1; }
+      line(ctx, q, box.y, q, box.y + 6, '#3A4860'); line(ctx, q, pb.bottom, q, pb.bottom + 6, '#3A4860');
+      if (quarter > .02 && q + 40 < right) { ctx.globalAlpha = quarter; label(ctx, months[m - 1], q + 6, labelY, portrait ? 19 : 14, C.dim); ctx.globalAlpha = 1; }
     }
   }
   for (const e of visible) {
@@ -299,7 +351,7 @@ export function ledgerRows(events, timeline, time) {
 }
 function ledger(ctx, data, visible, timeline, state, year, w, portrait) {
   const n = data.labs.length, p = 64, gap = portrait ? (n > 2 ? 30 : 42) : (n > 2 ? 60 : 90), col = (w - 2 * p - gap * (n - 1)) / n, nameX = n > 2 ? 150 : 165;
-  const y = portrait ? 1262 : 767, rowH = portrait ? 91 : 49, top = y + (portrait ? 54 : 58);
+  const y = portrait ? 1290 : 767, rowH = portrait ? 91 : 49, top = y + (portrait ? 54 : 58);
   data.labs.forEach((lab, i) => {
     const x = p + i * (col + gap), all = visible.filter(e => e.lab === lab.id), newest = all.at(-1);
     circle(ctx, x + 5, y - 7, 5, lab.color);
@@ -420,7 +472,7 @@ export function drawFrame(ctx, data, timeline, seconds, format = 'landscape') {
     if (out > 0) { ctx.beginPath(); ctx.rect(0, portrait ? 160 : 140, w, h - (portrait ? 160 : 140) - 70); ctx.clip(); zoomAbout(ctx, cam.P.x, cam.P.y, 1 + .22 * out ** 2); }
     chart(ctx, data, timeline, state, year, box, visible, portrait, cam);
     if (portrait) { label(ctx, '1 BURST = 1 LAUNCH · HEIGHT = ECI', 64, 1718, 30, C.muted); label(ctx, `ECI: ${data.capability.publisher}, ${data.capability.license} · retrieved ${data.capability.retrievedOn}`, 64, 1761, 26, C.muted); }
-    else label(ctx, 'ONE BURST = ONE LAUNCH · HEIGHT = ECI SCORE · CONSTANT CALENDAR SPEED', 64, 709, 19, C.muted);
+    else label(ctx, 'ONE BURST = ONE LAUNCH · HEIGHT = ECI SCORE · CONSTANT CALENDAR SPEED', 64, 720, 19, C.muted);
     ledger(ctx, data, visible, timeline, state, year, w, portrait);
     if (portrait) { label(ctx, '* PREVIEW · FOUNTAIN / — = NOT YET SCORED', 64, 1810, 24, C.muted); }
     else label(ctx, '* PREVIEW · FOUNTAIN ON THE AXIS / — = NOT YET SCORED BY EPOCH AI', 64, 1010, 19, C.muted);

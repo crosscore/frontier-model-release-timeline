@@ -54,7 +54,7 @@ days_per_launch = observed_days / selected_launch_count
 mean_adjacent_gap = (last_event_day - first_event_day) / (event_count - 1)
 ```
 
-The film presents **days per launch**, a density measure. It is not the mean adjacent gap, the duration of training, or a prediction of the next release. Leap years use 366 days. A zero-event year has no density estimate; zero- and one-event years have no mean-gap estimate. Same-day events contribute a zero-day adjacent gap.
+The conclusion presents **days per launch**, a density measure. It is not the mean adjacent gap, the duration of training, or a prediction of the next release. Leap years use 366 days. A zero-event year has no density estimate; zero- and one-event years have no mean-gap estimate. Same-day events contribute a zero-day adjacent gap.
 
 | Observation | Days | Events | Days / event |
 | --- | ---: | ---: | ---: |
@@ -65,9 +65,19 @@ The film presents **days per launch**, a density measure. It is not the mean adj
 
 The 2026 result is year-to-date, so it is not directly interchangeable with a completed year's cadence. The original post's “18 days” is not treated as verified evidence and is not hard-coded. The rendering and generated statistics always recompute values from the JSON.
 
+### Launch pace (the lower panel)
+
+During the calendar travel, a panel under the chart plots a smoothed launch rate, read like an indicator under a price chart:
+
+```text
+pace(t) = 30 / τ · Σ exp(−(t − d_i) / τ)   over selected launch dates d_i ≤ t,   τ = 60 days
+```
+
+The unit is launches per 30 days. Each launch adds 0.5 on its date, and its contribution falls to 37% after 60 days; a steady cadence of one launch every g days settles to an average of 30 / g. The pace only looks back. Same-day launches from different labs count separately, as in the density table. Launches before the observation window are not in the dataset, so the curve starts at zero and understates the pace in early 2023. It is a display smoothing of this curated sample, not a statistical estimate of industry activity or a forecast. The panel's vertical scale is 1.35 times the highest pace reached so far (at least 1.5), so it widens whenever the pace sets a new high; its gridlines are labelled in the same unit throughout.
+
 ## Visual time
 
-The main stage is a two-dimensional chart. The horizontal axis is one continuous calendar from January 1 of the first year to December 31 of the last; dates after the observation cutoff are hatched. The vertical axis is the ECI score, with gridlines every 10 points and headroom above the highest score. Each rocket climbs straight up from its exact date and bursts at its score, then leaves a marker. A step line per lab follows that lab's highest score so far, rising when a launch sets a new high. Launches without a score spray a low fountain on the date axis instead of taking a height. Each burst has the same 68 rays, radius and 1.9-second lifetime. Each lab keeps its own burst shape (plain peony, long-tailed glitter, double ring) and marker (circle, diamond, square), so labs stay distinguishable without relying on color. Burst positions are never shifted for legibility; late 2026 launches overlap because they are close in date and score. Ground ticks on the axis still mark every launch, including unscored ones. Previews retain an asterisk and hollow marker. The large year counter sits in the plot's upper left, which early (low) scores leave empty.
+The main stage is a two-dimensional chart. The horizontal axis is one continuous calendar from January 1 of the first year to December 31 of the last; dates after the observation cutoff are hatched. The vertical axis is the ECI score, with gridlines every 10 points and headroom above the highest score. Each rocket climbs straight up from its exact date and bursts at its score, then leaves a marker. A step line per lab follows that lab's highest score so far, rising when a launch sets a new high. Launches without a score spray a low fountain on the date axis instead of taking a height. Each burst has the same 68 rays, radius and 1.9-second lifetime. Each lab keeps its own burst shape (plain peony, long-tailed glitter, double ring) and marker (circle, diamond, square), so labs stay distinguishable without relying on color. Burst positions are never shifted for legibility; late 2026 launches overlap because they are close in date and score. Ground ticks on the axis still mark every launch, including unscored ones. Below the axis, the launch-pace panel shares the chart's calendar and camera: it pans and zooms horizontally with the chart, while its vertical scale follows the pace alone. Previews retain an asterisk and hollow marker. The large year counter sits in the plot's upper left, which early (low) scores leave empty.
 
 The playback clock has 22.5 seconds of continuous, linear calendar travel, a 1.875-second introduction, a 1.875-second final hold, and a 3.75-second conclusion: 30 seconds, exactly 16 bars of the 128 BPM score. A calendar day always has the same film duration, including across leap years. The clock stops at the observation cutoff. There are no release-date pauses or late-film speedups. Active bursts retain their full lifetime across year transitions, using their own event year for geometry. Markers and step lines persist and remain faintly behind the conclusion; they are not additional launches. The conclusion also shows the highest ECI among selected launches in the first and last year. The burst and its sound occur at the date's onset; the upward trail and sound start 0.36 seconds earlier. Same-day labs burst simultaneously. Intro/outro are presentation sections outside the calendar clock.
 
