@@ -1,9 +1,12 @@
 import { day } from './data.mjs';
 
-// Launch pace: an exponential moving average of selected launches, in launches per 30 days, read like an
-// indicator under a price chart. Each launch adds 30 / PACE_TAU_DAYS on its date and then decays with that
-// time constant, so a steady cadence of one launch every g days settles near 30 / g. It only looks back.
-export const PACE_TAU_DAYS = 60, PACE_PER_DAYS = 30;
+// Launch pace: an exponential moving average of selected launches, annualized to launches per year, read like an
+// indicator beside a price chart. Each launch adds 365 / PACE_TAU_DAYS on its date and then decays with that
+// time constant, so a steady cadence of one launch every g days settles near 365 / g. It only looks back.
+export const PACE_TAU_DAYS = 60, PACE_PER_DAYS = 365;
+// Reference cadences for the panel's gridlines: one launch every this many days.
+export const PACE_CADENCES = [{ days: 60, name: '1 / 2 MONTHS' }, { days: 30, name: '1 / MONTH' }, { days: 14, name: '1 / 2 WEEKS' }, { days: 7, name: '1 / WEEK' }]
+  .map(c => ({ ...c, value: PACE_PER_DAYS / c.days }));
 
 // `launches` are { day, weight } pairs; the weight is 1 unless a launch is still animating in.
 export function paceAt(launches, at) {

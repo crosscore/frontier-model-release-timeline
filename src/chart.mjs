@@ -1,10 +1,11 @@
 import { day, yearOf } from './data.mjs';
 
 // Shared chart geometry ("world" coordinates, the whole chart at camera zoom 1): x is the calendar date,
-// y the launched model's ECI score. The launch-pace panel sits under the date axis and shares its calendar.
+// y the launched model's ECI score. The launch-pace panel shares its calendar and width: under the date axis in
+// portrait, beside the chart in landscape so both get the full height.
 export function chartBox(format) {
-  return format === 'portrait' ? { x: 150, y: 990, w: 866, top: 300, radius: 125, pace: { top: 1010, bottom: 1150 } }
-    : { x: 140, y: 548, w: 1716, top: 190, radius: 100, pace: { top: 566, bottom: 664 } };
+  return format === 'portrait' ? { x: 150, y: 990, w: 866, top: 300, radius: 125, pace: { x: 150, top: 1010, bottom: 1150 } }
+    : { x: 140, y: 664, w: 790, top: 190, radius: 100, pace: { x: 1066, top: 190, bottom: 664 } };
 }
 export const scoreOf = event => Number.isFinite(event.capability?.score) ? event.capability.score : null;
 export function chartScale(data, box) {

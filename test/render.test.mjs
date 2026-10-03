@@ -77,6 +77,13 @@ test('the date axis spans whole calendar years, so the observation cutoff falls 
   assert(Math.abs(scale.x('2025-01-01') - (box.x + box.w * (day('2025-01-01') - day('2023-01-01')) / (day('2027-01-01') - day('2023-01-01')))) < 1e-9);
   assert(scale.x(data.endDate) < box.x + box.w * .95);
 });
+test('the pace panel shares the chart width: beside it at full height in landscape, under it in portrait', () => {
+  const wide = chartBox('landscape'), wp = wide.pace;
+  assert(wp.x >= wide.x + wide.w + 100, 'room for the pace axis labels between the panels');
+  assert(wp.x + wide.w <= 1920 - 64); assert.equal(wp.top, wide.top); assert.equal(wp.bottom, wide.y);
+  const tall = chartBox('portrait'), tp = tall.pace;
+  assert.equal(tp.x, tall.x); assert(tp.top > tall.y && tp.bottom - tp.top >= 120);
+});
 test('the score axis spans every published score and leaves headroom for the highest burst', () => {
   const scores = data.releases.map(scoreOf).filter(v => v !== null), scale = chartScale(data, chartBox('landscape'));
   assert(scores.length >= 40, 'most selected launches should carry an ECI score');
