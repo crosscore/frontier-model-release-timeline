@@ -1,9 +1,9 @@
-// Original composition: "Deep Field / 005". Pure oscillators + seeded noise.
+// Original composition: "Supernova / 006". Pure oscillators + seeded noise.
 // No recorded samples, external music, audio libraries, or network services.
 import { FIREWORK, seeded } from './draw.mjs';
-import { BAR_SECONDS, BEAT_SECONDS, cuePoints, kickTimes } from './timeline.mjs';
+import { BAR_SECONDS, BEAT_SECONDS, cuePoints, kickTimes, scorePart, energy } from './timeline.mjs';
 
-export const SCORE = Object.freeze({ title: 'Deep Field / 005', bpm: 128, sampleRate: 48000, channels: 2, targetLufs: -16, truePeakDb: -1.5 });
+export const SCORE = Object.freeze({ title: 'Supernova / 006', bpm: 128, sampleRate: 48000, channels: 2, targetLufs: -14, truePeakDb: -1.0 });
 const TAU = Math.PI * 2, hz = midi => 440 * 2 ** ((midi - 69) / 12);
 const clamp = (x, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
 const NOTE_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -32,17 +32,14 @@ export function soundCues(data, timeline, scale = 1) {
   return cues;
 }
 
-// Sections follow the film, not the release dates, and start on bar lines: an intro bar, grooves A, B and C over the
-// calendar (4, 4 and 2 bars in the 30-second cut), a build bar, a half-bar kick roll, a half-bar breath, then the drop
-// at the observation cutoff, which keeps going until the track fades out. There is no closing cadence.
-export function scorePart(p, t) {
-  if (t < p.intro) return 'intro';
-  if (t < p.build) {
-    const bars = Math.max(0, (p.build - p.intro) / BAR_SECONDS), k = (t - p.intro) / BAR_SECONDS;
-    return k < Math.round(.4 * bars) ? 'A' : k < Math.round(.8 * bars) ? 'B' : 'C';
-  }
-  return t < p.gap ? 'build' : t < p.breath ? 'roll' : t < p.drop ? 'breath' : 'drop';
-}
+export { scorePart, energy } from './timeline.mjs';
+export const CHORDS = Object.freeze([[55, 62, 67, 70, 74], [51, 63, 67, 70, 74], [58, 62, 65, 72], [53, 60, 65, 67, 72]].map(Object.freeze));
+export const HOOK = Object.freeze([
+  [[0,74,3],[3,70,3],[6,67,2],[8,70,2],[10,74,3],[13,77,3]],
+  [[0,79,3],[3,77,3],[6,74,2],[8,70,2],[10,74,6]],
+  [[0,74,3],[3,70,3],[6,67,2],[8,70,2],[10,74,3],[13,72,3]],
+  [[0,72,3],[3,74,3],[6,77,4],[10,79,6]],
+].map(bar => Object.freeze(bar.map(Object.freeze))));
 
 // Band-limited saw wavetables, chosen per pitch so no harmonic passes 18 kHz or the Nyquist limit.
 const TABLE = 2048, tables = new Map();
@@ -89,13 +86,10 @@ function svf(sampleRate) {
   return f;
 }
 
-// `stems: true` also returns the music (bgm) and launch-cue (sfx) buses as they enter the master, with the fade and
-// output gain they share with the mix. They cost two extra stereo buffers, so they are only kept on request.
+// `stems: true` exposes the BGM and launch buses before master saturation, at the same output gain.
 export function synthesize(data, timeline, { duration = timeline.duration, timeScale = duration / timeline.duration, sampleRate = SCORE.sampleRate, stems = false } = {}) {
   if (!Number.isFinite(duration) || duration <= 0 || duration > 600 || !Number.isInteger(sampleRate) || sampleRate < 8000 || sampleRate > 96000 || !Number.isFinite(timeScale) || timeScale <= 0) throw new Error('Invalid audio duration, rate, or time scale');
   const sr = sampleRate, length = Math.ceil(duration * sr), bus = () => [new Float32Array(length), new Float32Array(length)];
-  // The music bus (`drums`) collects the kick and every layer that needs no bus processing; the hats and the texture
-  // get their own buses for the reverb and delay sends and are mixed in at the end.
   const drums = bus(), perc = bus(), tex = bus(), sfx = bus();
   function add(target, start, len, amp, pan, signal) {
     const first = Math.max(0, Math.ceil(start * sr)), end = Math.min(length, Math.ceil((start + len) * sr));
@@ -104,178 +98,172 @@ export function synthesize(data, timeline, { duration = timeline.duration, timeS
   }
   const osc = (f, limit) => saw(f, limit, sr), hiss = (seed, high, low = 230) => noise(seed, high, low, sr);
   const beat = BEAT_SECONDS, bar = BAR_SECONDS, s16 = beat / 4, p = cuePoints(timeline, timeScale), kicks = kickTimes(p, duration);
-  const part = t => scorePart(p, t), progress = t => clamp((t - p.intro) / Math.max(.001, p.build - p.intro));
-
-  // Sidechain and ducking. The sub and bass duck almost fully under each kick and swell back (the pump); the texture
-  // and its echoes pump less. Around each burst the music above the sub steps aside with a 5 ms look-ahead, a 40 ms
-  // hold and a 0.14 s release: texture −6 dB, hats −8 dB, pads and transitions −4 dB, bass −2.5 dB. The kick and
-  // sub never duck for launches, so the beat stays solid under dense clusters.
-  const cues = soundCues(data, timeline, timeScale), bursts = cues.map(c => c.burst).sort((a, b) => a - b), sinceKick = clock(kicks), nearBurst = clock(bursts);
-  const pump = (t, release) => { const u = sinceKick.at(t).since; return u < .004 ? u / .004 : Math.max(0, 1 - (u - .004) / release); };
-  const duck = t => { const { since, until } = nearBurst.at(t); return Math.max(since < .04 ? 1 : Math.exp(-(since - .04) / .14), clamp(1 - until / .005)); };
+  const part = t => scorePart(p, t), cues = soundCues(data, timeline, timeScale);
+  const sinceKick = clock(kicks), nearBurst = clock(cues.map(c => c.burst).sort((a, b) => a - b));
+  const pump = (t, release = .34) => { const u = sinceKick.at(t).since; return u < .004 ? u / .004 : Math.max(0, 1 - (u - .004) / release); };
+  const duck = t => { const { since, until } = nearBurst.at(t); return Math.max(since < .08 ? 1 : Math.exp(-(since - .08) / .11), clamp(1 - until / .008)); };
   const into = gainAt => (start, len, amp, pan, signal) => add(drums, start, len, amp, pan, u => gainAt(start + u) * signal(u));
-  const toSub = into(t => 1 - pump(t, .3) ** 2), toBass = into(t => (1 - .95 * pump(t, .42) ** 1.6) * (1 - .25 * duck(t))), toFx = into(t => 1 - .35 * duck(t));
-  const lift = t => ({ intro: .8, A: .86, B: .93, C: 1, build: 1, roll: 1, breath: 1, drop: 1.08 })[part(t)];
-  // G minor, one root per bar: G, E♭, C, D from the first calendar bar; D in the bar before the drop; G again at the drop.
-  const ROOTS = [31, 39, 36, 38];
-  const loop = t => t >= p.drop ? Math.floor((t - p.drop) / bar + 1e-6) % 4 : t >= p.gap ? 3 : t < p.intro ? 0 : Math.floor((t - p.intro) / bar + 1e-6) % 4;
+  const toSub = into(t => 1 - .98 * pump(t) ** 1.5), toBass = into(t => (1 - .96 * pump(t) ** 1.5) * (1 - .45 * duck(t)));
+  const toFx = into(t => 1 - .65 * duck(t));
+  const ROOTS = [31, 39, 34, 29]; // G1 / Eb2 / Bb1 / F1: all fundamentals 40–90 Hz.
+  const loop = t => t >= p.drop ? Math.floor((t - p.drop) / bar + 1e-6) % 4 : t >= p.build ? (t < p.build + 2 * bar ? 1 : 3) : t < p.intro ? 0 : Math.floor((t - p.intro) / bar + 1e-6) % 4;
+  const chordAt = t => CHORDS[loop(t)];
+  const isFull = pt => pt === 'drop1' || pt === 'drop' || pt === 'outro';
+  const tail = (u, len, attack = .006, release = .04) => clamp(u / attack) * clamp((len - u) / release);
 
-  // Kick: a sine falling from 210 Hz to G (49 Hz) with a held body, a long tail and a noise click, saturated so its
-  // harmonics carry on small speakers, then low-passed so the saturation adds no fizz on top.
+  // A broad, held kick body, an attack click and saturation; its low end and the sub do not duck for launches.
   const kick = (t, amp) => {
     let phase = 0; const click = hiss(Math.round(t * 1e4), 10000, 2700), lp = svf(sr).set(9000);
-    add(drums, t, .46, amp, 0, u => {
-      phase += (49 + 161 * Math.exp(-u / .032)) / sr;
-      const env = Math.min(1, u / .0012) * (u < .045 ? 1 : Math.exp(-(u - .045) / .13)) * Math.min(1, (.46 - u) / .02);
-      return lp.run(Math.tanh(2.6 * (Math.sin(TAU * phase) * env + .5 * Math.exp(-u / .0025) * click())) / Math.tanh(2.6));
+    add(drums, t, .4, amp, 0, u => {
+      phase += (49 + 161 * Math.exp(-u / .026)) / sr;
+      const env = clamp(u / .0012) * (u < .045 ? 1 : Math.exp(-(u - .045) / .095)) * clamp((.4 - u) / .025);
+      return lp.run(Math.tanh(2.8 * (Math.sin(TAU * phase) * env + .65 * Math.exp(-u / .003) * click())) / Math.tanh(2.8));
     });
   };
-  for (const t of kicks) kick(t, ({ intro: .7, A: .75, B: .78, C: .8, drop: .92 })[part(t + 1e-4)] ?? .84);
+  for (const t of kicks) kick(t, isFull(part(t + 1e-4)) ? .8 : .64);
 
-  // Low end, all mono: a sine sub on the root and three detuned saws an octave up, one long note per bar. Both duck
-  // almost fully under each kick and swell back between kicks, which is the pump. The bass filter opens with the
-  // calendar but stays under the chimes until the launches are over.
-  const bassCut = t => { const pt = part(t); return pt === 'drop' ? 1700 : pt === 'build' || pt === 'roll' ? 1100 + 400 * clamp((t - p.build) / bar) : 300 + 800 * progress(t) ** 1.3; };
-  const subNote = (t, len, midi, amp, glide = 0) => {
-    let phase = 0;
-    toSub(t, len, amp, 0, u => { phase += hz(midi + glide * u / len) / sr; return Math.min(1, u / .005) * Math.min(1, (len - u) / .01) * (Math.sin(TAU * phase) + .15 * Math.sin(2 * TAU * phase)); });
-  };
-  const bassNote = (t, len, midi, amp) => {
-    const voices = [-14, 0, 14].map((cents, k) => { const f = hz(midi) * 2 ** (cents / 1200); return [osc(f, 60), f, k * .29 + .1]; }), lp = svf(sr);
-    let n = 0;
-    toBass(t, len, amp, 0, u => {
-      if (n++ % 32 === 0) lp.set(bassCut(t + u), 1.2);
-      let v = 0; for (const [o, f, phase] of voices) v += o(phase + f * u);
-      return Math.min(1, u / .004) * Math.min(1, (len - u) / .02) * Math.tanh(1.8 * lp.run(v * .58)) / 1.8;
+  const bassNote = (t, len, midi, amp, sub = false) => {
+    const f = hz(midi), o = osc(f, 40), lp = svf(sr), hp = svf(sr).set(260); let n = 0;
+    (sub ? toSub : toBass)(t, len, amp, 0, u => {
+      if (sub) return tail(u, len, .005, .02) * (Math.sin(TAU * f * u) + .13 * Math.sin(2 * TAU * f * u));
+      if (n++ % 32 === 0) lp.set(isFull(part(t + u)) ? 1800 : 500 + 700 * energy(p, t + u), .85);
+      const v = lp.run((o(f * u) + .35 * o(f * 1.007 * u + .3)) * .7);
+      hp.run(v);
+      return tail(u, len) * Math.tanh(1.6 * (part(t + u) === 'build' || part(t + u) === 'roll' ? hp.hp : v));
     });
   };
-  for (let k = 1; k * bar < duration - 1e-6; k++) {
-    const t = k * bar, pt = part(t + 1e-4), root = ROOTS[loop(t + 1e-4)], len = Math.min(pt === 'roll' ? bar / 2 : bar + .02, duration - t);
-    if (pt === 'intro' || pt === 'breath') continue;
-    // In the kick roll the sub slides up an octave on D; then everything but the risers drops out for the breath.
-    if (pt === 'roll') subNote(t, len, root - 12, .5, 12); else subNote(t, len, root, .4 * lift(t));
-    bassNote(t, len, root + 12, .7 * lift(t));
+  for (let t = p.intro; t < Math.min(p.finale, duration) - 1e-6; t += beat / 2) {
+    const pt = part(t + 1e-4);
+    if (pt === 'breath') continue;
+    const root = ROOTS[loop(t + 1e-4)], off = Math.round(t / (beat / 2)) % 2;
+    bassNote(t, beat / 2 * .92, root, .42, true);
+    if (off || pt === 'drop1' || pt === 'drop') bassNote(t, beat / 2 * .85, root + 12, .42);
   }
 
-  // Upper texture, kept sparse: a dub chord stab of B♭ D F G C (the pentatonic itself, consonant over every root),
-  // later the hook, both through a filter that opens with the calendar, a ping-pong delay and a dark reverb.
-  const STAB = [58, 62, 65, 67, 72], STABS = { A: [7], B: [2, 10], C: [2, 10], build: [2, 10], drop: [2, 10] };
-  const stab = (t, amp) => {
-    for (const [v, midi] of STAB.entries()) for (const d of [-.004, .004]) {
-      const f = hz(midi) * (1 + d), o = osc(f, 40), lp = svf(sr), phase = (v * .23 + d * 60 + 1) % 1;
-      let n = 0;
-      add(tex, t, .22, amp, 0, u => { if (n++ % 16 === 0) lp.set(300 + 1800 * Math.exp(-u / .05), 1.6); return Math.min(1, u / .002) * Math.exp(-u / .12) * Math.min(1, (.22 - u) / .02) * lp.run(o(phase + f * u)); });
+  // Seven band-limited saws per note, +/-24 cents, spread in stereo. All stereo side energy is
+  // high-passed below 150 Hz on the texture bus. The chord tops stay <= D5 throughout the launches.
+  const supersaw = (t, len, notes, amp, cutoff, sustained = false) => {
+    for (const [v, midi] of notes.entries()) for (let k = 0; k < 7; k++) {
+      const f = hz(midi) * 2 ** ((k - 3) * 8 / 1200), o = osc(f, 64), lp = svf(sr); let n = 0;
+      const pan = (k - 3) / 3 * .82, phase = (v * .213 + k * .137) % 1;
+      add(tex, t, len, amp / 7, pan, u => {
+        if (n++ % 64 === 0) lp.set(typeof cutoff === 'function' ? cutoff(t + u, u) : cutoff, .8);
+        const env = sustained ? tail(u, len, Math.min(.15, len / 3), .07) : tail(u, len, .004, .035) * Math.exp(-u / .32);
+        return lp.run(o(phase + f * u)) * env;
+      });
     }
   };
-  // Hats, shaker, rim and claps arrive section by section; there are no sixteenth-note synths.
-  // Everything is band-limited: hats 7–11 kHz, shaker under 10 kHz, claps under 5 kHz, so the music has little air.
-  const hat = (t, amp, decay) => {
-    const n = hiss(Math.round(t * 1e4) + 1, 11000, 3900), hp = svf(sr).set(7000, .8), lp = svf(sr).set(11000);
-    add(perc, t, Math.min(.5, decay * 6), amp, .15, u => { hp.run(n()); return lp.run(hp.hp) * Math.min(1, u / .0005) * Math.exp(-u / decay); });
+  const pluck = (t, midi, amp, cutoff) => {
+    const f = hz(midi), o = osc(f, 40), lp = svf(sr).set(cutoff, 1.1);
+    add(tex, t, .21, amp, Math.sin(t * 1.7) * .55, u => tail(u, .21, .002, .025) * Math.exp(-u / .065) * lp.run(o(f * u)));
   };
-  const shaker = (t, amp) => { const n = hiss(Math.round(t * 1e4) + 2, 10000, 5300), lp = svf(sr).set(9500); add(perc, t, .09, amp, -.3, u => lp.run(n()) * Math.min(1, u / .006) * Math.exp(-u / .025)); };
-  const rim = (t, amp) => { const n = hiss(Math.round(t * 1e4) + 3, 7000, 1700); add(perc, t, .06, amp, .3, u => (.7 * Math.sin(TAU * 1650 * u) + .6 * n()) * Math.exp(-u / .011)); };
+  for (let t = 0; t < Math.min(p.finale, duration) - 1e-6; t += bar) {
+    const pt = part(t + 1e-4), notes = chordAt(t + 1e-4);
+    if (pt === 'intro') supersaw(t, Math.min(bar, p.intro - t), CHORDS[0], .13, 420 + t * 120, true);
+    else if (pt === 'lift' || pt === 'build' || pt === 'roll') {
+      const end = pt === 'lift' ? p.drop1 : p.breath;
+      supersaw(t, Math.min(bar, end - t), notes, .19, at => 1000 + 3800 * clamp((at - (pt === 'lift' ? p.lift : p.build)) / Math.max(.001, end - (pt === 'lift' ? p.lift : p.build))), true);
+    } else if (isFull(pt)) {
+      for (const [step, , steps] of HOOK[0]) supersaw(t + step * s16, steps * s16 * .86, notes, pt === 'drop' ? .31 : .26, pt === 'drop' ? 6800 : 3500);
+    } else if (pt === 'A') for (const step of [2, 6, 10, 14]) supersaw(t + step * s16, .16, notes, .12, 850);
+  }
+  for (let step = 0; step * s16 < Math.min(p.finale, duration) - 1e-6; step++) {
+    const t = step * s16, pt = part(t + 1e-4), lateA = t >= p.intro + (p.lift - p.intro) / 2;
+    if (!['A', 'lift', 'drop1'].includes(pt) || (pt === 'A' && !lateA && step % 2)) continue;
+    const notes = chordAt(t).filter(m => m >= 60).map(m => { while (m < 67) m += 12; return m; }).filter(m => m <= 74);
+    pluck(t, notes[Math.floor(step / (pt === 'A' && !lateA ? 2 : 1)) % notes.length], pt === 'drop1' ? .06 : .095, 1200 + 1800 * clamp((t - p.intro) / Math.max(.001, p.build - p.intro)));
+  }
+  // The written four-bar melody first appears after the last launch, doubled one octave up.
+  for (let t = p.drop, m = 0; t < Math.min(p.musicOutro, duration) - 1e-6; t += bar, m++) {
+    for (const [step, midi, steps] of HOOK[m % 4]) for (const [octave, gain] of [[0, 1], [12, .34]]) {
+      supersaw(t + step * s16, steps * s16 * .91, [midi + octave], .31 * gain, 8500);
+    }
+  }
+
+  const hat = (t, amp, decay, ride = false) => {
+    const n = hiss(Math.round(t * 1e4) + 1, 14000, ride ? 4500 : 6500);
+    add(perc, t, Math.min(.65, decay * 5), amp, ride ? -.4 : .35, u => n() * clamp(u / .001) * Math.exp(-u / decay));
+  };
+  const snare = (t, amp, roll = false) => {
+    const n = hiss(Math.round(t * 1e4) + 3, 8000, 900);
+    add(perc, t, .18, amp, -.1, u => (n() + .26 * Math.sin(TAU * 185 * u)) * clamp(u / .001) * Math.exp(-u / (roll ? .027 : .045)));
+  };
   const clap = (t, amp) => {
-    const n = hiss(Math.round(t * 1e4) + 4, 6100, 640), lp = svf(sr).set(5000);
-    add(perc, t, .3, amp, -.05, u => { let e = 0; for (const d of [0, .0095, .019]) if (u >= d) e = Math.max(e, Math.exp(-(u - d) / .0042)); if (u >= .027) e = Math.max(e, .7 * Math.exp(-(u - .027) / .08)); return lp.run(n()) * e; });
+    const n = hiss(Math.round(t * 1e4) + 4, 7000, 750);
+    add(perc, t, .28, amp, .1, u => { let e = 0; for (const d of [0, .009, .019, .03]) if (u >= d) e = Math.max(e, Math.exp(-(u - d) / (d === .03 ? .065 : .004))); return n() * e; });
   };
-  for (let s = 0; s * s16 < duration - 1e-6; s++) {
-    const t = s * s16, pt = part(t + 1e-4), inBar = s % 16, inBeat = s % 4, d = lift(t);
-    if (STABS[pt]?.includes(inBar)) stab(t, .16 * d);
+  for (let s = 0; s * s16 < Math.min(p.finale, duration) - 1e-6; s++) {
+    const t = s * s16, pt = part(t + 1e-4), inBar = s % 16, full = isFull(pt), lateA = t >= p.intro + (p.lift - p.intro) / 2;
     if (pt === 'intro' || pt === 'roll' || pt === 'breath') continue;
-    if (inBeat === 2) hat(t, (pt === 'A' ? .35 : .43) * d, .03);
-    if (pt === 'A') continue;
-    shaker(t, (inBeat === 0 ? .16 : .11) * d);
-    if (inBar === 4 || inBar === 12) clap(t, .55 * d);
-    if (inBar === 3 || inBar === 10) rim(t, .18 * d);
-    if (pt !== 'B' && inBeat === 2) hat(t, .24 * d, .14);
+    if (s % 4 === 2) hat(t, full ? .48 : .28, full ? .12 : .028);
+    if (full || (pt === 'A' && lateA) || pt === 'lift') {
+      hat(t, s % 4 ? .11 : .16, .018);
+      if (inBar === 4 || inBar === 12) { clap(t, .45); snare(t, .24); }
+    }
+    if (full && inBar % 4 === 0) hat(t, .15, .18, true);
+    if (pt === 'drop1' && [3, 7].includes(Math.floor((t - p.drop1) / bar)) && inBar >= 12) snare(t, .18 + (inBar - 12) * .025, true);
   }
+  const roll = (from, to, spacing, amp) => { for (let t = from; t < Math.min(to, duration) - 1e-6; t += spacing) snare(t, amp * (.6 + .4 * clamp((t - from) / Math.max(.001, to - from))), true); };
+  roll(Math.max(0, p.intro - beat), p.intro, s16, .18);
+  if (p.drop1 > p.lift) { roll(Math.max(p.lift, p.drop1 - 2 * bar), p.drop1 - bar, beat, .2); roll(Math.max(p.lift, p.drop1 - bar), p.drop1 - beat, beat / 2, .25); roll(p.drop1 - beat, p.drop1, s16 / 2, .2); }
+  if (p.build < p.gap) { roll(p.build, Math.min(p.build + 2 * bar, p.gap), beat / 2, .22); roll(p.build + 2 * bar, p.gap, s16, .25); roll(p.gap, p.breath, s16 / 2, .28); }
 
-  // The hook in the drop: G–B♭–D, then a different answer in each bar, all on the chimes' five notes, so the launch
-  // pitches turn into the tune once the launches are over.
-  const HOOK = [[[0, 67, 3], [3, 70, 3], [6, 74, 6], [12, 72, 2], [14, 70, 2]], [[0, 67, 3], [3, 70, 3], [6, 77, 4], [10, 74, 6]],
-    [[0, 67, 3], [3, 70, 3], [6, 74, 6], [12, 77, 2], [14, 79, 2]], [[0, 67, 3], [3, 70, 3], [6, 72, 4], [10, 70, 6]]];
-  const lead = (t, len, midi, amp) => {
-    const f = hz(midi), o = osc(f, 30), lp = svf(sr);
-    let n = 0;
-    add(tex, t, len + .25, amp, 0, u => {
-      if (n++ % 16 === 0) lp.set(500 + 3800 * Math.exp(-u / .06), 1.4);
-      const gate = Math.min(1, u / .004) * (u < len ? 1 : Math.max(0, 1 - (u - len) / .25));
-      return gate * Math.exp(-u / .45) * (lp.run(.6 * o(f * u)) + .5 * Math.sin(TAU * f * u) + .12 * Math.exp(-u / .12) * Math.sin(TAU * 2 * f * u));
+  const impact = (t, amp) => {
+    const crash = hiss(Math.round(t * 1000) + 7, 14000, 2200); let phase = 0;
+    toFx(t, 2.1, amp, 0, u => { phase += (42 + 32 * Math.exp(-u / .12)) / sr; return tail(u, 2.1, .002, .05) * (.6 * Math.sin(TAU * phase) * Math.exp(-u / .32) + .22 * crash() * Math.exp(-u / .55)); });
+  };
+  const crash = (t, amp) => { const n = hiss(700 + Math.round(t * 1000), 14000, 3500); add(perc, t, 1.4, amp, -.3, u => tail(u, 1.4, .002) * Math.exp(-u / .34) * n()); };
+  const sweep = (t, len, amp, reverse = false) => {
+    if (len <= 0 || t < 0) return;
+    const n = hiss(Math.round(t * 1000) + 991, 18000, 400), bp = svf(sr); let k = 0, phase = 0;
+    toFx(t, len, amp, 0, u => {
+      const q = clamp(u / len), x = reverse ? 1 - q : q;
+      if (k++ % 32 === 0) bp.set(400 * 22 ** x, .9);
+      phase += 150 * 2 ** (3 * q) / sr;
+      return tail(u, len, .02, .006) * (bp.run(n()) * (reverse ? (1 - q) ** 2 : q ** 2) + (reverse ? 0 : .09 * Math.sin(TAU * phase) * q ** 3));
     });
   };
-  for (let t = p.drop, m = 0; t < duration - .01; t += bar, m++) for (const [step, midi, steps] of HOOK[m % 4]) lead(t + step * s16, steps * s16 * .9, midi, .2);
+  impact(0, .55);
+  sweep(Math.max(0, p.intro - bar), Math.min(bar, p.intro), .15);
+  for (const t of [p.intro, p.intro + 4 * bar, p.lift, p.drop1, p.drop1 + 4 * bar, p.drop]) if (t < duration && t < p.finale) crash(t, t === p.drop ? .65 : .38);
+  if (p.drop1 > p.lift) { sweep(p.lift, p.drop1 - p.lift, .19); sweep(Math.max(p.lift, p.drop1 - beat), Math.min(beat, p.drop1 - p.lift), .26); impact(p.drop1, .75); sweep(p.drop1, bar, .1, true); }
+  sweep(p.build, p.drop - p.build, .16);
+  sweep(p.breath, p.drop - p.breath, .12);
+  if (p.drop < duration) { impact(p.drop, .95); sweep(p.drop, 2 * bar, .13, true); }
+  if (p.finale < duration) { supersaw(p.finale, Math.min(1.6, duration - p.finale), CHORDS[0], .4, 5000); impact(p.finale, .8); crash(p.finale, .5); }
 
-  // Pads only frame the calendar: a muffled swell in the intro and an E♭-over-D swell under the last calendar bar.
-  const pad = (t, len, notes, amp, cutoff) => {
-    for (const [v, midi] of notes.entries()) for (const d of [-.006, .006]) {
-      const f = hz(midi) * (1 + d), o = osc(f, 24), lp = svf(sr).set(cutoff, .7), phase = (v * .31 + d * 50 + 1) % 1;
-      toFx(t, len, amp, (v - (notes.length - 1) / 2) * .25 + d * 30, u => Math.min(1, u / (len * .45)) * Math.min(1, (len - u) / .15) * lp.run(o(phase + f * u)));
-    }
-  };
-  pad(0, Math.min(duration, p.intro + .3), [43, 50, 55, 58, 62], .03, 600);
-  if (p.drop > p.gap && p.gap >= 0) pad(p.gap, Math.min(duration, p.drop + .05) - p.gap, [50, 55, 58, 63], .025, 1400);
-
-  // Transitions: an opening boom, a fill into the chart, small crashes on grooves B and C, a two-bar build, and the drop.
-  const impact = (t, amp, boom = 1) => {
-    const crash = hiss(Math.round(t * 1000) + 7, 12000, 2700); let phase = 0;
-    toFx(t, 2.4, amp, 0, u => { phase += (37 + 23 * Math.exp(-u / .25)) / sr; return boom * .5 * Math.sin(TAU * phase) * Math.min(1, u / .003) * Math.exp(-u / .55) + .1 * crash() * Math.exp(-u / .7) * Math.min(1, u / .002); });
-  };
-  const sweep = (t, len, amp, from, to, seed) => {
-    const n = hiss(seed, 24000, 150), bp = svf(sr); let c = 0;
-    toFx(t, len, amp, 0, u => { const q = u / len; if (c++ % 32 === 0) bp.set(from * (to / from) ** q, 1.5); bp.run(n()); return bp.bp * q * q * Math.min(1, (len - u) / .005); });
-  };
-  impact(0, .8);
-  if (p.intro < duration) { const len = Math.min(p.intro, 2 * beat); sweep(p.intro - len, len, .06, 600, 6000, 77); impact(p.intro, .45, .5); }
-  for (let t = p.intro + bar; t < p.build - 1e-6; t += bar) if (part(t + 1e-4) !== part(t - 1e-4)) impact(t, .3, .2);
-  if (p.build >= p.intro) {
-    sweep(p.build, p.drop - p.build, .08, 300, 7000, 991);
-    let phase = 0; const lp = svf(sr).set(3000);
-    toFx(p.gap, bar, .02, 0, u => { const q = u / bar; phase += 160 * 2 ** (3 * q) / sr; return q * lp.run(Math.sin(TAU * phase)); });
-    const swell = hiss(313, 24000), len = p.drop - p.breath, slp = svf(sr); let c = 0;
-    toFx(p.breath, len, .08, 0, u => { const q = u / len; if (c++ % 32 === 0) slp.set(300 + 7000 * q * q, .8); return slp.run(swell()) * q ** 2.5; });
-    // Snare roll: eighths, then sixteenths, then thirty-seconds through the kick roll.
-    for (let t = p.build, k = 0; t < p.breath - .01; t += t < p.build + bar / 2 - 1e-6 ? beat / 2 : t < p.gap - 1e-6 ? s16 : s16 / 2, k++) {
-      const q = (t - p.build) / (p.breath - p.build), snare = hiss(500 + k, 7000), f = 170 + 160 * q;
-      add(drums, t, .09, .025 + .07 * q, 0, u => (snare() + .4 * Math.sin(TAU * f * u)) * Math.exp(-u * 40));
-    }
-  }
-  if (p.drop < duration) impact(p.drop, 1.1);
-
-  // Bus processing. The texture's low-pass opens from 600 Hz in the intro to fully open in the drop.
-  for (const ch of tex) {
-    const lp = svf(sr);
-    for (let i = 0; i < ch.length; i++) {
-      if (i % 32 === 0) { const t = i / sr, pt = part(t); lp.set(pt === 'intro' ? 600 : pt === 'drop' ? 8000 : t < p.build ? 900 + 3100 * progress(t) ** 1.4 : 4000 + 3000 * clamp((t - p.build) / Math.max(.001, p.drop - p.build)), 1.1); }
-      ch[i] = lp.run(ch[i]);
-    }
-  }
-  // Dotted-eighth ping-pong (damped, nothing under 350 Hz), then an eight-line feedback-delay reverb fed by the
-  // texture, its echoes and a little of the hats.
-  const echo = bus(), wet = bus(), delay = Math.round(.75 * beat * sr), ehp = svf(sr).set(350), el = svf(sr).set(2400), er = svf(sr).set(2400);
+  // Dotted-eighth ping-pong and eight-line reverb. Their high-pass sends keep the sub mono.
+  const echo = bus(), wet = bus(), delay = Math.round(.75 * beat * sr), ehp = svf(sr).set(350), el = svf(sr).set(3700), er = svf(sr).set(3700);
   for (let i = delay; i < length; i++) {
     ehp.run((tex[0][i - delay] + tex[1][i - delay]) / 2);
-    echo[0][i] = el.run(ehp.hp + .5 * echo[1][i - delay]); echo[1][i] = er.run(.5 * echo[0][i - delay]);
+    echo[0][i] = el.run(ehp.hp + .4 * echo[1][i - delay]); echo[1][i] = er.run(.4 * echo[0][i - delay]);
   }
   {
     const lens = [1031, 1327, 1523, 1777, 1949, 2213, 2459, 2687].map(l => Math.max(1, Math.round(l * sr / 44100))), lines = lens.map(l => new Float32Array(l)), at = new Int32Array(8);
-    const g = lens.map(l => 10 ** (-3 * l / sr / 3.2)), damp = Math.exp(-TAU * 3800 / sr), state = new Float64Array(8), y = new Float64Array(8), pre = Math.round(.025 * sr), hl = svf(sr).set(200), hr = svf(sr).set(200);
+    const g = lens.map(l => 10 ** (-3 * l / sr / 2.1)), damp = Math.exp(-TAU * 4500 / sr), state = new Float64Array(8), y = new Float64Array(8), pre = Math.round(.025 * sr), hl = svf(sr).set(200), hr = svf(sr).set(200);
     for (let i = 0; i < length; i++) {
       const j = i - pre;
-      hl.run(j >= 0 ? tex[0][j] + .15 * perc[0][j] + .5 * echo[0][j] : 0); hr.run(j >= 0 ? tex[1][j] + .15 * perc[1][j] + .5 * echo[1][j] : 0);
+      hl.run(j >= 0 ? tex[0][j] + .18 * perc[0][j] + .4 * echo[0][j] : 0); hr.run(j >= 0 ? tex[1][j] + .18 * perc[1][j] + .4 * echo[1][j] : 0);
       let sum = 0; for (let k = 0; k < 8; k++) { y[k] = lines[k][at[k]]; sum += y[k]; }
-      for (let k = 0; k < 8; k++) {
-        const v = (y[k] - sum / 4) * g[k]; state[k] = v + damp * (state[k] - v);
-        lines[k][at[k]] = state[k] + (k % 2 ? hr.hp : hl.hp) * .5; if (++at[k] >= lens[k]) at[k] = 0;
-      }
+      for (let k = 0; k < 8; k++) { const v = (y[k] - sum / 4) * g[k]; state[k] = v + damp * (state[k] - v); lines[k][at[k]] = state[k] + (k % 2 ? hr.hp : hl.hp) * .5; if (++at[k] >= lens[k]) at[k] = 0; }
       wet[0][i] = (y[0] - y[2] + y[4] - y[6]) * .35; wet[1][i] = (y[1] - y[3] + y[5] - y[7]) * .35;
     }
   }
-  // The hats and the texture with its echoes and reverb join the music bus, pumping and ducking as described above.
-  const depth = { intro: .3, A: .5, B: .55, C: .6, build: .6, roll: .6, breath: 0, drop: .6 };
+  const sideHP = [svf(sr).set(150), svf(sr).set(150)], outroHP = [svf(sr), svf(sr)];
+  const sectionGain = { intro: .65, A: .46, lift: .65, drop1: 1, build: .52, roll: .46, breath: .14, drop: 1.48, outro: 1.15 };
   for (let i = 0; i < length; i++) {
-    const t = i / sr, ducked = duck(t), gPerc = 1 - .6 * ducked, gTex = (1 - depth[part(t)] * pump(t, .4) ** 1.6) * (1 - .5 * ducked);
-    for (const ch of [0, 1]) drums[ch][i] += perc[ch][i] * gPerc + (tex[ch][i] + .45 * echo[ch][i] + .8 * wet[ch][i]) * gTex;
+    const t = i / sr, pt = part(t), d = duck(t), pumpGain = 1 - .85 * pump(t, .36) ** 1.5;
+    const l = tex[0][i] + .32 * echo[0][i] + .38 * wet[0][i], r = tex[1][i] + .32 * echo[1][i] + .38 * wet[1][i];
+    sideHP[0].run((l - r) / 2); sideHP[1].run(sideHP[0].hp);
+    const mid = (l + r) / 2, side = sideHP[1].hp;
+    for (const ch of [0, 1]) {
+      drums[ch][i] += 1.8 * perc[ch][i] * (1 - .84 * d) + 6 * (mid + (ch ? -side : side)) * pumpGain * (1 - .82 * d);
+      if (pt === 'outro' && t < p.finale) {
+        if (i % 32 === 0) outroHP[ch].set(25 + 900 * clamp((t - p.musicOutro) / Math.max(.001, p.finale - p.musicOutro)) ** 1.5);
+        outroHP[ch].run(drums[ch][i]); drums[ch][i] = outroHP[ch].hp;
+      }
+      drums[ch][i] *= sectionGain[pt] * (.9 + .1 * energy(p, t));
+    }
   }
 
   // Launch cues: a whistle on the rise; on the date, a crack, a mid-range body (nothing under the bass), the lab's
@@ -290,7 +278,7 @@ export function synthesize(data, timeline, { duration = timeline.duration, timeS
       return Math.sin(Math.PI * q) * (.6 * (high - low) * q + .25 * Math.sin(TAU * (700 * u + 900 * u * u / rise)));
     });
     const f = hz(cue.tone), phase = rng() * TAU, h2 = 2 * f < .45 * sr ? .22 : 0, h3 = 3 * f < .45 * sr ? .07 : 0; let crack = 0, body = 0, floor = 0;
-    add(sfx, cue.burst, 1.2, .55 * gain, cue.pan, u => {
+    add(sfx, cue.burst, 1.2, .75 * gain, cue.pan, u => {
       const n = rng() * 2 - 1; crack += crackHigh * (n - crack); body += bodyHigh * (n - body); floor += bodyLow * (n - floor);
       const bell = Math.exp(-u / .32) * Math.sin(TAU * f * u + phase) + h2 * Math.exp(-u / .14) * Math.sin(2 * TAU * f * u) + h3 * Math.exp(-u / .07) * Math.sin(3 * TAU * f * u);
       return Math.min(1, u / .0015) * Math.min(1, (1.2 - u) / .05) * (.5 * (crack - body) * Math.exp(-u * 90) + .9 * (body - floor) * Math.exp(-u * 11) + .35 * bell);
@@ -302,10 +290,8 @@ export function synthesize(data, timeline, { duration = timeline.duration, timeS
     }
   }
 
-  // Mix, glue with soft saturation, and shape the edges: an instant start under the opening boom and a long fade-out
-  // over the groove instead of an ending. The saturation's knee sits 13 dB above the mix RMS, so it rounds only the
-  // loudest hits whatever the absolute bus levels are.
-  const fade = Math.min(3.2, duration / 4), envelope = t => clamp(t / .01) * Math.cos(Math.PI / 2 * clamp((t - (duration - fade)) / fade)) ** 2;
+  // A final chord at the last bar, then its tail. Only the last second is tapered to exact silence.
+  const fade = Math.min(1, duration / 4), envelope = t => clamp(t / .01) * (1 - clamp((t - (duration - fade)) / Math.max(.001, fade - 1 / sr))) ** 2;
   let music = 0, effects = 0, both = 0;
   for (let i = 0; i < length; i++) {
     const e = envelope(i / sr) ** 2;

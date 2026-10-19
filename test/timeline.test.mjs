@@ -42,10 +42,24 @@ test('each name stays among its lab\'s four newest ledger rows for at least 1.4 
 });
 test('cue points sit on the bar grid and the kick pattern leaves a breath before the drop', () => {
   const p = cuePoints(timeline), kicks = kickTimes(p), on = t => kicks.some(k => Math.abs(k - t) < 1e-9);
-  for (const t of [p.intro, p.build, p.gap, p.drop, p.outro]) assert(Math.abs(t / BAR_SECONDS - Math.round(t / BAR_SECONDS)) < 1e-9);
-  assert(on(p.drop) && on(p.intro) && on(0) && !on(BEAT_SECONDS));
+  for (const t of [p.intro, p.lift, p.drop1, p.build, p.gap, p.drop, p.outro, p.finale]) assert(Math.abs(t / BAR_SECONDS - Math.round(t / BAR_SECONDS)) < 1e-9);
+  assert(on(p.drop) && on(p.intro) && on(BAR_SECONDS) && !on(0) && !on(BAR_SECONDS + BEAT_SECONDS));
+  assert(!kicks.some(t => t >= p.drop1 - 2 * BEAT_SECONDS && t < p.drop1), 'two beats free for the reverse cymbal');
+  assert(!kicks.some(t => t > p.finale), 'only the final hit, no later kick');
   assert(on(p.gap + BEAT_SECONDS / 2), 'eighth-note kick roll');
   assert(!kicks.some(k => k >= p.breath - 1e-9 && k < p.drop - 1e-9), 'no kick in the breath');
-  const scaled = cuePoints(timeline, 899 / 900);
+  const scaled = cuePoints(timeline, 1799 / 1800);
   assert.equal(scaled.drop, p.drop, 'a near-full-length render snaps the drop back onto the beat');
+});
+test('the default clock is exactly 32 bars, with the specified section and scene boundaries', () => {
+  assert.equal(timeline.duration, 60);
+  assert.equal(timeline.duration / BAR_SECONDS, 32);
+  assert.equal(timeline.duration * 30, 1800);
+  assert.deepEqual(cuePoints(timeline), { intro: 3.75, lift: 18.75, drop1: 26.25, build: 41.25, gap: 46.875,
+    breath: 47.8125, drop: 48.75, outro: 52.5, musicOutro: 56.25, finale: 58.125, end: 60 });
+  for (const scale of [3 / 60, 1 / 60, .5, 1.5]) {
+    const p = cuePoints(timeline, scale);
+    const order = [p.intro, p.lift, p.drop1, p.build, p.gap, p.breath, p.drop, p.musicOutro, p.finale, p.end];
+    assert(order.every((x, i) => Number.isFinite(x) && (i === 0 || x >= order[i - 1])), `compressed/extended clock ${scale}`);
+  }
 });

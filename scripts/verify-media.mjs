@@ -22,7 +22,7 @@ const audio = probe.streams.find(s => s.codec_type === 'audio');
 assert.equal(audio.codec_name, 'aac'); assert.equal(audio.channels, 2); assert.equal(Number(audio.sample_rate), 48000);
 assert(Math.abs(Number(audio.duration) - expected.duration) <= .05, 'Audio must cover the complete film');
 const level = loudness(file);
-assert(Math.abs(Number(level.input_i) - SCORE.targetLufs) <= 1.5, `Integrated loudness out of range: ${level.input_i}`);
+assert(Math.abs(Number(level.input_i) - SCORE.targetLufs) <= .5, `Integrated loudness out of range: ${level.input_i}`);
 assert(Number(level.input_tp) <= -1, `Encoded audio exceeds true-peak ceiling: ${level.input_tp}`);
 assert(Number(level.input_lra) <= 9, `Excessive loudness range: ${level.input_lra}`);
 const actualHash = createHash('sha256').update(await readFile(args.data)).digest('hex');

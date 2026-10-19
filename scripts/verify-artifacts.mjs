@@ -23,6 +23,11 @@ for (const format of ['landscape', 'portrait']) {
   assert.equal(manifest.events, data.releases.length);
   assert.equal(manifest.observationEnd, data.endDate);
   assert.equal(manifest.audio.title, SCORE.title);
+  assert.equal(manifest.duration, timeline.duration, 'published bundle uses the complete timeline');
+  assert.equal(manifest.fps, 30);
+  assert.equal(manifest.frames, 1800);
+  assert(audio.integratedLufs >= SCORE.targetLufs - .5 && audio.integratedLufs <= SCORE.targetLufs + .5);
+  assert(audio.truePeakDbtp <= SCORE.truePeakDb);
   assert.equal(audio.title, SCORE.title);
   assert.equal(audio.cueCount, data.releases.length);
   const scale = (manifest.frames - 1) / manifest.fps / timeline.duration;
@@ -31,6 +36,8 @@ for (const format of ['landscape', 'portrait']) {
   for (const filename of [`frontier-${format}.mp4`, `soundtrack-${format}.m4a`, `poster-${format}.png`]) {
     assert((await stat(join(args.out, filename))).size > 0, filename);
   }
+  assert((await stat(join(args.out, `frontier-${format}.mp4`))).size <= 30_000_000, 'MP4 <= 30 MB');
 }
 assert((await stat(join(args.out, 'preview.gif'))).size > 0);
+assert((await stat(join(args.out, 'preview.gif'))).size <= 15_000_000, 'GIF <= 15 MB');
 console.log(`Verified both artifact bundles against ${data.releases.length} events, sources, annual statistics, captions, original score and date-exact cues.`);

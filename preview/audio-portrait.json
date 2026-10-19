@@ -1,26 +1,26 @@
 {
-  "title": "Deep Field / 005",
+  "title": "Supernova / 006",
   "bpm": 128,
   "sampleRate": 48000,
   "channels": 2,
-  "targetLufs": -16,
-  "truePeakDb": -1.5,
+  "targetLufs": -14,
+  "truePeakDb": -1,
   "original": true,
   "recordedSamplesUsed": false,
   "synthesis": "Deterministic oscillators and seeded filtered noise",
-  "samples": 1440000,
-  "duration": 30,
-  "samplePeakDbfs": -6.19318159817157,
-  "rmsDbfs": -15.609121288858512,
+  "samples": 2880000,
+  "duration": 60,
+  "samplePeakDbfs": -3.609120944016389,
+  "rmsDbfs": -15.706048363142184,
   "cueCount": 79,
-  "introEnd": 1.875,
-  "drop": 24.375,
-  "kicks": 62,
-  "sfxToBgmDb": -19.30152691160118,
-  "eventSfxToBgmDb": -13.306958764826334,
-  "integratedLufs": -15.99,
-  "truePeakDbtp": -6.89,
-  "loudnessRangeLu": 3.5,
+  "introEnd": 3.75,
+  "drop": 48.75,
+  "kicks": 117,
+  "sfxToBgmDb": -16.096793582066194,
+  "eventSfxToBgmDb": -2.5662394579251884,
+  "integratedLufs": -14.15,
+  "truePeakDbtp": -1.7,
+  "loudnessRangeLu": 6.8,
   "voices": [
     {
       "id": "openai",
@@ -62,35 +62,35 @@
     {
       "id": "meta-llama",
       "lab": "meta",
-      "launch": 2.3883346911800047,
-      "burst": 2.747934691180004,
+      "launch": 5.139126039413602,
+      "burst": 5.498926039413602,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 3
+      "neighbors": 1
     },
     {
       "id": "openai-gpt-4",
       "lab": "openai",
-      "launch": 2.680007366017784,
-      "burst": 3.039607366017784,
+      "launch": 5.722795830329247,
+      "burst": 6.0825958303292476,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "anthropic-claude",
       "lab": "anthropic",
-      "launch": 2.680007366017784,
-      "burst": 3.039607366017784,
+      "launch": 5.722795830329247,
+      "burst": 6.0825958303292476,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "anthropic-claude-2",
       "lab": "anthropic",
-      "launch": 4.6082878274453245,
-      "burst": 4.967887827445325,
+      "launch": 9.58150167027157,
+      "burst": 9.941301670271569,
       "pan": 0.5,
       "tone": 82,
       "neighbors": 2
@@ -98,8 +98,8 @@
     {
       "id": "meta-llama-2",
       "lab": "meta",
-      "launch": 4.721716089882238,
-      "burst": 5.081316089882239,
+      "launch": 9.808484366738764,
+      "burst": 10.168284366738764,
       "pan": 0.25,
       "tone": 89,
       "neighbors": 2
@@ -107,26 +107,26 @@
     {
       "id": "openai-gpt-4-turbo",
       "lab": "openai",
-      "launch": 6.520364251381878,
-      "burst": 6.879964251381878,
+      "launch": 13.407781410718577,
+      "burst": 13.767581410718575,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 2
+      "neighbors": 1
     },
     {
       "id": "anthropic-claude-2-1",
       "lab": "anthropic",
-      "launch": 6.763424813746695,
-      "burst": 7.123024813746695,
+      "launch": 13.894172903148283,
+      "burst": 14.25397290314828,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 4
+      "neighbors": 2
     },
     {
       "id": "deepseek-llm",
       "lab": "deepseek",
-      "launch": 6.893057113674596,
-      "burst": 7.252657113674596,
+      "launch": 14.15358169911079,
+      "burst": 14.51338169911079,
       "pan": -0.25,
       "tone": 84,
       "neighbors": 3
@@ -134,17 +134,17 @@
     {
       "id": "google-gemini-1",
       "lab": "google",
-      "launch": 7.0064853761115105,
-      "burst": 7.366085376111511,
+      "launch": 14.380564395577986,
+      "burst": 14.740364395577986,
       "pan": 0,
       "tone": 79,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "google-gemini-ultra-1",
       "lab": "google",
-      "launch": 8.043543775534728,
-      "burst": 8.403143775534726,
+      "launch": 16.45583476327806,
+      "burst": 16.81563476327806,
       "pan": 0,
       "tone": 79,
       "neighbors": 2
@@ -152,44 +152,44 @@
     {
       "id": "google-gemini-1-5-pro",
       "lab": "google",
-      "launch": 8.156972037971641,
-      "burst": 8.51657203797164,
+      "launch": 16.68281745974525,
+      "burst": 17.04261745974525,
       "pan": 0,
       "tone": 79,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "anthropic-claude-3",
       "lab": "anthropic",
-      "launch": 8.44864471280942,
-      "burst": 8.808244712809419,
+      "launch": 17.266487250660898,
+      "burst": 17.626287250660898,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 2
+      "neighbors": 1
     },
     {
       "id": "meta-llama-3",
       "lab": "meta",
-      "launch": 9.17782639990387,
-      "burst": 9.53742639990387,
+      "launch": 18.725661727950015,
+      "burst": 19.085461727950015,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 2
+      "neighbors": 1
     },
     {
       "id": "deepseek-v2",
       "lab": "deepseek",
-      "launch": 9.46949907474165,
-      "burst": 9.829099074741649,
+      "launch": 19.30933151886566,
+      "burst": 19.669131518865658,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "openai-gpt-4o",
       "lab": "openai",
-      "launch": 9.582927337178564,
-      "burst": 9.942527337178563,
+      "launch": 19.536314215332855,
+      "burst": 19.896114215332855,
       "pan": -0.5,
       "tone": 86,
       "neighbors": 2
@@ -197,8 +197,8 @@
     {
       "id": "anthropic-claude-3-5-sonnet",
       "lab": "anthropic",
-      "launch": 10.198680761836096,
-      "burst": 10.558280761836095,
+      "launch": 20.76850599615477,
+      "burst": 21.12830599615477,
       "pan": 0.5,
       "tone": 82,
       "neighbors": 1
@@ -206,8 +206,8 @@
     {
       "id": "meta-llama-3-1",
       "lab": "meta",
-      "launch": 10.733413999038692,
-      "burst": 11.093013999038693,
+      "launch": 21.838567279500122,
+      "burst": 22.198367279500122,
       "pan": 0.25,
       "tone": 89,
       "neighbors": 1
@@ -215,35 +215,35 @@
     {
       "id": "deepseek-v2-5",
       "lab": "deepseek",
-      "launch": 11.446391648642154,
-      "burst": 11.805991648642152,
+      "launch": 23.265315657293918,
+      "burst": 23.625115657293918,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "openai-o1-preview",
       "lab": "openai",
-      "launch": 11.559819911079067,
-      "burst": 11.919419911079066,
+      "launch": 23.492298353761115,
+      "burst": 23.852098353761114,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "meta-llama-3-2",
       "lab": "meta",
-      "launch": 11.770472398461909,
-      "burst": 12.130072398461907,
+      "launch": 23.913837647200193,
+      "burst": 24.273637647200193,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 3
+      "neighbors": 1
     },
     {
       "id": "anthropic-claude-3-5-sonnet-v2",
       "lab": "anthropic",
-      "launch": 12.207981410718578,
-      "burst": 12.567581410718576,
+      "launch": 24.78934233357366,
+      "burst": 25.14914233357366,
       "pan": 0.5,
       "tone": 82,
       "neighbors": 1
@@ -251,80 +251,80 @@
     {
       "id": "deepseek-r1-lite-preview",
       "lab": "deepseek",
-      "launch": 12.677898497957221,
-      "burst": 13.037498497957221,
+      "launch": 25.729699218937757,
+      "burst": 26.089499218937757,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 4
+      "neighbors": 1
     },
     {
       "id": "openai-o1",
       "lab": "openai",
-      "launch": 12.920959060322037,
-      "burst": 13.280559060322037,
+      "launch": 26.21609071136746,
+      "burst": 26.57589071136746,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 5
+      "neighbors": 3
     },
     {
       "id": "meta-llama-3-3",
       "lab": "meta",
-      "launch": 12.937163097813027,
-      "burst": 13.296763097813026,
+      "launch": 26.248516810862778,
+      "burst": 26.608316810862778,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 5
+      "neighbors": 3
     },
     {
       "id": "google-gemini-2-0-flash",
       "lab": "google",
-      "launch": 13.018183285267963,
-      "burst": 13.377783285267963,
+      "launch": 26.41064730833934,
+      "burst": 26.77044730833934,
       "pan": 0,
       "tone": 79,
-      "neighbors": 5
+      "neighbors": 3
     },
     {
       "id": "deepseek-v3",
       "lab": "deepseek",
-      "launch": 13.26124384763278,
-      "burst": 13.620843847632779,
+      "launch": 26.897038800769046,
+      "burst": 27.256838800769046,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 4
+      "neighbors": 1
     },
     {
       "id": "deepseek-r1",
       "lab": "deepseek",
-      "launch": 13.666344784907473,
-      "burst": 14.025944784907473,
+      "launch": 27.707691288151885,
+      "burst": 28.067491288151885,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 2
+      "neighbors": 1
     },
     {
       "id": "google-gemini-2-0-pro",
       "lab": "google",
-      "launch": 13.925609384763277,
-      "burst": 14.285209384763276,
+      "launch": 28.226508880076903,
+      "burst": 28.586308880076903,
       "pan": 0,
       "tone": 79,
-      "neighbors": 3
+      "neighbors": 1
     },
     {
       "id": "anthropic-claude-3-7-sonnet",
       "lab": "anthropic",
-      "launch": 14.233486097092046,
-      "burst": 14.593086097092046,
+      "launch": 28.842604770487867,
+      "burst": 29.202404770487867,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "openai-gpt-4-5",
       "lab": "openai",
-      "launch": 14.282098209565008,
-      "burst": 14.641698209565007,
+      "launch": 28.939883068973806,
+      "burst": 29.299683068973803,
       "pan": -0.5,
       "tone": 86,
       "neighbors": 2
@@ -332,53 +332,53 @@
     {
       "id": "deepseek-v3-0324",
       "lab": "deepseek",
-      "launch": 14.687199146839703,
-      "burst": 15.046799146839701,
+      "launch": 29.75053555635665,
+      "burst": 30.11033555635665,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 4
+      "neighbors": 2
     },
     {
       "id": "google-gemini-2-5-pro",
       "lab": "google",
-      "launch": 14.70340318433069,
-      "burst": 15.063003184330688,
+      "launch": 29.78296165585196,
+      "burst": 30.14276165585196,
       "pan": 0,
       "tone": 79,
-      "neighbors": 4
+      "neighbors": 2
     },
     {
       "id": "meta-llama-4",
       "lab": "meta",
-      "launch": 14.881647596731554,
-      "burst": 15.241247596731554,
+      "launch": 30.13964875030041,
+      "burst": 30.49944875030041,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 5
+      "neighbors": 2
     },
     {
       "id": "openai-gpt-4-1",
       "lab": "openai",
-      "launch": 15.027483934150444,
-      "burst": 15.387083934150443,
-      "pan": -0.5,
-      "tone": 86,
-      "neighbors": 5
-    },
-    {
-      "id": "openai-o3",
-      "lab": "openai",
-      "launch": 15.059892009132419,
-      "burst": 15.41949200913242,
+      "launch": 30.43148364575823,
+      "burst": 30.79128364575823,
       "pan": -0.5,
       "tone": 86,
       "neighbors": 3
     },
     {
+      "id": "openai-o3",
+      "lab": "openai",
+      "launch": 30.49633584474886,
+      "burst": 30.85613584474886,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 2
+    },
+    {
       "id": "anthropic-claude-4",
       "lab": "anthropic",
-      "launch": 15.643237358807976,
-      "burst": 16.002837358807977,
+      "launch": 31.663675426580145,
+      "burst": 32.02347542658015,
       "pan": 0.5,
       "tone": 82,
       "neighbors": 2
@@ -386,8 +386,8 @@
     {
       "id": "deepseek-r1-0528",
       "lab": "deepseek",
-      "launch": 15.740461583753904,
-      "burst": 16.100061583753902,
+      "launch": 31.85823202355203,
+      "burst": 32.21803202355203,
       "pan": -0.25,
       "tone": 84,
       "neighbors": 2
@@ -395,35 +395,35 @@
     {
       "id": "anthropic-claude-opus-4-1",
       "lab": "anthropic",
-      "launch": 16.85854017063206,
-      "burst": 17.218140170632058,
+      "launch": 34.09563288872867,
+      "burst": 34.45543288872867,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "openai-gpt-5",
       "lab": "openai",
-      "launch": 16.890948245614034,
-      "burst": 17.250548245614034,
+      "launch": 34.1604850877193,
+      "burst": 34.5202850877193,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "deepseek-v3-1",
       "lab": "deepseek",
-      "launch": 17.11780477048786,
-      "burst": 17.477404770487862,
+      "launch": 34.61445048065369,
+      "burst": 34.97425048065369,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 3
+      "neighbors": 1
     },
     {
       "id": "anthropic-claude-sonnet-4-5",
       "lab": "anthropic",
-      "launch": 17.74976223263638,
-      "burst": 18.109362232636382,
+      "launch": 35.87906836097092,
+      "burst": 36.23886836097092,
       "pan": 0.5,
       "tone": 82,
       "neighbors": 2
@@ -431,8 +431,8 @@
     {
       "id": "deepseek-v3-2-exp",
       "lab": "deepseek",
-      "launch": 17.74976223263638,
-      "burst": 18.109362232636382,
+      "launch": 35.87906836097092,
+      "burst": 36.23886836097092,
       "pan": -0.25,
       "tone": 84,
       "neighbors": 2
@@ -440,107 +440,107 @@
     {
       "id": "openai-gpt-5-1",
       "lab": "openai",
-      "launch": 18.462739882239845,
-      "burst": 18.822339882239845,
+      "launch": 37.30581673876472,
+      "burst": 37.66561673876472,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 4
+      "neighbors": 2
     },
     {
       "id": "google-gemini-3-pro",
       "lab": "google",
-      "launch": 18.55996410718577,
-      "burst": 18.919564107185767,
+      "launch": 37.5003733357366,
+      "burst": 37.8601733357366,
       "pan": 0,
       "tone": 79,
-      "neighbors": 4
+      "neighbors": 3
     },
     {
       "id": "anthropic-claude-opus-4-5",
       "lab": "anthropic",
-      "launch": 18.657188332131696,
-      "burst": 19.016788332131696,
+      "launch": 37.69492993270848,
+      "burst": 38.05472993270848,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 5
+      "neighbors": 3
     },
     {
       "id": "deepseek-v3-2",
       "lab": "deepseek",
-      "launch": 18.770616594568615,
-      "burst": 19.130216594568616,
+      "launch": 37.92191262917569,
+      "burst": 38.281712629175686,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 5
+      "neighbors": 3
     },
     {
       "id": "openai-gpt-5-2",
       "lab": "openai",
-      "launch": 18.93265696947849,
-      "burst": 19.29225696947849,
+      "launch": 38.246173624128815,
+      "burst": 38.605973624128815,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "anthropic-claude-opus-4-6",
       "lab": "anthropic",
-      "launch": 19.840083068973804,
-      "burst": 20.199683068973805,
+      "launch": 40.06203519586638,
+      "burst": 40.42183519586638,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 3
+      "neighbors": 1
     },
     {
       "id": "anthropic-claude-sonnet-4-6",
       "lab": "anthropic",
-      "launch": 20.034531518865656,
-      "burst": 20.394131518865656,
+      "launch": 40.45114838981014,
+      "burst": 40.81094838981014,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 5
+      "neighbors": 2
     },
     {
       "id": "google-gemini-3-1-pro",
       "lab": "google",
-      "launch": 20.066939593847632,
-      "burst": 20.426539593847632,
+      "launch": 40.51600058880077,
+      "burst": 40.87580058880077,
       "pan": 0,
       "tone": 79,
-      "neighbors": 5
+      "neighbors": 2
     },
     {
       "id": "openai-gpt-5-3-instant",
       "lab": "openai",
-      "launch": 20.261388043739487,
-      "burst": 20.620988043739487,
+      "launch": 40.905113782744536,
+      "burst": 41.264913782744536,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 4
+      "neighbors": 2
     },
     {
       "id": "openai-gpt-5-4",
       "lab": "openai",
-      "launch": 20.29379611872146,
-      "burst": 20.65339611872146,
+      "launch": 40.96996598173516,
+      "burst": 41.32976598173516,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 4
+      "neighbors": 2
     },
     {
       "id": "meta-muse-spark",
       "lab": "meta",
-      "launch": 20.844733393415044,
-      "burst": 21.204333393415045,
+      "launch": 42.07245336457583,
+      "burst": 42.43225336457583,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 4
+      "neighbors": 2
     },
     {
       "id": "anthropic-claude-opus-4-7",
       "lab": "anthropic",
-      "launch": 20.974365693342946,
-      "burst": 21.333965693342943,
+      "launch": 42.331862160538336,
+      "burst": 42.691662160538336,
       "pan": 0.5,
       "tone": 82,
       "neighbors": 4
@@ -548,227 +548,227 @@
     {
       "id": "openai-gpt-5-5",
       "lab": "openai",
-      "launch": 21.08779395577986,
-      "burst": 21.44739395577986,
+      "launch": 42.558844857005525,
+      "burst": 42.918644857005525,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 4
+      "neighbors": 3
     },
     {
       "id": "deepseek-v4-preview",
       "lab": "deepseek",
-      "launch": 21.10399799327085,
-      "burst": 21.46359799327085,
+      "launch": 42.59127095650084,
+      "burst": 42.95107095650084,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 4
+      "neighbors": 3
     },
     {
       "id": "google-gemini-3-5-flash",
       "lab": "google",
-      "launch": 21.50909893054554,
-      "burst": 21.86869893054554,
+      "launch": 43.40192344388368,
+      "burst": 43.76172344388368,
       "pan": 0,
       "tone": 79,
-      "neighbors": 3
+      "neighbors": 2
     },
     {
       "id": "anthropic-claude-opus-4-8",
       "lab": "anthropic",
-      "launch": 21.654935267964433,
-      "burst": 22.01453526796443,
+      "launch": 43.69375833934151,
+      "burst": 44.05355833934151,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 2
+    },
+    {
+      "id": "anthropic-claude-fable-5",
+      "lab": "anthropic",
+      "launch": 44.08287153328527,
+      "burst": 44.44267153328527,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 1
+    },
+    {
+      "id": "anthropic-claude-sonnet-5",
+      "lab": "anthropic",
+      "launch": 44.76381962268685,
+      "burst": 45.12361962268685,
       "pan": 0.5,
       "tone": 82,
       "neighbors": 3
     },
     {
-      "id": "anthropic-claude-fable-5",
+      "id": "openai-gpt-5-6",
+      "lab": "openai",
+      "launch": 45.055654518144685,
+      "burst": 45.41545451814468,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 3
+    },
+    {
+      "id": "meta-muse-spark-1-1",
+      "lab": "meta",
+      "launch": 45.055654518144685,
+      "burst": 45.41545451814468,
+      "pan": 0.25,
+      "tone": 89,
+      "neighbors": 3
+    },
+    {
+      "id": "google-gemini-3-6-flash",
+      "lab": "google",
+      "launch": 45.44476771208844,
+      "burst": 45.80456771208844,
+      "pan": 0,
+      "tone": 79,
+      "neighbors": 2
+    },
+    {
+      "id": "anthropic-claude-opus-5",
       "lab": "anthropic",
-      "launch": 21.849383717856284,
-      "burst": 22.20898371785628,
+      "launch": 45.54204601057438,
+      "burst": 45.90184601057438,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 2
+    },
+    {
+      "id": "meta-muse-spark-1-2",
+      "lab": "meta",
+      "launch": 45.931159204518146,
+      "burst": 46.29095920451814,
+      "pan": 0.25,
+      "tone": 89,
+      "neighbors": 3
+    },
+    {
+      "id": "google-gemini-3-7-flash",
+      "lab": "google",
+      "launch": 46.19056800048065,
+      "burst": 46.55036800048065,
+      "pan": 0,
+      "tone": 79,
+      "neighbors": 3
+    },
+    {
+      "id": "deepseek-v4-pro-ga",
+      "lab": "deepseek",
+      "launch": 46.19056800048065,
+      "burst": 46.55036800048065,
+      "pan": -0.25,
+      "tone": 84,
+      "neighbors": 3
+    },
+    {
+      "id": "anthropic-claude-fable-5-1",
+      "lab": "anthropic",
+      "launch": 46.80666389089162,
+      "burst": 47.16646389089161,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 5
+    },
+    {
+      "id": "google-gemini-3-8-flash",
+      "lab": "google",
+      "launch": 46.839089990386924,
+      "burst": 47.198889990386924,
+      "pan": 0,
+      "tone": 79,
+      "neighbors": 5
+    },
+    {
+      "id": "meta-muse-spark-1-3",
+      "lab": "meta",
+      "launch": 46.839089990386924,
+      "burst": 47.198889990386924,
+      "pan": 0.25,
+      "tone": 89,
+      "neighbors": 5
+    },
+    {
+      "id": "openai-gpt-6-astra",
+      "lab": "openai",
+      "launch": 46.87151608988224,
+      "burst": 47.23131608988224,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 5
+    },
+    {
+      "id": "deepseek-v4-1-flash",
+      "lab": "deepseek",
+      "launch": 47.09849878634943,
+      "burst": 47.45829878634943,
+      "pan": -0.25,
+      "tone": 84,
+      "neighbors": 5
+    },
+    {
+      "id": "openai-gpt-6-sol",
+      "lab": "openai",
+      "launch": 47.4876119802932,
+      "burst": 47.8474119802932,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 4
+    },
+    {
+      "id": "anthropic-claude-opus-5-5",
+      "lab": "anthropic",
+      "launch": 47.4876119802932,
+      "burst": 47.8474119802932,
       "pan": 0.5,
       "tone": 82,
       "neighbors": 4
     },
     {
-      "id": "anthropic-claude-sonnet-5",
-      "lab": "anthropic",
-      "launch": 22.189668505167024,
-      "burst": 22.549268505167024,
-      "pan": 0.5,
-      "tone": 82,
-      "neighbors": 5
-    },
-    {
-      "id": "openai-gpt-5-6",
-      "lab": "openai",
-      "launch": 22.335504842585916,
-      "burst": 22.695104842585916,
-      "pan": -0.5,
-      "tone": 86,
-      "neighbors": 5
-    },
-    {
-      "id": "meta-muse-spark-1-1",
-      "lab": "meta",
-      "launch": 22.335504842585916,
-      "burst": 22.695104842585916,
-      "pan": 0.25,
-      "tone": 89,
-      "neighbors": 5
-    },
-    {
-      "id": "google-gemini-3-6-flash",
-      "lab": "google",
-      "launch": 22.52995329247777,
-      "burst": 22.889553292477768,
-      "pan": 0,
-      "tone": 79,
-      "neighbors": 6
-    },
-    {
-      "id": "anthropic-claude-opus-5",
-      "lab": "anthropic",
-      "launch": 22.57856540495073,
-      "burst": 22.93816540495073,
-      "pan": 0.5,
-      "tone": 82,
-      "neighbors": 7
-    },
-    {
-      "id": "meta-muse-spark-1-2",
-      "lab": "meta",
-      "launch": 22.77301385484258,
-      "burst": 23.13261385484258,
-      "pan": 0.25,
-      "tone": 89,
-      "neighbors": 5
-    },
-    {
-      "id": "google-gemini-3-7-flash",
-      "lab": "google",
-      "launch": 22.902646154770487,
-      "burst": 23.262246154770487,
-      "pan": 0,
-      "tone": 79,
-      "neighbors": 8
-    },
-    {
-      "id": "deepseek-v4-pro-ga",
-      "lab": "deepseek",
-      "launch": 22.902646154770487,
-      "burst": 23.262246154770487,
-      "pan": -0.25,
-      "tone": 84,
-      "neighbors": 8
-    },
-    {
-      "id": "anthropic-claude-fable-5-1",
-      "lab": "anthropic",
-      "launch": 23.210522867099254,
-      "burst": 23.570122867099254,
-      "pan": 0.5,
-      "tone": 82,
-      "neighbors": 9
-    },
-    {
-      "id": "google-gemini-3-8-flash",
-      "lab": "google",
-      "launch": 23.22672690459024,
-      "burst": 23.58632690459024,
-      "pan": 0,
-      "tone": 79,
-      "neighbors": 9
-    },
-    {
-      "id": "meta-muse-spark-1-3",
-      "lab": "meta",
-      "launch": 23.22672690459024,
-      "burst": 23.58632690459024,
-      "pan": 0.25,
-      "tone": 89,
-      "neighbors": 9
-    },
-    {
-      "id": "openai-gpt-6-astra",
-      "lab": "openai",
-      "launch": 23.24293094208123,
-      "burst": 23.60253094208123,
-      "pan": -0.5,
-      "tone": 86,
-      "neighbors": 9
-    },
-    {
-      "id": "deepseek-v4-1-flash",
-      "lab": "deepseek",
-      "launch": 23.356359204518142,
-      "burst": 23.715959204518143,
-      "pan": -0.25,
-      "tone": 84,
-      "neighbors": 9
-    },
-    {
-      "id": "openai-gpt-6-sol",
-      "lab": "openai",
-      "launch": 23.550807654409997,
-      "burst": 23.910407654409997,
-      "pan": -0.5,
-      "tone": 86,
-      "neighbors": 11
-    },
-    {
-      "id": "anthropic-claude-opus-5-5",
-      "lab": "anthropic",
-      "launch": 23.550807654409997,
-      "burst": 23.910407654409997,
-      "pan": 0.5,
-      "tone": 82,
-      "neighbors": 11
-    },
-    {
       "id": "anthropic-claude-sonnet-5-5",
       "lab": "anthropic",
-      "launch": 23.64803187935592,
-      "burst": 24.00763187935592,
+      "launch": 47.68216857726508,
+      "burst": 48.041968577265074,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 8
+      "neighbors": 4
     },
     {
       "id": "openai-gpt-6-1-sol",
       "lab": "openai",
-      "launch": 23.66423591684691,
-      "burst": 24.02383591684691,
+      "launch": 47.71459467676039,
+      "burst": 48.07439467676039,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 8
+      "neighbors": 4
     },
     {
       "id": "meta-muse-wonder",
       "lab": "meta",
-      "launch": 23.87488840422975,
-      "burst": 24.23448840422975,
+      "launch": 48.136133970199474,
+      "burst": 48.495933970199474,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 7
+      "neighbors": 3
     },
     {
       "id": "google-gemini-4-argon",
       "lab": "google",
-      "launch": 23.891092441720737,
-      "burst": 24.250692441720737,
+      "launch": 48.168560069694784,
+      "burst": 48.528360069694784,
       "pan": 0,
       "tone": 79,
-      "neighbors": 7
+      "neighbors": 3
     },
     {
       "id": "deepseek-v4-1-flash-1017",
       "lab": "deepseek",
-      "launch": 23.95590859168469,
-      "burst": 24.31550859168469,
+      "launch": 48.29826446767604,
+      "burst": 48.65806446767604,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 5
+      "neighbors": 3
     }
   ]
 }

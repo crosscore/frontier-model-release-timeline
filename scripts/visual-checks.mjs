@@ -1,9 +1,10 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import assert from 'node:assert/strict';
 import { createCanvas } from '@napi-rs/canvas';
 import { day, loadDataset } from '../src/data.mjs';
-import { cuePoints, kickTimes, makeTimeline } from '../src/timeline.mjs';
+import { BAR_SECONDS, BEAT_SECONDS, cuePoints, kickTimes, makeTimeline } from '../src/timeline.mjs';
 import { makeRenderer } from '../src/node-renderer.mjs';
 import { cameraAt, DIVE_SECONDS, REVEAL_SECONDS } from '../src/camera.mjs';
 import { burstCrowd } from '../src/draw.mjs';
@@ -63,19 +64,28 @@ const stressMoments = stress ? [
 ] : [];
 const moments = [
   ['Intro', 1.2],
+  ['Title complete', points.intro - .4],
   ['Dive', points.intro + DIVE_SECONDS + .3],
   ...boundaryMoments,
   ...clusters,
   ['Densest', densest.time],
   ...stressMoments,
+  ['Lift wave', points.lift + BEAT_SECONDS / 2],
+  ['Drop1 wave', points.drop1 + BEAT_SECONDS / 2],
+  ['Drop1 kick', points.drop1 + BEAT_SECONDS + .033],
   ['Build', points.build + .2],
   ['Breath', points.breath + .3],
   ['Before drop', points.drop - .1],
   ['Tags before drop', points.drop - .025],
   ['After drop', points.drop + .1],
   ['Wide reveal', points.drop + REVEAL_SECONDS + .15],
+  ['Relight sweep', points.drop + 1.8],
   ['Final hold', timeline.outroStart - .4],
-  ['Conclusion', timeline.duration - .7],
+  ['Summary count', points.outro + .9],
+  ['Summary ECI', points.outro + BAR_SECONDS + .9],
+  ['Summary complete', points.musicOutro + .5],
+  ['End card', points.finale + .5],
+  ['Final fade', timeline.duration - .3],
 ];
 await writeFile(join(out, 'contact-moments.json'), JSON.stringify(moments, null, 2) + '\n');
 
@@ -83,8 +93,9 @@ function scanLuminance(format) {
   const renderer = makeRenderer(data, timeline, format, 320);
   const frames = Math.ceil(timeline.duration * scanFps);
   let maxLuma = 0, maxWhite = 0, maxJump = 0, previous = null;
-  for (let frame = 0; frame <= frames; frame++) {
-    renderer.frame(frame / frames * timeline.duration);
+  for (let frame = 0; frame < frames; frame++) {
+    // Match render.mjs: the last encoded frame samples the exact logical ending.
+    renderer.frame(frame / Math.max(1, frames - 1) * timeline.duration);
     const pixels = renderer.canvas.data();
     let sum = 0, white = 0;
     for (let i = 0; i < pixels.length; i += 4) {
@@ -100,6 +111,7 @@ function scanLuminance(format) {
   }
   return {
     fps: scanFps,
+    frames,
     maxMeanLuma: Number(maxLuma.toFixed(4)),
     maxNearWhiteShare: Number(maxWhite.toFixed(5)),
     maxMeanLumaJump: Number(maxJump.toFixed(4)),
@@ -203,6 +215,10 @@ for (const format of ['landscape', 'portrait']) {
     scan: scanLuminance(format),
     camera: cameraMetrics(format),
   };
+  const scan = summary.formats[format].scan;
+  assert(scan.maxMeanLuma <= .16, `${format}: mean luminance exceeds .16`);
+  assert(scan.maxNearWhiteShare <= .015, `${format}: near-white share exceeds .015`);
+  assert(scan.maxMeanLumaJump <= .03, `${format}: frame luminance jump exceeds .03`);
 }
 if (args.fixture === 'real') await writePalette();
 await writeFile(join(out, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');

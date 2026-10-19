@@ -1,5 +1,5 @@
 import { chartBox, chartScale, eventPose, scoreOf } from './chart.mjs';
-import { clamp, cuePoints, smooth, stateAt } from './timeline.mjs';
+import { BAR_SECONDS, clamp, cuePoints, smooth, stateAt } from './timeline.mjs';
 
 // A virtual camera over the chart. The camera frames world coordinates (the whole chart at zoom 1)
 // inside the same plot window: it dives in after the intro, follows the calendar and the recent scores,
@@ -39,7 +39,8 @@ function follow(p, timeline, t) {
   s += (f.breath - f.build) * easeInOut((t - points.breath) / Math.max(.001, points.drop - points.breath));
   // Gaussian-weighted height and spread of the bursts around now; a wide spread loosens the zoom so both ends stay in frame.
   let sw = 1e-9, sy = 1e-9 * P.y, sq = 1e-9 * P.y * P.y;
-  for (const e of p.scored) { const w = Math.exp(-.5 * ((t - e.onset + .25) / .9) ** 2); sw += w; sy += w * e.y; sq += w * e.y * e.y; }
+  const calendarScale = timeline.travelSeconds / (12 * BAR_SECONDS);
+  for (const e of p.scored) { const w = Math.exp(-.5 * ((t - e.onset + .25 * calendarScale) / (.9 * calendarScale)) ** 2); sw += w; sy += w * e.y; sq += w * e.y * e.y; }
   const eye = sy / sw, spread = Math.sqrt(Math.max(0, sq / sw - eye * eye));
   s = softMin(s, -softMin(-1.2, -(box.y - box.top) * .5 / (2 * spread + 30), .05), .06);
   const nowX = scale.x(stateAt(timeline, t).day);

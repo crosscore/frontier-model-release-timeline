@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createCanvas } from '@napi-rs/canvas';
 import { loadDataset, day, validateDataset } from '../src/data.mjs';
-import { BEAT_SECONDS, cuePoints, kickTimes, makeTimeline } from '../src/timeline.mjs';
+import { BAR_SECONDS, BEAT_SECONDS, cuePoints, energy, kickTimes, makeTimeline, scorePart } from '../src/timeline.mjs';
 import { cameraAt, DIVE_SECONDS, REVEAL_SECONDS } from '../src/camera.mjs';
-import { activeFireworks, burstRays, chartBox, chartScale, eventPose, glyph, LAB_STYLES, labStyles, LEDGER_ROWS, ledgerLayout, ledgerRows, modelLabel, scoreOf, TAG, tagGroups, FIREWORK } from '../src/draw.mjs';
+import { activeFireworks, burstRays, chartBox, chartScale, eventPose, glyph, LAB_STYLES, labStyles, LEDGER_ROWS, ledgerLayout, ledgerRows, lightingAt, modelLabel, reignition, scoreOf, TAG, tagGroups, FIREWORK } from '../src/draw.mjs';
 import { makeRenderer } from '../src/node-renderer.mjs';
 import { captions, previewHtml } from '../src/artifacts.mjs';
 import { labSubset, stressDataset } from '../scripts/visual-fixtures.mjs';
@@ -17,13 +17,25 @@ const stress = validateDataset(stressDataset(data));
 function assertTextFits(data, timeline, label = '') {
   for (const format of ['landscape', 'portrait']) {
     const renderer = makeRenderer(data, timeline, format), ctx = renderer.canvas.getContext('2d');
+    // Account for rectangular text masks, notably the two moving years inside the odometer window.
+    // Coordinates remain in the design space, like the text checks below.
+    let clip = null, pendingClip = null; const saved = [];
+    const originals = Object.fromEntries(['save', 'restore', 'beginPath', 'rect', 'clip'].map(k => [k, ctx[k].bind(ctx)]));
+    const intersect = (a, b) => a ? { left: Math.max(a.left, b.left), right: Math.min(a.right, b.right), top: Math.max(a.top, b.top), bottom: Math.min(a.bottom, b.bottom) } : b;
+    ctx.save = () => { saved.push(clip); originals.save(); };
+    ctx.restore = () => { clip = saved.pop() ?? null; originals.restore(); };
+    ctx.beginPath = () => { pendingClip = null; originals.beginPath(); };
+    ctx.rect = (x, y, w, h) => { pendingClip = { left: x, top: y, right: x + w, bottom: y + h }; originals.rect(x, y, w, h); };
+    ctx.clip = (...args) => { if (pendingClip) clip = intersect(clip, pendingClip); originals.clip(...args); };
     const fillText = ctx.fillText.bind(ctx); let boxes = [];
     ctx.fillText = (value, x, y) => {
       const metrics = ctx.measureText(value), width = metrics.width;
       const left = ctx.textAlign === 'right' ? x - width : x;
-      assert(left >= 0 && left + width <= renderer.width + 1, `${label}${format}: ${value} overflows horizontally (${left}, ${width})`);
-      assert(y <= renderer.height && y - metrics.actualBoundingBoxAscent >= 0, `${label}${format}: ${value} overflows vertically`);
-      const box = { value, x: left, y: y - metrics.actualBoundingBoxAscent, w: width, h: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent };
+      const bounds = intersect(clip, { left, right: left + width, top: y - metrics.actualBoundingBoxAscent, bottom: y + metrics.actualBoundingBoxDescent });
+      if (bounds.right <= bounds.left || bounds.bottom <= bounds.top) { fillText(value, x, y); return; }
+      assert(bounds.left >= 0 && bounds.right <= renderer.width + 1, `${label}${format}: ${value} overflows horizontally`);
+      assert(bounds.bottom <= renderer.height && bounds.top >= 0, `${label}${format}: ${value} overflows vertically`);
+      const box = { value, x: bounds.left, y: bounds.top, w: bounds.right - bounds.left, h: bounds.bottom - bounds.top };
       for (const other of boxes) {
         const overlapX = Math.min(box.x + box.w, other.x + other.w) - Math.max(box.x, other.x);
         const overlapY = Math.min(box.y + box.h, other.y + other.h) - Math.max(box.y, other.y);
@@ -31,7 +43,13 @@ function assertTextFits(data, timeline, label = '') {
       }
       boxes.push(box); fillText(value, x, y);
     };
-    for (const seconds of [1.2, 2, ...[...timeline.onsets.values()].flatMap(t => [t + .05, t + .5])].concat(timeline.outroStart + 4)) { boxes = []; renderer.frame(seconds); }
+    const p = cuePoints(timeline), years = [];
+    for (let year = Number(data.startDate.slice(0, 4)) + 1; year <= Number(data.endDate.slice(0, 4)); year++) {
+      const jan = timeline.introSeconds + (day(`${year}-01-01`) - timeline.start) / (timeline.end - timeline.start) * timeline.travelSeconds;
+      years.push(jan + .03, jan + .15, jan + .29);
+    }
+    for (const seconds of [0, .05, 1.2, 2, 3.2, ...years, ...[...timeline.onsets.values()].flatMap(t => [t + .05, t + .5]),
+      ...Array.from({ length: 17 }, (_, k) => p.outro + k * BEAT_SECONDS)].filter(t => t <= timeline.duration)) { boxes = []; renderer.frame(seconds); }
   }
 }
 test('both layouts keep text on canvas at every launch and in the intro/summary', () => {
@@ -72,6 +90,21 @@ test('frame rendering is deterministic and changes across time', () => {
   const renderer = makeRenderer(data, timeline, 'landscape', 640);
   const hash = time => { renderer.frame(time); return createHash('sha256').update(renderer.canvas.data()).digest('hex'); };
   assert.equal(hash(10), hash(10)); assert.notEqual(hash(10), hash(35));
+});
+test('sound and light share section energy; kicks only change light and the relight sweep makes no new bursts', () => {
+  const p = cuePoints(timeline);
+  for (let t = 0; t <= timeline.duration; t += BEAT_SECONDS / 4) {
+    const light = lightingAt(timeline, t);
+    assert.equal(light.part, scorePart(p, t)); assert.equal(light.energy, energy(p, t));
+    assert(light.energy >= .2 && light.energy <= 1);
+  }
+  assert.equal(lightingAt(timeline, p.drop1).kick, 1);
+  assert.equal(lightingAt(timeline, p.drop1 + .13).kick, 0);
+  assert.equal(lightingAt(timeline, p.intro).kick, 0);
+  const sweep = reignition(timeline, p.drop + 1);
+  assert.equal(sweep.start, p.drop + REVEAL_SECONDS);
+  assert.equal(reignition(timeline, p.drop + 1.5 * BAR_SECONDS).progress, 1);
+  assert.equal(activeFireworks(data, timeline, p.drop + FIREWORK.life).length, 0);
 });
 test('VTT uses grouped dates, includes all models and scales to film duration', () => {
   const text = captions(data, timeline, 10);

@@ -1,7 +1,7 @@
 import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadDataset, yearlyStats } from '../src/data.mjs';
-import { makeTimeline } from '../src/timeline.mjs';
+import { cuePoints, makeTimeline } from '../src/timeline.mjs';
 import { makeRenderer } from '../src/node-renderer.mjs';
 import { buildArtifacts } from '../src/artifacts.mjs';
 import { options } from './options.mjs';
@@ -14,7 +14,7 @@ const renderer = makeRenderer(data, timeline);
 const moments = [timeline.introSeconds * .65, ...yearlyStats(data).map(({ year }) => {
   const event = data.releases.filter(e => e.date.startsWith(String(year))).at(-1);
   return event ? timeline.onsets.get(event.id) + .65 : undefined;
-}).filter(t => t !== undefined), timeline.outroStart + 4];
+}).filter(t => t !== undefined), cuePoints(timeline).finale + .5];
 for (const [i, time] of moments.entries()) {
   renderer.frame(time); await writeFile(join(args.out, 'storyboard', `${i}.png`), await renderer.canvas.encode('png'));
 }

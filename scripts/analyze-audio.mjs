@@ -1,13 +1,15 @@
 // Audio diagnostics: loudness, band levels, stereo image, per-bar level and the balance between the launch cues
 // (SFX) and the music (BGM). Everything here is a measurement; none of it is a listening test.
 // Usage: node scripts/analyze-audio.mjs [--data data/releases.json] [--out output/qa] [--fast]
-//   --fast skips the candidate comparison, the temporary AAC master and the plots.
+//   --fast skips the temporary master and plots; --compare additionally loads optional historical sketches.
+//   Default: the published 30 fps render clock. --logical-clock measures unscaled exact film seconds.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import assert from 'node:assert/strict';
 import { loadDataset } from '../src/data.mjs';
 import { BAR_SECONDS, BEAT_SECONDS, cuePoints, makeTimeline } from '../src/timeline.mjs';
 import { SCORE, labVoices, scorePart, synthesize } from '../src/audio.mjs';
@@ -102,12 +104,12 @@ function presenceOnsets(t) {
 }
 
 // Beat-synchronous level swing: a band's energy averaged over every beat at 32 phases per beat, from the end of the
-// first bar to the start of the fade, loudest phase minus quietest. A sidechained bass swings widely, a steady one
+// first bar through the penultimate bar, loudest phase minus quietest. A sidechained bass swings widely, a steady one
 // little. The kick's own energy in the band counts too, so this is a proxy for the pump, not a measurement of it.
 const SWING_BANDS = [[20, 120], [120, 500]];
 function beatSwing(t, range) {
   const b = split(t, range), sr = t.sampleRate, bins = new Float64Array(32), counts = new Float64Array(32);
-  for (let i = Math.round(BAR_SECONDS * sr), end = Math.round((t.left.length / sr - 3.2) * sr); i < end; i++) {
+  for (let i = Math.round(BAR_SECONDS * sr), end = Math.round((t.left.length / sr - BAR_SECONDS) * sr); i < end; i++) {
     const k = Math.floor((i / sr / BEAT_SECONDS % 1) * 32); bins[k] += b.left[i] ** 2 + b.right[i] ** 2; counts[k]++;
   }
   const levels = [...bins].map((s, k) => db(s / counts[k]));
@@ -159,6 +161,16 @@ export function balance(bgm, sfx, cues, { window = EVENT_WINDOW, bar = BAR_SECON
   const eventful = result.bars.filter(b => b.events > 0).map(b => b.sfxDbfs).sort((a, b) => a - b);
   result.sfxBarSpreadDb = eventful.length ? fixed(eventful.at(-1) - percentile(eventful, .5), 2) : null;
   return result;
+}
+
+export function sectionDynamics(bgm, p) {
+  const level = (from, to = from + BAR_SECONDS) => db(power(bgm, from, to));
+  const bars = (from, to) => Array.from({ length: Math.round((to - from) / BAR_SECONDS) }, (_, k) => level(from + k * BAR_SECONDS));
+  const aMax = Math.max(...bars(p.intro, p.lift)), first = bars(p.drop1, p.build), drop = bars(p.drop, p.musicOutro);
+  const drop1Min = Math.min(...first), drop1Max = Math.max(...first), dropMin = Math.min(...drop);
+  const buildFirst = level(p.build), breath = level(p.breath, p.drop);
+  return Object.fromEntries(Object.entries({ aMax, drop1Min, drop1Max, dropMin, buildFirst, breath,
+    drop1AboveA: drop1Min - aMax, dropAboveDrop1: dropMin - drop1Max, buildBelowDrop1: drop1Min - buildFirst, breathBelowDrop: dropMin - breath }).map(([k, v]) => [k, fixed(v, 2)]));
 }
 
 export function decode(file, sampleRate = SCORE.sampleRate) {
@@ -250,56 +262,67 @@ const COLORS = ['#ffd166', '#9aa5ff', '#ef476f', '#f2779a', '#49cfe8', '#76d3b2'
 function withoutSeries(p) { const { loudnessSeries, ...rest } = p; return rest; }
 
 async function main() {
-  const args = options({ out: { type: 'string', default: 'output/qa' }, fast: { type: 'boolean', default: false } });
-  const root = fileURLToPath(new URL('..', import.meta.url)), data = await loadDataset(args.data), timeline = makeTimeline(data), points = cuePoints(timeline);
+  const args = options({ out: { type: 'string', default: 'output/qa' }, fast: { type: 'boolean', default: false }, compare: { type: 'boolean', default: false }, 'logical-clock': { type: 'boolean', default: false } });
+  const root = fileURLToPath(new URL('..', import.meta.url)), data = await loadDataset(args.data), timeline = makeTimeline(data);
+  const timeScale = args['logical-clock'] ? 1 : (timeline.duration * 30 - 1) / (timeline.duration * 30), points = cuePoints(timeline, timeScale);
   const work = await mkdtemp(join(tmpdir(), 'frontier-audio-')), plots = join(args.out, 'audio-plots'), started = Date.now();
   await mkdir(args.out, { recursive: true });
   const parts = Array.from({ length: Math.ceil(timeline.duration / BAR_SECONDS - 1e-6) }, (_, k) => scorePart(points, k * BAR_SECONDS + 1e-4));
   try {
-    const audio = synthesize(data, timeline, { stems: true }), [bgm, sfx] = stemsOf(audio), mix = mixOf(audio);
+    const audio = synthesize(data, timeline, { stems: true, timeScale }), [bgm, sfx] = stemsOf(audio), mix = mixOf(audio);
     const report = {
       score: SCORE, generatedOn: new Date().toISOString(), commands: ['node scripts/analyze-audio.mjs'],
       dataset: { path: relative(root, args.data), sha256: createHash('sha256').update(await readFile(args.data)).digest('hex'), events: data.releases.length, labs: data.labs.map(l => l.id), startDate: data.startDate, endDate: data.endDate },
-      method: { eventWindowSeconds: EVENT_WINDOW, broadBandsHz: BROAD_BANDS, presenceHz: PRESENCE, octaveCentresHz: OCTAVES, bandFilters: '4th-order Butterworth high-pass and low-pass per edge', loudness: 'ITU-R BS.1770-4 K-weighting in JavaScript; FFmpeg loudnorm (true peak) and ebur128 on AAC masters', barSeconds: BAR_SECONDS },
+      method: { eventWindowSeconds: EVENT_WINDOW, broadBandsHz: BROAD_BANDS, presenceHz: PRESENCE, octaveCentresHz: OCTAVES, bandFilters: '4th-order Butterworth high-pass and low-pass per edge', loudness: 'ITU-R BS.1770-4 K-weighting in JavaScript; FFmpeg loudnorm (true peak) and ebur128 on AAC masters', barSeconds: BAR_SECONDS, timeScale },
       voices: labVoices(data.labs), cuePoints: points, sections: parts, metrics: audio.metrics,
       current: { mix: profile(mix), bgm: profile(bgm), sfx: profile(sfx, { onsets: false }), balance: balance(bgm, sfx, audio.cues) },
     };
+    report.current.dynamics = sectionDynamics(bgm, points);
+    const { dynamics, balance: mixBalance } = report.current;
+    assert(mixBalance.events.presence.median >= 3, '80 ms presence-band SFX/BGM median >= +3 dB');
+    assert(mixBalance.audibleShare >= .8, 'at least 80% of launches clear the BGM');
+    assert(dynamics.drop1AboveA >= 3 && dynamics.dropAboveDrop1 >= .5 && dynamics.buildBelowDrop1 >= 2 && dynamics.breathBelowDrop >= 10, 'BGM section contrasts');
+    assert(audio.left.every(Number.isFinite) && audio.right.every(Number.isFinite) && audio.metrics.samplePeakDbfs < 0, 'finite, unclipped PCM');
+    assert(audio.left.at(-1) === 0 && audio.right.at(-1) === 0, 'the last PCM frame is silent');
     const curves = [];
     if (!args.fast) {
       await mkdir(plots, { recursive: true });
-      const { report: mastered } = await masterSoundtrack(data, timeline, { duration: timeline.duration, timeScale: 1, out: work, format: 'qa' });
+      const { report: mastered } = await masterSoundtrack(data, timeline, { duration: timeline.duration, timeScale, out: work, format: 'qa' });
       const masterFile = join(work, 'soundtrack-qa.m4a'), master = decode(masterFile), ff = loudness(masterFile);
       const { series, ...meter } = ebur128(masterFile);
       report.current.master = { integratedLufs: Number(ff.input_i), truePeakDbtp: Number(ff.input_tp), loudnessRangeLu: Number(ff.input_lra), ebur128: meter, reported: { integratedLufs: mastered.integratedLufs, truePeakDbtp: mastered.truePeakDbtp, loudnessRangeLu: mastered.loudnessRangeLu }, profile: profile(master) };
+      assert(Math.abs(Number(ff.input_i) - SCORE.targetLufs) <= .5 && Number(ff.input_tp) <= SCORE.truePeakDb, 'AAC master loudness and true peak');
       const masterGainDb = report.current.master.profile.integratedLufs - report.current.mix.integratedLufs;
       curves.push({ name: `${SCORE.title} master`, series, color: COLORS[0] });
-      spectrogram(masterFile, join(plots, 'spectrogram-005-master.png'));
-      for (const [name, stem] of [['bgm', bgm], ['sfx', sfx]]) { const wav = join(work, `${name}.wav`); await writeFile(wav, floatWav(scaled(stem, masterGainDb))); spectrogram(wav, join(plots, `spectrogram-005-${name}.png`)); }
+      spectrogram(masterFile, join(plots, 'spectrogram-006-master.png'));
+      for (const [name, stem] of [['bgm', bgm], ['sfx', sfx]]) { const wav = join(work, `${name}.wav`); await writeFile(wav, floatWav(scaled(stem, masterGainDb))); spectrogram(wav, join(plots, `spectrogram-006-${name}.png`)); }
 
       // Candidates: the BGM-only sketches as rendered, 004 as published (51 events, before the dataset grew), and 004
       // on the current data. For the masking test every candidate's music alone is matched to the new BGM stem's
       // loudness and the new launch cues are laid over it, so only the music differs.
-      const reference = report.current.bgm.integratedLufs, candidates = {}, masking = {};
-      const dry = (name, t) => { const m = loudnessOf(t).integratedLufs; masking[name] = balance(scaled(t, reference - m), sfx, audio.cues); };
-      for (const [name, file] of SKETCHES) {
-        const path = join(root, 'output/bgm-sketches', `${file}.m4a`), t = decode(path), ff = loudness(path);
-        candidates[name] = { source: relative(root, path), kind: 'BGM-only sketch (no launch cues)', master: { integratedLufs: Number(ff.input_i), truePeakDbtp: Number(ff.input_tp), loudnessRangeLu: Number(ff.input_lra) }, mix: profile(t) };
-        dry(name, t); curves.push({ name, series: ebur128(path).series, color: COLORS[curves.length] }); spectrogram(path, join(plots, `spectrogram-${file}.png`));
+      if (args.compare) {
+        const reference = report.current.bgm.integratedLufs, candidates = {}, masking = {};
+        const dry = (name, t) => { const m = loudnessOf(t).integratedLufs; masking[name] = balance(scaled(t, reference - m), sfx, audio.cues); };
+        for (const [name, file] of SKETCHES) {
+          const path = join(root, 'output/bgm-sketches', `${file}.m4a`), t = decode(path), ff = loudness(path);
+          candidates[name] = { source: relative(root, path), kind: 'BGM-only sketch (no launch cues)', master: { integratedLufs: Number(ff.input_i), truePeakDbtp: Number(ff.input_tp), loudnessRangeLu: Number(ff.input_lra) }, mix: profile(t) };
+          dry(name, t); curves.push({ name, series: ebur128(path).series, color: COLORS[curves.length] }); spectrogram(path, join(plots, `spectrogram-${file}.png`));
+        }
+        // Read the historical master from the pinned revision: preview/ is replaced by each new render.
+        const published = join(work, 'afterburn-004-published.m4a');
+        await writeFile(published, execFileSync('git', ['show', `${AFTERBURN.ref}:preview/soundtrack-landscape.m4a`], { cwd: root, maxBuffer: 16 << 20 }));
+        const ffp = loudness(published);
+        candidates[`${AFTERBURN.title} (published)`] = { source: `git ${AFTERBURN.ref}:preview/soundtrack-landscape.m4a`, kind: 'mastered score and launch cues for the earlier 51-event dataset', master: { integratedLufs: Number(ffp.input_i), truePeakDbtp: Number(ffp.input_tp), loudnessRangeLu: Number(ffp.input_lra) }, mix: profile(decode(published)) };
+        curves.push({ name: `${AFTERBURN.title} published`, series: ebur128(published).series, color: COLORS[curves.length], dash: '5 3' });
+        spectrogram(published, join(plots, 'spectrogram-004-published.png'));
+        const old = await afterburn(root), oldAudio = old(data, timeline, true), [oldBgm, oldSfx] = stemsOf(oldAudio);
+        candidates[`${AFTERBURN.title} (current data)`] = { source: `git ${AFTERBURN.ref}:src/audio.mjs with DeepSeek/Meta voices added`, kind: 'pre-master synthesis of 004 on this dataset', mix: profile(mixOf(oldAudio)), bgm: profile(oldBgm), sfx: profile(oldSfx, { onsets: false }), balance: balance(oldBgm, oldSfx, oldAudio.cues) };
+        // With no releases there are no bursts, so neither score ducks: the music as composed, before it steps aside.
+        const empty = { ...data, releases: [] };
+        dry(`${AFTERBURN.title} (music only)`, mixOf(old(empty, timeline)));
+        dry(`${SCORE.title} (music only)`, mixOf(synthesize(empty, timeline)));
+        report.candidates = candidates; report.masking = masking;
       }
-      // Read the historical master from the pinned revision: preview/ is replaced by each new render.
-      const published = join(work, 'afterburn-004-published.m4a');
-      await writeFile(published, execFileSync('git', ['show', `${AFTERBURN.ref}:preview/soundtrack-landscape.m4a`], { cwd: root, maxBuffer: 16 << 20 }));
-      const ffp = loudness(published);
-      candidates[`${AFTERBURN.title} (published)`] = { source: `git ${AFTERBURN.ref}:preview/soundtrack-landscape.m4a`, kind: 'mastered score and launch cues for the earlier 51-event dataset', master: { integratedLufs: Number(ffp.input_i), truePeakDbtp: Number(ffp.input_tp), loudnessRangeLu: Number(ffp.input_lra) }, mix: profile(decode(published)) };
-      curves.push({ name: `${AFTERBURN.title} published`, series: ebur128(published).series, color: COLORS[curves.length], dash: '5 3' });
-      spectrogram(published, join(plots, 'spectrogram-004-published.png'));
-      const old = await afterburn(root), oldAudio = old(data, timeline, true), [oldBgm, oldSfx] = stemsOf(oldAudio);
-      candidates[`${AFTERBURN.title} (current data)`] = { source: `git ${AFTERBURN.ref}:src/audio.mjs with DeepSeek/Meta voices added`, kind: 'pre-master synthesis of 004 on this dataset', mix: profile(mixOf(oldAudio)), bgm: profile(oldBgm), sfx: profile(oldSfx, { onsets: false }), balance: balance(oldBgm, oldSfx, oldAudio.cues) };
-      // With no releases there are no bursts, so neither score ducks: the music as composed, before it steps aside.
-      const empty = { ...data, releases: [] };
-      dry(`${AFTERBURN.title} (music only)`, mixOf(old(empty, timeline)));
-      dry(`${SCORE.title} (music only)`, mixOf(synthesize(empty, timeline)));
-      report.candidates = candidates; report.masking = masking;
       await writeFile(join(plots, 'loudness.svg'), loudnessSvg(curves, points, { title: 'Short-term loudness of the AAC masters (FFmpeg ebur128)' }));
       const offset = series => series.map(s => ({ ...s, momentary: s.momentary + masterGainDb, shortTerm: s.shortTerm + masterGainDb }));
       await writeFile(join(plots, 'stems-loudness.svg'), loudnessSvg([
@@ -330,7 +353,7 @@ function markdown(r, fast) {
   if (r.masking) {
     const music = [...SKETCHES.map(([name]) => [name, r.candidates[name].mix, r.masking[name]]), [`${AFTERBURN.title} music (this dataset)`, old.bgm, r.masking[`${AFTERBURN.title} (music only)`]], [`${r.score.title} music`, c.bgm, r.masking[`${r.score.title} (music only)`]]];
     out.push('## Candidates at a glance', '',
-      `Music only: the sketches as rendered, and the BGM stems of 004 and 005 on this dataset. Beat swing is the loudest minus the quietest point of the band's level averaged over one beat (a pump proxy). The last two columns lay the same new launch cues over each candidate's music at matched loudness, without ducking. Drop rise is bar ${dropBar + 1} against the loudest of bars ${barRange}.`, '',
+      `Music only: the sketches as rendered, and the historical/current BGM stems on this dataset. Beat swing is the loudest minus the quietest point of the band's level averaged over one beat (a pump proxy). The last two columns lay the same new launch cues over each candidate's music at matched loudness, without ducking. Drop rise is bar ${dropBar + 1} against the loudest of bars ${barRange}.`, '',
       table(['Music', '20–120 share', 'Corr. 20–120', 'Beat swing 20–120', 'Beat swing 120–500', '2k–10k share', 'Presence onsets/s', 'Drop rise', 'Bursts: median 500–10k', 'Bursts ≥ 0 dB'],
         music.map(([name, p, m]) => [name, dB(p.bands[0].shareDb, 1, false), n(p.bands[0].correlation, 2), dB(p.beatSwingDb['20-120'], 1, false), dB(p.beatSwingDb['120-500'], 1, false), dB(p.bands[3].shareDb, 1, false), n(p.presenceOnsetsPerSecond, 1), dB(dropRise(p.barRmsDbfs)), dB(m.events.presence.median), `${n(m.audibleShare * 100, 0)} %`])), '');
   }
@@ -357,6 +380,7 @@ function markdown(r, fast) {
   out.push('Octave-band RMS (dBFS, pre-master scale for stems):', '', table(['Signal', ...OCTAVES.map(f => f >= 1000 ? `${f / 1000}k` : String(f))], [['mix', c.mix], ['BGM', c.bgm], ['SFX', c.sfx]].map(([name, p]) => [name, ...p.octaves.map(o => n(o.rmsDbfs, 1))])), '');
   out.push('## Per bar', '', 'RMS in dBFS at the pre-master scale; correlation of the mix\'s left and right channels.', '',
     table(['Bar', 'Section', 'Bursts', 'Mix RMS', 'BGM RMS', 'SFX RMS', 'SFX/BGM', 'Mix corr.'], b.bars.map((x, i) => [x.bar, r.sections[i], x.events, n(c.mix.barRmsDbfs[i], 1), n(x.bgmDbfs, 1), n(x.sfxDbfs, 1), dB(x.sfxToBgmDb), n(c.mix.barCorrelation[i], 2)])), '');
+  out.push('Section checks (the quietest drop/drop1 against the loudest earlier bar):', '', table(['Measurement', 'dB'], Object.entries(c.dynamics).map(([name, value]) => [name, n(value, 2)])), '');
   if (!fast) out.push('## Plots', '', '- `audio-plots/loudness.svg`: short-term loudness of every AAC master (FFmpeg `ebur128`).', '- `audio-plots/stems-loudness.svg`: momentary loudness of the new mix and its two stems at master gain.', '- `audio-plots/spectrogram-*.png`: FFmpeg `showspectrumpic`, log frequency 20 Hz–16 kHz, 90 dB range.', '');
   out.push('## Method and limits', '',
     '- Bands use 4th-order Butterworth edges (24 dB/octave), so neighbouring bands leak a little; octave bands are not class-1 filters.',

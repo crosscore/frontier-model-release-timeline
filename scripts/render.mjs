@@ -51,7 +51,7 @@ const hash = createHash('sha256').update(await readFile(args.data)).digest('hex'
 const manifest = { format: args.format, width: renderer.width, height: renderer.height, fps, frames, duration, datasetSha256: hash, events: data.releases.length, observationEnd: data.endDate, codec: 'h264', pixelFormat: 'yuv420p', audio: { codec: 'aac', sampleRate: 48000, channels: 2, title: soundtrack.report.title, integratedLufs: soundtrack.report.integratedLufs, truePeakDbtp: soundtrack.report.truePeakDbtp } };
 await writeFile(join(args.out, `manifest-${args.format}.json`), JSON.stringify(manifest, null, 2) + '\n');
 if (!args['no-gif'] && args.format === 'landscape') {
-  const result = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-i', join(args.out, filename), '-vf', 'fps=8,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=96[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3', '-loop', '0', join(args.out, 'preview.gif')], { stdio: 'inherit' });
+  const result = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-i', join(args.out, filename), '-vf', 'fps=6,scale=640:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=96[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3', '-loop', '0', join(args.out, 'preview.gif')], { stdio: 'inherit' });
   if (result.status !== 0) throw new Error('GIF generation failed');
 }
 console.log(`Rendered ${filename}: ${renderer.width}×${renderer.height}, ${frames} frames, ${duration.toFixed(2)} seconds.`);

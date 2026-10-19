@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { loadDataset } from '../src/data.mjs';
 import { BAR_SECONDS, BEAT_SECONDS, cuePoints, kickTimes, makeTimeline } from '../src/timeline.mjs';
 import { FIREWORK } from '../src/draw.mjs';
-import { SCORE, labVoices, scorePart, soundCues, synthesize, wavBuffer } from '../src/audio.mjs';
+import { CHORDS, SCORE, labVoices, scorePart, soundCues, synthesize, wavBuffer } from '../src/audio.mjs';
 import { balance, power } from '../scripts/analyze-audio.mjs';
 const data = await loadDataset(), timeline = makeTimeline(data);
 const FIVE = ['openai', 'anthropic', 'google', 'deepseek', 'meta'];
@@ -48,22 +48,38 @@ test('original stereo synthesis is finite, unclipped, reproducible and fades to 
 test('invalid audio options fail before allocating buffers', () => {
   for (const opts of [{duration: -1}, {sampleRate: 0}, {duration: Infinity}, {timeScale: NaN}]) assert.throws(() => synthesize(data, timeline, opts));
 });
-test('the groove runs through the drop and fades out instead of resolving to a final chord', () => {
-  const sampleRate = 8000, a = synthesize(data, timeline, { sampleRate }), p = cuePoints(timeline);
+test('the drop is the loudest section, builds leave space, and the final hit resolves to silence', () => {
+  const sampleRate = 8000, a = synthesize(data, timeline, { sampleRate, stems: true }), p = cuePoints(timeline);
   const rms = (from, to) => { let s = 0; const i0 = Math.round(from * sampleRate), i1 = Math.round(to * sampleRate); for (let i = i0; i < i1; i++) s += a.left[i] ** 2 + a.right[i] ** 2; return 10 * Math.log10(s / (2 * (i1 - i0))); };
   const drop = rms(p.drop, p.drop + BAR_SECONDS), travel = [];
   for (let t = p.intro; t < p.build - 1e-6; t += BAR_SECONDS) travel.push(rms(t, t + BAR_SECONDS));
   assert(drop > Math.max(...travel), 'the drop is the loudest bar');
   assert(rms(p.outro, p.outro + .5) > drop - 3, 'the groove is still running when the summary appears');
-  assert(rms(timeline.duration - .25, timeline.duration) < drop - 30, 'the track fades out');
+  assert(rms(p.finale, p.finale + .3) > rms(p.finale - .3, p.finale), 'the final chord strikes after the high-pass outro');
+  assert(rms(timeline.duration - .25, timeline.duration) < drop - 30, 'the final tail reaches silence');
+  assert.equal(Math.abs(a.left.at(-1)), 0); assert.equal(Math.abs(a.right.at(-1)), 0);
+  const [bgm] = stemsOf(a), level = (from, to = from + BAR_SECONDS) => 10 * Math.log10(power(bgm, from, to));
+  const bars = (from, to) => Array.from({ length: Math.round((to - from) / BAR_SECONDS) }, (_, i) => level(from + i * BAR_SECONDS));
+  const earlyMax = Math.max(...bars(p.intro, p.lift)), drop1 = bars(p.drop1, p.build), drops = bars(p.drop, p.musicOutro);
+  assert(Math.min(...drop1) >= earlyMax + 3, 'each drop1 bar exceeds the loudest A bar by 3 dB');
+  assert(Math.min(...drops) >= Math.max(...drop1) + .5, 'each drop bar exceeds drop1 by .5 dB');
+  assert(level(p.build) <= Math.min(...drop1) - 2, 'the first build bar steps down at least 2 dB');
+  assert(level(p.breath, p.drop) <= Math.min(...drops) - 10, 'the breath steps down at least 10 dB');
   assert.equal(a.metrics.kicks, kickTimes(p).length);
 });
 test('score sections start on bar lines and follow the film', () => {
   const p = cuePoints(timeline), starts = [];
   for (let t = 0, last = ''; t < timeline.duration; t += BEAT_SECONDS / 4) { const part = scorePart(p, t + 1e-4); if (part !== last) starts.push([part, t]); last = part; }
-  assert.deepEqual(starts.map(([part]) => part), ['intro', 'A', 'B', 'C', 'build', 'roll', 'breath', 'drop']);
+  assert.deepEqual(starts.map(([part]) => part), ['intro', 'A', 'lift', 'drop1', 'build', 'roll', 'breath', 'drop', 'outro']);
   for (const [part, t] of starts) if (part !== 'breath') assert(Math.abs(t / BAR_SECONDS - Math.round(t / BAR_SECONDS)) < 1e-9, `${part} starts on a bar line`);
   assert.equal(starts.find(([part]) => part === 'drop')[1], p.drop);
+});
+test('chord voices stay under the chimes and avoid their semitone neighbours', () => {
+  for (const chord of CHORDS) for (const tone of chord) {
+    assert(tone <= 74);
+    assert(![9, 4, 6, 11, 1].includes(tone % 12));
+  }
+  assert.deepEqual(CHORDS[3], [53, 60, 65, 67, 72], 'F is voiced as Fsus2');
 });
 
 test('five labs get distinct, finite pans and pentatonic chime pitches, fixed by lab id', () => {
@@ -121,7 +137,7 @@ test('dense launches stay audible over the music without crowding it', () => {
   assert(r.wholeDb.broadband > -26 && r.wholeDb.broadband < -12, `launch cues are a layer, not the lead (${r.wholeDb.broadband} dB)`);
   assert(r.events.presence.median >= 3, `a typical burst is above the music in 500 Hz+ (${r.events.presence.median} dB)`);
   assert(r.events.presence.p10 >= -3, `quiet bursts are not buried (${r.events.presence.p10} dB)`);
-  assert(r.audibleShare >= .75, `most bursts clear the music (${r.audibleShare})`);
+  assert(r.audibleShare >= .8, `at least 80 percent of bursts clear the music (${r.audibleShare})`);
   assert(r.sfxBarSpreadDb <= 4, `the densest bar is not much louder than a typical one (${r.sfxBarSpreadDb} dB)`);
   const busiest = r.bars.reduce((x, y) => y.events > x.events ? y : x), sparse = r.bars.filter(b => b.events > 0 && b.events <= 3);
   assert(busiest.events >= 3 * Math.max(...sparse.map(b => b.events)));

@@ -5,9 +5,9 @@ export const smooth = x => { x = clamp(x); return x * x * (3 - 2 * x); };
 
 // One continuous clock: a real-world day always has the same film duration.
 // Names accumulate in the ledger instead of stopping time at crowded launches.
-// Defaults fill exactly 16 bars at 128 BPM (30 s): 1 intro, 12 travel, 1 hold, 2 outro.
+// Defaults fill exactly 32 bars at 128 BPM (60 s): 2 intro, 24 travel, 2 hold, 4 outro.
 export const BAR_SECONDS = 60 / 128 * 4;
-export function makeTimeline(data, { travelSeconds = 12 * BAR_SECONDS, holdSeconds = BAR_SECONDS, introSeconds = BAR_SECONDS, outroSeconds = 2 * BAR_SECONDS } = {}) {
+export function makeTimeline(data, { travelSeconds = 24 * BAR_SECONDS, holdSeconds = 2 * BAR_SECONDS, introSeconds = 2 * BAR_SECONDS, outroSeconds = 4 * BAR_SECONDS } = {}) {
   for (const value of [travelSeconds, holdSeconds, introSeconds, outroSeconds]) {
     if (!Number.isFinite(value) || value <= 0) throw new Error('Timeline durations must be positive');
   }
@@ -42,9 +42,36 @@ export function stateYear(state) { return yearOf(iso(state.day)); }
 export const BEAT_SECONDS = BAR_SECONDS / 4;
 export function cuePoints(timeline, scale = 1) {
   const snap = t => { const g = Math.round(t / BEAT_SECONDS) * BEAT_SECONDS; return Math.abs(t - g) < .06 ? g : t; };
-  const drop = snap((timeline.introSeconds + timeline.travelSeconds) * scale);
-  return { intro: snap(timeline.introSeconds * scale), build: drop - 2 * BAR_SECONDS, gap: drop - BAR_SECONDS, breath: drop - BAR_SECONDS / 2,
-    drop, outro: snap(timeline.outroStart * scale), end: timeline.duration * scale };
+  const intro = snap(timeline.introSeconds * scale), drop = snap((timeline.introSeconds + timeline.travelSeconds) * scale), end = timeline.duration * scale;
+  const total = Math.max(0, Math.round((drop - intro) / BAR_SECONDS));
+  let a = Math.round(total / 3), lift = Math.round(total / 6), drop1 = Math.round(total / 3);
+  // Reserve two build bars when there is room. Omit the shortest sections first in smoke-test cuts.
+  if (total < 4) { a = total; lift = drop1 = 0; }
+  else while (total - a - lift - drop1 < 2) {
+    if (lift) lift--; else if (drop1) drop1--; else a--;
+  }
+  const at = bars => Math.min(drop, intro + bars * BAR_SECONDS);
+  const build = at(a + lift + drop1), gap = Math.max(build, drop - BAR_SECONDS), breath = Math.max(build, drop - BAR_SECONDS / 2);
+  const finale = Math.max(drop, snap(end - Math.min(BAR_SECONDS, timeline.outroSeconds * scale)));
+  return { intro, lift: at(a), drop1: at(a + lift), build, gap, breath, drop,
+    outro: snap(timeline.outroStart * scale), musicOutro: Math.min(finale, drop + 4 * BAR_SECONDS), finale, end };
+}
+
+// One arrangement for sound and light. `outro` above is the summary scene; the music keeps its
+// four-bar drop running under that scene before the closing two bars.
+export function scorePart(p, t) {
+  return t < p.intro ? 'intro' : t < p.lift ? 'A' : t < p.drop1 ? 'lift' : t < p.build ? 'drop1'
+    : t < p.gap ? 'build' : t < p.breath ? 'roll' : t < p.drop ? 'breath' : t < p.musicOutro ? 'drop' : 'outro';
+}
+export function energy(p, t) {
+  const part = scorePart(p, t);
+  if (part === 'lift') return .5 + .2 * clamp((t - p.lift) / Math.max(.001, p.drop1 - p.lift));
+  if (part === 'build' || part === 'roll') return .6 + .3 * clamp((t - p.build) / Math.max(.001, p.breath - p.build));
+  return { intro: .2, A: .35, drop1: 1, breath: .4, drop: 1, outro: .6 }[part];
+}
+export function kickLight(p, t) {
+  if (!['drop1', 'drop'].includes(scorePart(p, t))) return 0;
+  return Math.exp(-((t % BEAT_SECONDS + BEAT_SECONDS) % BEAT_SECONDS) / .035) * clamp((.12 - t % BEAT_SECONDS) / .02);
 }
 // The kick: a heartbeat in the intro, four on the floor, an eighth-note roll in the first half of the
 // bar before the drop, silence for the last two beats, then four on the floor again from the drop.
@@ -52,7 +79,9 @@ export function kickTimes(points, until = points.end) {
   const kicks = [];
   for (let k = 0; k * BEAT_SECONDS < until - 1e-6; k++) {
     const t = k * BEAT_SECONDS;
-    if (t < points.intro - 1e-6) { if (k % 2 === 0) kicks.push(t); }
+    if (t > points.finale + 1e-6) continue;
+    if (t < points.intro - 1e-6) { if (t >= points.intro - BAR_SECONDS - 1e-6 && k % 2 === 0) kicks.push(t); }
+    else if (t >= points.drop1 - BEAT_SECONDS * 2 && t < points.drop1 && points.drop1 > points.lift) continue;
     else if (t < points.gap - 1e-6 || t >= points.drop - 1e-6) kicks.push(t);
     else if (t < points.breath - 1e-6) kicks.push(t, t + BEAT_SECONDS / 2);
   }
