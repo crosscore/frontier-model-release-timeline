@@ -35,13 +35,14 @@ test('equal calendar gaps have equal film durations without release-date pauses'
   }
 });
 test('cue points sit on the bar grid and the kick pattern leaves a breath before the drop', () => {
-  const p = cuePoints(timeline), kicks = kickTimes(p), on = t => kicks.some(k => Math.abs(k - t) < 1e-9);
+  const p = cuePoints(timeline), kicks = kickTimes(p), beats = (from, to) => kicks.filter(k => k >= from - 1e-9 && k < to - 1e-9);
   for (const t of [p.intro, p.lift, p.drop1, p.build, p.gap, p.drop, p.outro, p.finale]) assert(Math.abs(t / BAR_SECONDS - Math.round(t / BAR_SECONDS)) < 1e-9);
-  assert(on(p.drop) && on(p.intro) && on(BAR_SECONDS) && !on(0) && !on(BAR_SECONDS + BEAT_SECONDS));
-  assert(!kicks.some(t => t >= p.drop1 - 2 * BEAT_SECONDS && t < p.drop1), 'two beats free for the reverse cymbal');
-  assert(!kicks.some(t => t > p.finale), 'only the final hit, no later kick');
-  assert(on(p.gap + BEAT_SECONDS / 2), 'eighth-note kick roll');
-  assert(!kicks.some(k => k >= p.breath - 1e-9 && k < p.drop - 1e-9), 'no kick in the breath');
+  assert(kicks.every(k => Math.abs(k / BEAT_SECONDS - Math.round(k / BEAT_SECONDS)) < 1e-9), 'every kick is on a beat');
+  assert.deepEqual(beats(0, p.intro), [p.intro - BAR_SECONDS, p.intro - BAR_SECONDS + 2 * BEAT_SECONDS], 'two heartbeats before the calendar');
+  assert.equal(beats(p.intro, p.breath).length, Math.round((p.breath - p.intro) / BEAT_SECONDS), 'four on the floor until the breath');
+  assert.equal(beats(p.breath, p.drop).length, 0, 'no kick in the breath');
+  assert.equal(beats(p.drop, p.musicOutro).length, Math.round((p.musicOutro - p.drop) / BEAT_SECONDS), 'four on the floor under the reveal');
+  assert.equal(beats(p.musicOutro, p.end + 1).length, 0, 'no kick in the closing bars');
   const scaled = cuePoints(timeline, 1799 / 1800);
   assert.equal(scaled.drop, p.drop, 'a near-full-length render snaps the drop back onto the beat');
 });

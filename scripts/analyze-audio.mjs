@@ -166,15 +166,24 @@ export function balance(bgm, sfx, cues, { window = EVENT_WINDOW, bar = BAR_SECON
   return result;
 }
 
+// The music's arc, from bar RMS: the largest rise from one bar to the next after the first calendar bar, the groove
+// against the first four calendar bars, the reveal against the groove, the step into the reveal from the last build
+// bar, the breath under the reveal, and the smallest fall from one closing bar to the next.
 export function sectionDynamics(bgm, p) {
   const level = (from, to = from + BAR_SECONDS) => db(power(bgm, from, to));
   const bars = (from, to) => Array.from({ length: Math.round((to - from) / BAR_SECONDS) }, (_, k) => level(from + k * BAR_SECONDS));
-  const aMax = Math.max(...bars(p.intro, p.lift)), first = bars(p.drop1, p.build), drop = bars(p.drop, p.musicOutro);
-  const drop1Min = Math.min(...first), drop1Max = Math.max(...first), dropMin = Math.min(...drop);
-  const buildFirst = level(p.build), breath = level(p.breath, p.drop);
-  return Object.fromEntries(Object.entries({ aMax, drop1Min, drop1Max, dropMin, buildFirst, breath,
-    drop1AboveA: drop1Min - aMax, dropAboveDrop1: dropMin - drop1Max, buildBelowDrop1: drop1Min - buildFirst, breathBelowDrop: dropMin - breath }).map(([k, v]) => [k, fixed(v, 2)]));
+  const all = bars(0, p.end), at = t => Math.round(t / BAR_SECONDS), first = at(p.intro), closing = all.slice(at(p.musicOutro) - 1);
+  const early = bars(p.intro, p.intro + 4 * BAR_SECONDS), groove = bars(p.drop1, p.build), reveal = bars(p.drop, p.musicOutro);
+  const earlyMax = Math.max(...early), grooveMin = Math.min(...groove), grooveMax = Math.max(...groove), revealMin = Math.min(...reveal), revealMax = Math.max(...reveal), breath = level(p.breath, p.drop);
+  return Object.fromEntries(Object.entries({ earlyMax, grooveMin, grooveMax, revealMin, revealMax, breath,
+    largestBarRise: Math.max(...all.slice(first + 1).map((x, k) => x - all[first + k])), grooveAboveEarly: grooveMin - earlyMax,
+    revealAboveGroove: revealMax - grooveMax, revealMinBelowGroove: grooveMax - revealMin, riseIntoReveal: reveal[0] - all[at(p.gap) - 1],
+    breathBelowReveal: revealMin - breath, smallestClosingFall: Math.min(...closing.slice(1).map((x, k) => closing[k] - x)) }).map(([k, v]) => [k, fixed(v, 2)]));
 }
+// Limits for the arc above (dB), shared by the tests and this report.
+export const ARC = Object.freeze({ largestBarRise: ['≤', 2], grooveAboveEarly: ['≥', 1.5], revealAboveGroove: ['≤', .5], revealMinBelowGroove: ['≤', 3],
+  riseIntoReveal: ['≤', 1.5], breathBelowReveal: ['≥', 1], smallestClosingFall: ['≥', 1] });
+export const arcFailures = d => Object.entries(ARC).filter(([k, [side, limit]]) => !(side === '≤' ? d[k] <= limit : d[k] >= limit)).map(([k]) => `${k} ${d[k]}`);
 
 export function decode(file, sampleRate = SCORE.sampleRate) {
   const r = spawnSync('ffmpeg', ['-v', 'error', '-i', file, '-f', 'f32le', '-ac', '2', '-ar', String(sampleRate), '-'], { maxBuffer: 1 << 29 });
@@ -284,7 +293,7 @@ async function main() {
     const { dynamics, balance: mixBalance } = report.current;
     assert(mixBalance.events.presence.median >= 3, '80 ms presence-band SFX/BGM median >= +3 dB');
     assert(mixBalance.models.length === data.releases.length && mixBalance.models.every(m => m.sfxToBgmDb !== null && m.sfxToBgmDb >= 0), 'every model clears the BGM in 500 Hz–10 kHz');
-    assert(dynamics.drop1AboveA >= 3 && dynamics.dropAboveDrop1 >= .5 && dynamics.buildBelowDrop1 >= 2 && dynamics.breathBelowDrop >= 10, 'BGM section contrasts');
+    assert.deepEqual(arcFailures(dynamics), [], 'BGM arc');
     assert(audio.left.every(Number.isFinite) && audio.right.every(Number.isFinite) && audio.metrics.samplePeakDbfs < 0, 'finite, unclipped PCM');
     assert(audio.left.at(-1) === 0 && audio.right.at(-1) === 0, 'the last PCM frame is silent');
     const curves = [];
@@ -297,8 +306,8 @@ async function main() {
       assert(Math.abs(Number(ff.input_i) - SCORE.targetLufs) <= .5 && Number(ff.input_tp) <= SCORE.truePeakDb, 'AAC master loudness and true peak');
       const masterGainDb = report.current.master.profile.integratedLufs - report.current.mix.integratedLufs;
       curves.push({ name: `${SCORE.title} master`, series, color: COLORS[0] });
-      spectrogram(masterFile, join(plots, 'spectrogram-006-master.png'));
-      for (const [name, stem] of [['bgm', bgm], ['sfx', sfx]]) { const wav = join(work, `${name}.wav`); await writeFile(wav, floatWav(scaled(stem, masterGainDb))); spectrogram(wav, join(plots, `spectrogram-006-${name}.png`)); }
+      spectrogram(masterFile, join(plots, 'spectrogram-007-master.png'));
+      for (const [name, stem] of [['bgm', bgm], ['sfx', sfx]]) { const wav = join(work, `${name}.wav`); await writeFile(wav, floatWav(scaled(stem, masterGainDb))); spectrogram(wav, join(plots, `spectrogram-007-${name}.png`)); }
 
       // Candidates: the BGM-only sketches as rendered, 004 as published (51 events, before the dataset grew), and 004
       // on the current data. For the masking test every candidate's music alone is matched to the new BGM stem's
@@ -383,7 +392,7 @@ function markdown(r, fast) {
   out.push('Octave-band RMS (dBFS, pre-master scale for stems):', '', table(['Signal', ...OCTAVES.map(f => f >= 1000 ? `${f / 1000}k` : String(f))], [['mix', c.mix], ['BGM', c.bgm], ['SFX', c.sfx]].map(([name, p]) => [name, ...p.octaves.map(o => n(o.rmsDbfs, 1))])), '');
   out.push('## Per bar', '', 'RMS in dBFS at the pre-master scale; correlation of the mix\'s left and right channels.', '',
     table(['Bar', 'Section', 'Bursts', 'Mix RMS', 'BGM RMS', 'SFX RMS', 'SFX/BGM', 'Mix corr.'], b.bars.map((x, i) => [x.bar, r.sections[i], x.events, n(c.mix.barRmsDbfs[i], 1), n(x.bgmDbfs, 1), n(x.sfxDbfs, 1), dB(x.sfxToBgmDb), n(c.mix.barCorrelation[i], 2)])), '');
-  out.push('Section checks (the quietest drop/drop1 against the loudest earlier bar):', '', table(['Measurement', 'dB'], Object.entries(c.dynamics).map(([name, value]) => [name, n(value, 2)])), '');
+  out.push('Arc checks (BGM bar RMS; limits from `ARC`):', '', table(['Measurement', 'dB', 'Limit'], Object.entries(c.dynamics).map(([name, value]) => [name, n(value, 2), ARC[name] ? `${ARC[name][0]} ${n(ARC[name][1], 1)}` : ''])), '');
   if (!fast) out.push('## Plots', '', '- `audio-plots/loudness.svg`: short-term loudness of every AAC master (FFmpeg `ebur128`).', '- `audio-plots/stems-loudness.svg`: momentary loudness of the new mix and its two stems at master gain.', '- `audio-plots/spectrogram-*.png`: FFmpeg `showspectrumpic`, log frequency 20 Hz–16 kHz, 90 dB range.', '');
   out.push('## Method and limits', '',
     '- Bands use 4th-order Butterworth edges (24 dB/octave), so neighbouring bands leak a little; octave bands are not class-1 filters.',

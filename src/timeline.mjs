@@ -76,17 +76,14 @@ export function kickLight(p, t) {
   if (!['drop1', 'drop'].includes(scorePart(p, t))) return 0;
   return Math.exp(-((t % BEAT_SECONDS + BEAT_SECONDS) % BEAT_SECONDS) / .035) * clamp((.12 - t % BEAT_SECONDS) / .02);
 }
-// The kick: a heartbeat in the intro, four on the floor, an eighth-note roll in the first half of the
-// bar before the drop, silence for the last two beats, then four on the floor again from the drop.
+// The kick: two soft heartbeats in the bar before the calendar, then four on the floor until the breath (the
+// last half bar before the cutoff), four on the floor again under the reveal, and none in the closing bars.
 export function kickTimes(points, until = points.end) {
   const kicks = [];
   for (let k = 0; k * BEAT_SECONDS < until - 1e-6; k++) {
     const t = k * BEAT_SECONDS;
-    if (t > points.finale + 1e-6) continue;
     if (t < points.intro - 1e-6) { if (t >= points.intro - BAR_SECONDS - 1e-6 && k % 2 === 0) kicks.push(t); }
-    else if (t >= points.drop1 - BEAT_SECONDS * 2 && t < points.drop1 && points.drop1 > points.lift) continue;
-    else if (t < points.gap - 1e-6 || t >= points.drop - 1e-6) kicks.push(t);
-    else if (t < points.breath - 1e-6) kicks.push(t, t + BEAT_SECONDS / 2);
+    else if (t < points.breath - 1e-6 || (t >= points.drop - 1e-6 && t < points.musicOutro - 1e-6)) kicks.push(t);
   }
   return kicks;
 }

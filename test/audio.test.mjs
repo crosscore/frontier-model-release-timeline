@@ -4,8 +4,8 @@ import { createHash } from 'node:crypto';
 import { loadDataset, launchGroups } from '../src/data.mjs';
 import { BAR_SECONDS, BEAT_SECONDS, cuePoints, kickTimes, makeTimeline } from '../src/timeline.mjs';
 import { FIREWORK } from '../src/draw.mjs';
-import { CHORDS, SCORE, labVoices, scorePart, soundCues, synthesize, wavBuffer } from '../src/audio.mjs';
-import { balance, power } from '../scripts/analyze-audio.mjs';
+import { CHORDS, SCORE, THEME, labVoices, scorePart, soundCues, synthesize, wavBuffer } from '../src/audio.mjs';
+import { arcFailures, balance, power, sectionDynamics } from '../scripts/analyze-audio.mjs';
 const data = await loadDataset(), timeline = makeTimeline(data);
 const FIVE = ['openai', 'anthropic', 'google', 'deepseek', 'meta'];
 const stemsOf = audio => ['bgm', 'sfx'].map(name => ({ left: audio.stems[name][0], right: audio.stems[name][1], sampleRate: audio.sampleRate }));
@@ -48,23 +48,17 @@ test('original stereo synthesis is finite, unclipped, reproducible and fades to 
 test('invalid audio options fail before allocating buffers', () => {
   for (const opts of [{duration: -1}, {sampleRate: 0}, {duration: Infinity}, {timeScale: NaN}]) assert.throws(() => synthesize(data, timeline, opts));
 });
-test('the drop is the loudest section, builds leave space, and the final hit resolves to silence', () => {
+test('the music rises in one arc, the reveal sits level with the groove, and the closing bars only fall', () => {
   const sampleRate = 8000, a = synthesize(data, timeline, { sampleRate, stems: true }), p = cuePoints(timeline);
-  const rms = (from, to) => { let s = 0; const i0 = Math.round(from * sampleRate), i1 = Math.round(to * sampleRate); for (let i = i0; i < i1; i++) s += a.left[i] ** 2 + a.right[i] ** 2; return 10 * Math.log10(s / (2 * (i1 - i0))); };
-  const drop = rms(p.drop, p.drop + BAR_SECONDS), travel = [];
-  for (let t = p.intro; t < p.build - 1e-6; t += BAR_SECONDS) travel.push(rms(t, t + BAR_SECONDS));
-  assert(drop > Math.max(...travel), 'the drop is the loudest bar');
-  assert(rms(p.outro, p.outro + .5) > drop - 3, 'the groove is still running when the summary appears');
-  assert(rms(p.finale, p.finale + .3) > rms(p.finale - .3, p.finale), 'the final chord strikes after the high-pass outro');
-  assert(rms(timeline.duration - .25, timeline.duration) < drop - 30, 'the final tail reaches silence');
+  const [bgm] = stemsOf(a), mix = { left: a.left, right: a.right, sampleRate }, level = (from, to) => 10 * Math.log10(power(mix, from, to));
+  // No bar a step louder than the last, no jump into the reveal, and closing bars that only fall (limits in ARC).
+  const dynamics = sectionDynamics(bgm, p);
+  assert.deepEqual(arcFailures(dynamics), [], JSON.stringify(dynamics));
+  const drop = level(p.drop, p.drop + BAR_SECONDS);
+  assert(level(p.outro, p.outro + .5) > drop - 3, 'the groove is still running when the summary appears');
+  assert(level(p.finale, p.finale + .3) > level(p.finale - .3, p.finale), 'the final chord rings after the fading outro');
+  assert(level(timeline.duration - .25, timeline.duration) < drop - 30, 'the final tail reaches silence');
   assert.equal(Math.abs(a.left.at(-1)), 0); assert.equal(Math.abs(a.right.at(-1)), 0);
-  const [bgm] = stemsOf(a), level = (from, to = from + BAR_SECONDS) => 10 * Math.log10(power(bgm, from, to));
-  const bars = (from, to) => Array.from({ length: Math.round((to - from) / BAR_SECONDS) }, (_, i) => level(from + i * BAR_SECONDS));
-  const earlyMax = Math.max(...bars(p.intro, p.lift)), drop1 = bars(p.drop1, p.build), drops = bars(p.drop, p.musicOutro);
-  assert(Math.min(...drop1) >= earlyMax + 3, 'each drop1 bar exceeds the loudest A bar by 3 dB');
-  assert(Math.min(...drops) >= Math.max(...drop1) + .5, 'each drop bar exceeds drop1 by .5 dB');
-  assert(level(p.build) <= Math.min(...drop1) - 2, 'the first build bar steps down at least 2 dB');
-  assert(level(p.breath, p.drop) <= Math.min(...drops) - 10, 'the breath steps down at least 10 dB');
   assert.equal(a.metrics.kicks, kickTimes(p).length);
 });
 test('score sections start on bar lines and follow the film', () => {
@@ -74,12 +68,25 @@ test('score sections start on bar lines and follow the film', () => {
   for (const [part, t] of starts) if (part !== 'breath') assert(Math.abs(t / BAR_SECONDS - Math.round(t / BAR_SECONDS)) < 1e-9, `${part} starts on a bar line`);
   assert.equal(starts.find(([part]) => part === 'drop')[1], p.drop);
 });
-test('chord voices stay under the chimes and avoid their semitone neighbours', () => {
-  for (const chord of CHORDS) for (const tone of chord) {
-    assert(tone <= 74);
-    assert(![9, 4, 6, 11, 1].includes(tone % 12));
+test('chord voices stay under the chimes and avoid their semitone neighbours; the theme stays in B♭ major', () => {
+  for (const [name, { root, pad, arp }] of Object.entries(CHORDS)) {
+    const bass = 440 * 2 ** ((root - 69) / 12);
+    assert(bass > 48 && bass < 88, `${name} root is a bass note (${bass.toFixed(1)} Hz)`);
+    for (const tone of [...pad, ...arp]) {
+      assert(tone <= 74, `${name} stays under the chimes`);
+      assert(![9, 4, 6, 11, 1].includes(tone % 12), `${name} has no tone a semitone under a chime`);
+    }
   }
-  assert.deepEqual(CHORDS[3], [53, 60, 65, 67, 72], 'F is voiced as Fsus2');
+  assert.deepEqual(CHORDS.F.pad, [53, 60, 63, 65, 70], 'F is voiced as F7sus4');
+  for (const bar of THEME) {
+    let next = 0;
+    for (const [at, tone, length] of bar) {
+      assert(at === next && length > 0, 'theme notes follow each other without gaps or overlaps');
+      assert([10, 0, 2, 3, 5, 7, 9].includes(tone % 12), 'theme notes are in B♭ major');
+      next = at + length;
+    }
+    assert(next <= 16, 'each theme bar fits in a bar');
+  }
 });
 
 test('five labs get distinct, finite pans and pentatonic chime pitches, fixed by lab id', () => {
@@ -90,7 +97,7 @@ test('five labs get distinct, finite pans and pentatonic chime pitches, fixed by
   for (const v of voices) {
     assert(Number.isFinite(v.pan) && Math.abs(v.pan) <= .5, `${v.id} pan`);
     assert(Number.isInteger(v.tone) && v.hz > 700 && v.hz < 1500, `${v.id} chime`);
-    assert([7, 10, 0, 2, 5].includes(v.tone % 12), `${v.id} chime is in G minor pentatonic`);
+    assert([7, 10, 0, 2, 5].includes(v.tone % 12), `${v.id} chime is in B♭ major pentatonic`);
   }
   for (let a = 0; a < 5; a++) for (let b = a + 1; b < 5; b++) assert(Math.abs(voices[a].pan - voices[b].pan) >= .2, 'pans are clearly apart');
   const byId = new Map(voices.map(v => [v.id, v]));
@@ -133,8 +140,10 @@ test('stems are kept only on request and add up to the mix at its own gain', () 
   assert(10 * Math.log10(error / signal) < -20, 'only the soft clipper and limiter separate the stems from the mix');
 });
 test('dense launches stay audible over the music without crowding it', () => {
-  const a = synthesize(data, timeline, { sampleRate: 8000, stems: true }), [bgm, sfx] = stemsOf(a), r = balance(bgm, sfx, a.cues);
-  assert(r.wholeDb.broadband > -26 && r.wholeDb.broadband < -12, `launch cues are a layer, not the lead (${r.wholeDb.broadband} dB)`);
+  const a = synthesize(data, timeline, { sampleRate: 8000, stems: true }), [bgm, sfx] = stemsOf(a), r = balance(bgm, sfx, a.cues), p = cuePoints(timeline);
+  // Over the calendar, where every launch is; the reveal after it has none.
+  const layer = 10 * Math.log10(power(sfx, p.intro, p.drop) / power(bgm, p.intro, p.drop));
+  assert(layer > -26 && layer < -10, `launch cues are a layer, not the lead (${layer.toFixed(2)} dB)`);
   assert(r.events.presence.median >= 3, `a typical burst is above the music in 500 Hz+ (${r.events.presence.median} dB)`);
   assert(r.events.presence.p10 >= -3, `quiet bursts are not buried (${r.events.presence.p10} dB)`);
   assert(r.models.length === data.releases.length && r.models.every(m => m.sfxToBgmDb !== null && m.sfxToBgmDb >= 0), `every model clears the music (${r.events.presence.min} dB minimum)`);
