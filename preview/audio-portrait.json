@@ -11,15 +11,15 @@
   "samples": 2880000,
   "duration": 60,
   "samplePeakDbfs": -3.609120944016389,
-  "rmsDbfs": -15.706048363142184,
-  "cueCount": 79,
+  "rmsDbfs": -15.71018314658042,
+  "cueCount": 116,
   "introEnd": 3.75,
   "drop": 48.75,
   "kicks": 117,
-  "sfxToBgmDb": -16.096793582066194,
-  "eventSfxToBgmDb": -2.5662394579251884,
-  "integratedLufs": -14.15,
-  "truePeakDbtp": -1.7,
+  "sfxToBgmDb": -15.487895218321345,
+  "eventSfxToBgmDb": -4.638380583290671,
+  "integratedLufs": -14.14,
+  "truePeakDbtp": -2.3,
   "loudnessRangeLu": 6.8,
   "voices": [
     {
@@ -75,7 +75,7 @@
       "burst": 6.0825958303292476,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 2
+      "neighbors": 3
     },
     {
       "id": "anthropic-claude",
@@ -84,7 +84,25 @@
       "burst": 6.0825958303292476,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 2
+      "neighbors": 3
+    },
+    {
+      "id": "anthropic-claude-instant",
+      "lab": "anthropic",
+      "launch": 5.83991822616258,
+      "burst": 6.199718226162581,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 3
+    },
+    {
+      "id": "google-palm-2",
+      "lab": "google",
+      "launch": 7.571083501562125,
+      "burst": 7.930883501562125,
+      "pan": 0,
+      "tone": 79,
+      "neighbors": 1
     },
     {
       "id": "anthropic-claude-2",
@@ -103,6 +121,15 @@
       "pan": 0.25,
       "tone": 89,
       "neighbors": 2
+    },
+    {
+      "id": "anthropic-claude-instant-1-2",
+      "lab": "anthropic",
+      "launch": 10.521858555635665,
+      "burst": 10.881658555635665,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 1
     },
     {
       "id": "openai-gpt-4-turbo",
@@ -159,13 +186,31 @@
       "neighbors": 2
     },
     {
-      "id": "anthropic-claude-3",
+      "id": "anthropic-claude-3-opus",
       "lab": "anthropic",
       "launch": 17.266487250660898,
       "burst": 17.626287250660898,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 1
+      "neighbors": 3
+    },
+    {
+      "id": "anthropic-claude-3-sonnet",
+      "lab": "anthropic",
+      "launch": 17.383609646494232,
+      "burst": 17.743409646494232,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 3
+    },
+    {
+      "id": "anthropic-claude-3-haiku",
+      "lab": "anthropic",
+      "launch": 17.55832214611872,
+      "burst": 17.91812214611872,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 3
     },
     {
       "id": "meta-llama-3",
@@ -183,7 +228,7 @@
       "burst": 19.669131518865658,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 2
+      "neighbors": 4
     },
     {
       "id": "openai-gpt-4o",
@@ -192,7 +237,25 @@
       "burst": 19.896114215332855,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 2
+      "neighbors": 4
+    },
+    {
+      "id": "google-gemini-1-5-flash",
+      "lab": "google",
+      "launch": 19.568740314828165,
+      "burst": 19.928540314828165,
+      "pan": 0,
+      "tone": 79,
+      "neighbors": 4
+    },
+    {
+      "id": "deepseek-v2-lite",
+      "lab": "deepseek",
+      "launch": 19.633592513818794,
+      "burst": 19.993392513818794,
+      "pan": -0.25,
+      "tone": 84,
+      "neighbors": 4
     },
     {
       "id": "anthropic-claude-3-5-sonnet",
@@ -204,13 +267,22 @@
       "neighbors": 1
     },
     {
+      "id": "openai-gpt-4o-mini",
+      "lab": "openai",
+      "launch": 21.67643678202355,
+      "burst": 22.03623678202355,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 2
+    },
+    {
       "id": "meta-llama-3-1",
       "lab": "meta",
       "launch": 21.838567279500122,
       "burst": 22.198367279500122,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 1
+      "neighbors": 2
     },
     {
       "id": "deepseek-v2-5",
@@ -219,16 +291,25 @@
       "burst": 23.625115657293918,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 2
+      "neighbors": 3
     },
     {
       "id": "openai-o1-preview",
+      "lab": "openai",
+      "launch": 23.60942074959445,
+      "burst": 23.96922074959445,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 4
+    },
+    {
+      "id": "openai-o1-mini",
       "lab": "openai",
       "launch": 23.492298353761115,
       "burst": 23.852098353761114,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 2
+      "neighbors": 3
     },
     {
       "id": "meta-llama-3-2",
@@ -237,13 +318,22 @@
       "burst": 24.273637647200193,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 1
+      "neighbors": 2
     },
     {
       "id": "anthropic-claude-3-5-sonnet-v2",
       "lab": "anthropic",
       "launch": 24.78934233357366,
       "burst": 25.14914233357366,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 1
+    },
+    {
+      "id": "anthropic-claude-3-5-haiku",
+      "lab": "anthropic",
+      "launch": 25.210881627012736,
+      "burst": 25.570681627012736,
       "pan": 0.5,
       "tone": 82,
       "neighbors": 1
@@ -303,13 +393,31 @@
       "neighbors": 1
     },
     {
+      "id": "openai-o3-mini",
+      "lab": "openai",
+      "launch": 28.06437838260034,
+      "burst": 28.424178382600335,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 3
+    },
+    {
       "id": "google-gemini-2-0-pro",
       "lab": "google",
       "launch": 28.226508880076903,
       "burst": 28.586308880076903,
       "pan": 0,
       "tone": 79,
-      "neighbors": 1
+      "neighbors": 3
+    },
+    {
+      "id": "google-gemini-2-0-flash-lite",
+      "lab": "google",
+      "launch": 28.343631275910237,
+      "burst": 28.703431275910237,
+      "pan": 0,
+      "tone": 79,
+      "neighbors": 3
     },
     {
       "id": "anthropic-claude-3-7-sonnet",
@@ -348,13 +456,22 @@
       "neighbors": 2
     },
     {
-      "id": "meta-llama-4",
+      "id": "meta-llama-4-maverick",
       "lab": "meta",
       "launch": 30.13964875030041,
       "burst": 30.49944875030041,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 2
+      "neighbors": 3
+    },
+    {
+      "id": "meta-llama-4-scout",
+      "lab": "meta",
+      "launch": 30.256771146133744,
+      "burst": 30.616571146133744,
+      "pan": 0.25,
+      "tone": 89,
+      "neighbors": 6
     },
     {
       "id": "openai-gpt-4-1",
@@ -363,7 +480,25 @@
       "burst": 30.79128364575823,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 3
+      "neighbors": 8
+    },
+    {
+      "id": "openai-gpt-4-1-mini",
+      "lab": "openai",
+      "launch": 30.548606041591565,
+      "burst": 30.908406041591565,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 7
+    },
+    {
+      "id": "openai-gpt-4-1-nano",
+      "lab": "openai",
+      "launch": 30.6657284374249,
+      "burst": 31.0255284374249,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 6
     },
     {
       "id": "openai-o3",
@@ -372,16 +507,43 @@
       "burst": 30.85613584474886,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 2
+      "neighbors": 7
     },
     {
-      "id": "anthropic-claude-4",
+      "id": "openai-o4-mini",
+      "lab": "openai",
+      "launch": 30.613458240582194,
+      "burst": 30.973258240582194,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 6
+    },
+    {
+      "id": "google-gemini-2-5-flash",
+      "lab": "google",
+      "launch": 30.528761944244174,
+      "burst": 30.888561944244174,
+      "pan": 0,
+      "tone": 79,
+      "neighbors": 7
+    },
+    {
+      "id": "anthropic-claude-opus-4",
       "lab": "anthropic",
       "launch": 31.663675426580145,
       "burst": 32.02347542658015,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 2
+      "neighbors": 3
+    },
+    {
+      "id": "anthropic-claude-sonnet-4",
+      "lab": "anthropic",
+      "launch": 31.78079782241348,
+      "burst": 32.14059782241348,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 3
     },
     {
       "id": "deepseek-r1-0528",
@@ -390,7 +552,16 @@
       "burst": 32.21803202355203,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 2
+      "neighbors": 3
+    },
+    {
+      "id": "google-gemini-2-5-flash-lite",
+      "lab": "google",
+      "launch": 32.506754013458306,
+      "burst": 32.866554013458305,
+      "pan": 0,
+      "tone": 79,
+      "neighbors": 1
     },
     {
       "id": "anthropic-claude-opus-4-1",
@@ -399,7 +570,7 @@
       "burst": 34.45543288872867,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 2
+      "neighbors": 4
     },
     {
       "id": "openai-gpt-5",
@@ -408,7 +579,25 @@
       "burst": 34.5202850877193,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 2
+      "neighbors": 4
+    },
+    {
+      "id": "openai-gpt-5-mini",
+      "lab": "openai",
+      "launch": 34.277607483552636,
+      "burst": 34.637407483552636,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 5
+    },
+    {
+      "id": "openai-gpt-5-nano",
+      "lab": "openai",
+      "launch": 34.39472987938597,
+      "burst": 34.75452987938597,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 5
     },
     {
       "id": "deepseek-v3-1",
@@ -417,7 +606,7 @@
       "burst": 34.97425048065369,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 1
+      "neighbors": 3
     },
     {
       "id": "anthropic-claude-sonnet-4-5",
@@ -438,13 +627,31 @@
       "neighbors": 2
     },
     {
+      "id": "anthropic-claude-haiku-4-5",
+      "lab": "anthropic",
+      "launch": 36.39788595289593,
+      "burst": 36.75768595289593,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 1
+    },
+    {
       "id": "openai-gpt-5-1",
       "lab": "openai",
       "launch": 37.30581673876472,
       "burst": 37.66561673876472,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 2
+      "neighbors": 3
+    },
+    {
+      "id": "openai-gpt-5-1-instant",
+      "lab": "openai",
+      "launch": 37.42293913459805,
+      "burst": 37.78273913459805,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 4
     },
     {
       "id": "google-gemini-3-pro",
@@ -453,7 +660,7 @@
       "burst": 37.8601733357366,
       "pan": 0,
       "tone": 79,
-      "neighbors": 3
+      "neighbors": 4
     },
     {
       "id": "anthropic-claude-opus-4-5",
@@ -462,7 +669,7 @@
       "burst": 38.05472993270848,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 3
+      "neighbors": 4
     },
     {
       "id": "deepseek-v3-2",
@@ -480,7 +687,25 @@
       "burst": 38.605973624128815,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 2
+      "neighbors": 4
+    },
+    {
+      "id": "openai-gpt-5-2-instant",
+      "lab": "openai",
+      "launch": 38.36329601996215,
+      "burst": 38.72309601996215,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 3
+    },
+    {
+      "id": "google-gemini-3-flash",
+      "lab": "google",
+      "launch": 38.4407302211007,
+      "burst": 38.8005302211007,
+      "pan": 0,
+      "tone": 79,
+      "neighbors": 3
     },
     {
       "id": "anthropic-claude-opus-4-6",
@@ -516,13 +741,40 @@
       "burst": 41.264913782744536,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 2
+      "neighbors": 3
+    },
+    {
+      "id": "google-gemini-3-1-flash-lite",
+      "lab": "google",
+      "launch": 40.905113782744536,
+      "burst": 41.264913782744536,
+      "pan": 0,
+      "tone": 79,
+      "neighbors": 3
     },
     {
       "id": "openai-gpt-5-4",
       "lab": "openai",
       "launch": 40.96996598173516,
       "burst": 41.32976598173516,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 3
+    },
+    {
+      "id": "openai-gpt-5-4-mini",
+      "lab": "openai",
+      "launch": 41.35907917567893,
+      "burst": 41.71887917567893,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 2
+    },
+    {
+      "id": "openai-gpt-5-4-nano",
+      "lab": "openai",
+      "launch": 41.47620157151226,
+      "burst": 41.83600157151226,
       "pan": -0.5,
       "tone": 86,
       "neighbors": 2
@@ -552,16 +804,34 @@
       "burst": 42.918644857005525,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 3
+      "neighbors": 4
     },
     {
-      "id": "deepseek-v4-preview",
+      "id": "deepseek-v4-pro",
       "lab": "deepseek",
       "launch": 42.59127095650084,
       "burst": 42.95107095650084,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 3
+      "neighbors": 4
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "lab": "deepseek",
+      "launch": 42.70839335233418,
+      "burst": 43.06819335233418,
+      "pan": -0.25,
+      "tone": 84,
+      "neighbors": 4
+    },
+    {
+      "id": "openai-gpt-5-5-instant",
+      "lab": "openai",
+      "launch": 42.94795805094929,
+      "burst": 43.30775805094929,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 2
     },
     {
       "id": "google-gemini-3-5-flash",
@@ -600,13 +870,31 @@
       "neighbors": 3
     },
     {
-      "id": "openai-gpt-5-6",
+      "id": "openai-gpt-5-6-sol",
       "lab": "openai",
       "launch": 45.055654518144685,
       "burst": 45.41545451814468,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 3
+      "neighbors": 5
+    },
+    {
+      "id": "openai-gpt-5-6-terra",
+      "lab": "openai",
+      "launch": 45.17277691397801,
+      "burst": 45.53257691397801,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 5
+    },
+    {
+      "id": "openai-gpt-5-6-luna",
+      "lab": "openai",
+      "launch": 45.28989930981135,
+      "burst": 45.649699309811346,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 7
     },
     {
       "id": "meta-muse-spark-1-1",
@@ -615,7 +903,7 @@
       "burst": 45.41545451814468,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 3
+      "neighbors": 5
     },
     {
       "id": "google-gemini-3-6-flash",
@@ -624,7 +912,16 @@
       "burst": 45.80456771208844,
       "pan": 0,
       "tone": 79,
-      "neighbors": 2
+      "neighbors": 5
+    },
+    {
+      "id": "google-gemini-3-5-flash-lite",
+      "lab": "google",
+      "launch": 45.561890107921776,
+      "burst": 45.921690107921776,
+      "pan": 0,
+      "tone": 79,
+      "neighbors": 4
     },
     {
       "id": "anthropic-claude-opus-5",
@@ -633,7 +930,7 @@
       "burst": 45.90184601057438,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 2
+      "neighbors": 4
     },
     {
       "id": "meta-muse-spark-1-2",
@@ -642,7 +939,16 @@
       "burst": 46.29095920451814,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 3
+      "neighbors": 4
+    },
+    {
+      "id": "meta-muse-glimmer",
+      "lab": "meta",
+      "launch": 46.09328970199471,
+      "burst": 46.45308970199471,
+      "pan": 0.25,
+      "tone": 89,
+      "neighbors": 4
     },
     {
       "id": "google-gemini-3-7-flash",
@@ -651,16 +957,16 @@
       "burst": 46.55036800048065,
       "pan": 0,
       "tone": 79,
-      "neighbors": 3
+      "neighbors": 4
     },
     {
-      "id": "deepseek-v4-pro-ga",
+      "id": "deepseek-v4-pro-0813",
       "lab": "deepseek",
       "launch": 46.19056800048065,
       "burst": 46.55036800048065,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 3
+      "neighbors": 4
     },
     {
       "id": "anthropic-claude-fable-5-1",
@@ -714,7 +1020,16 @@
       "burst": 47.8474119802932,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 4
+      "neighbors": 5
+    },
+    {
+      "id": "openai-gpt-6-luna",
+      "lab": "openai",
+      "launch": 47.60473437612654,
+      "burst": 47.96453437612654,
+      "pan": -0.5,
+      "tone": 86,
+      "neighbors": 5
     },
     {
       "id": "anthropic-claude-opus-5-5",
@@ -723,7 +1038,7 @@
       "burst": 47.8474119802932,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 4
+      "neighbors": 5
     },
     {
       "id": "anthropic-claude-sonnet-5-5",
@@ -732,7 +1047,7 @@
       "burst": 48.041968577265074,
       "pan": 0.5,
       "tone": 82,
-      "neighbors": 4
+      "neighbors": 6
     },
     {
       "id": "openai-gpt-6-1-sol",
@@ -741,7 +1056,16 @@
       "burst": 48.07439467676039,
       "pan": -0.5,
       "tone": 86,
-      "neighbors": 4
+      "neighbors": 6
+    },
+    {
+      "id": "anthropic-claude-haiku-5-5",
+      "lab": "anthropic",
+      "launch": 47.974003472722906,
+      "burst": 48.333803472722906,
+      "pan": 0.5,
+      "tone": 82,
+      "neighbors": 7
     },
     {
       "id": "meta-muse-wonder",
@@ -750,7 +1074,16 @@
       "burst": 48.495933970199474,
       "pan": 0.25,
       "tone": 89,
-      "neighbors": 3
+      "neighbors": 5
+    },
+    {
+      "id": "meta-muse-wonder-full",
+      "lab": "meta",
+      "launch": 48.25325636603281,
+      "burst": 48.61305636603281,
+      "pan": 0.25,
+      "tone": 89,
+      "neighbors": 5
     },
     {
       "id": "google-gemini-4-argon",
@@ -759,7 +1092,7 @@
       "burst": 48.528360069694784,
       "pan": 0,
       "tone": 79,
-      "neighbors": 3
+      "neighbors": 5
     },
     {
       "id": "deepseek-v4-1-flash-1017",
@@ -768,7 +1101,7 @@
       "burst": 48.65806446767604,
       "pan": -0.25,
       "tone": 84,
-      "neighbors": 3
+      "neighbors": 5
     }
   ]
 }

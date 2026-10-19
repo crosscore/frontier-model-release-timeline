@@ -40,7 +40,7 @@ function text(value, context, max = 600) {
 
 export function validateDataset(data) {
   keys(data, ['schemaVersion', 'title', 'startDate', 'endDate', 'verifiedOn', 'scope', 'capability', 'labs', 'releases'], 'Dataset');
-  requireThat(data.schemaVersion === 2, 'Unsupported schemaVersion');
+  requireThat(data.schemaVersion === 3, 'Unsupported schemaVersion');
   text(data.title, 'title'); text(data.scope, 'scope');
   keys(data.capability, ['index', 'publisher', 'url', 'data', 'license', 'retrievedOn'], 'Capability index');
   for (const field of ['index', 'publisher', 'license']) text(data.capability[field], `capability.${field}`, 80);
@@ -63,7 +63,7 @@ export function validateDataset(data) {
     labs.add(lab.id);
   }
   requireThat(Array.isArray(data.releases) && data.releases.length > 0, 'At least one release is required');
-  const ids = new Set(), labDates = new Set();
+  const ids = new Set(), modelDates = new Set();
   let previous = '';
   for (const event of data.releases) {
     keys(event, ['id', 'date', 'lab', 'name', 'stage', 'capability', 'sources', 'note'], 'Release');
@@ -75,9 +75,9 @@ export function validateDataset(data) {
     requireThat(value >= start && value <= end, `${event.id}: date outside observation window`);
     requireThat(event.date >= previous, 'Releases must be in chronological order');
     previous = event.date;
-    const key = `${event.lab}:${event.date}`;
-    requireThat(!labDates.has(key), `Group simultaneous models from the same lab into one event: ${key}`);
-    labDates.add(key);
+    const key = `${event.lab}:${event.date}:${event.name}`;
+    requireThat(!modelDates.has(key), `Duplicate lab/date/model: ${key}`);
+    modelDates.add(key);
     requireThat(['release', 'preview'].includes(event.stage), `${event.id}: invalid stage`);
     if (event.note !== undefined) text(event.note, `${event.id}: note`);
     if (event.capability !== undefined) {
@@ -107,9 +107,41 @@ export function yearlyStats(data) {
     const observedDays = end - start + 1;
     result.push({ year, start: iso(start), end: iso(end), observedDays, count: events.length,
       partial: observedDays !== day(`${year + 1}-01-01`) - day(`${year}-01-01`),
-      daysPerLaunch: events.length ? observedDays / events.length : null,
+      daysPerModel: events.length ? observedDays / events.length : null,
       meanGapDays: events.length > 1 ? (day(events.at(-1).date) - day(events[0].date)) / (events.length - 1) : null,
       byLab: Object.fromEntries(data.labs.map(lab => [lab.id, events.filter(e => e.lab === lab.id).length])) });
   }
   return result;
+}
+
+// Announcements are derived, never stored. Stable sorting preserves JSON order for equal or missing scores.
+export function launchGroups(data) {
+  const groups = new Map();
+  for (const model of data.releases) {
+    const id = `${model.lab}-${model.date}`;
+    if (!groups.has(id)) groups.set(id, { id, lab: model.lab, date: model.date, models: [] });
+    groups.get(id).models.push(model);
+  }
+  return [...groups.values()].map(group => ({ ...group, models: group.models.sort((a, b) =>
+    (Number.isFinite(b.capability?.score) ? b.capability.score : -Infinity) -
+    (Number.isFinite(a.capability?.score) ? a.capability.score : -Infinity)) }));
+}
+
+export function modelLabel(model, compact = false) {
+  const full = model.name + (model.stage === 'preview' ? ' *' : '');
+  return compact ? full.replace(/^Claude (?=[A-Za-z]|\d+(?:\.\d+)* [A-Za-z])/, '').replace(/^DeepSeek (?=[A-Z]\d)/, '').replace(/ \(([A-Za-z]+) \d{4}\)/, ' ($1)') : full;
+}
+
+// Only elide leading words shared with the first full name; always retain at least one word.
+export function joinNames(models, compact = false) {
+  if (!models.length) return '';
+  const records = models.map(model => typeof model === 'string' ? { name: model } : model);
+  const first = records[0].name.split(' ');
+  return records.map((model, i) => {
+    if (!i) return modelLabel(model, compact);
+    const words = model.name.split(' ');
+    let shared = 0;
+    while (shared < words.length - 1 && shared < first.length && words[shared] === first[shared]) shared++;
+    return modelLabel({ ...model, name: words.slice(shared).join(' ') }, compact);
+  }).join(' · ');
 }

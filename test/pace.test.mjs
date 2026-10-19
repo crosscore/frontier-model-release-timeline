@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { launchesOf, paceAt, pacePeak, PACE_CADENCES, PACE_PER_DAYS, PACE_TAU_DAYS } from '../src/pace.mjs';
+import { launchesOf, launchesAt, paceAt, pacePeak, PACE_CADENCES, PACE_PER_DAYS, PACE_TAU_DAYS } from '../src/pace.mjs';
 
 const near = (a, b, tolerance = 1e-9) => assert(Math.abs(a - b) <= tolerance, `${a} is not near ${b}`);
 
@@ -27,4 +27,17 @@ test('the peak follows a launch, and same-day launches from different labs both 
   near(pacePeak(launches), Math.max(...launches.map(l => paceAt(launches, l.day))));
   for (let d = launches[0].day; d < launches[2].day + 90; d += .5) assert(paceAt(launches, d) <= pacePeak(launches) + 1e-12);
   assert.equal(pacePeak([]), 0);
+});
+
+test('a salvo adds one pace impulse per model at its own onset without moving the date', () => {
+  const data = { releases: [{ id: 'first', date: '2025-05-22' }, { id: 'second', date: '2025-05-22' }] };
+  const timeline = { onsets: new Map([['first', 10], ['second', 10.1171875]]) };
+  assert.equal(launchesAt(data, timeline, 9.99).length, 0);
+  const beforeSecond = launchesAt(data, timeline, 10.11718);
+  assert.equal(beforeSecond.length, 1);
+  const both = launchesAt(data, timeline, 10.5);
+  assert.equal(both.length, 2);
+  assert.equal(both[0].day, both[1].day);
+  near(paceAt(both, both[0].day), 2 * PACE_PER_DAYS / PACE_TAU_DAYS);
+  assert(paceAt(beforeSecond, both[0].day) < PACE_PER_DAYS / PACE_TAU_DAYS);
 });

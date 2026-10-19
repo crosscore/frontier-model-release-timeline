@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createCanvas } from '@napi-rs/canvas';
-import { loadDataset, day, validateDataset } from '../src/data.mjs';
+import { loadDataset, day, validateDataset, launchGroups, joinNames } from '../src/data.mjs';
 import { BAR_SECONDS, BEAT_SECONDS, cuePoints, energy, kickTimes, makeTimeline, scorePart } from '../src/timeline.mjs';
 import { cameraAt, DIVE_SECONDS, REVEAL_SECONDS } from '../src/camera.mjs';
-import { activeFireworks, burstRays, chartBox, chartScale, eventPose, glyph, LAB_STYLES, labStyles, LEDGER_ROWS, ledgerLayout, ledgerRows, lightingAt, modelLabel, reignition, scoreOf, TAG, tagGroups, FIREWORK } from '../src/draw.mjs';
+import { activeFireworks, burstRays, chartBox, chartScale, eventPose, glyph, LAB_STYLES, labStyles, LEDGER_ROWS, ledgerLayout, ledgerEntries, ledgerRows, lightingAt, modelLabel, reignition, scoreOf, TAG, tagGroups, FIREWORK } from '../src/draw.mjs';
 import { makeRenderer } from '../src/node-renderer.mjs';
 import { captions, previewHtml } from '../src/artifacts.mjs';
 import { labSubset, stressDataset } from '../scripts/visual-fixtures.mjs';
@@ -71,17 +71,18 @@ function ledgerTexts(data, timeline, format, seconds) {
   renderer.frame(seconds);
   return new Map(ledgerLayout(data, format).map(c => [c.lab.id, drawn.filter(d => d.y > c.y + 15 && d.y <= c.bottom && d.x >= c.x - 1 && d.x <= c.x + c.w).map(d => d.value)]));
 }
-test('every lab lists its four newest names in both layouts, with real labs and with five long names', () => {
+test('both layouts draw all names in the complete visible rows, with the newest announcement present', () => {
   for (const set of [data, stress]) {
     const clock = makeTimeline(set), hold = cuePoints(clock).drop + 1;
     for (const format of ['landscape', 'portrait']) {
-      const texts = ledgerTexts(set, clock, format, hold), compact = ledgerLayout(set, format)[0].compact;
-      for (const lab of set.labs) {
-        const newest = set.releases.filter(e => e.lab === lab.id).slice(-LEDGER_ROWS).map(e => modelLabel(e, compact));
-        const names = (t, name) => t === name || (t.endsWith('…') && t.length > 8 && name.startsWith(t.slice(0, -1)));
-        const shown = texts.get(lab.id).filter(t => newest.some(name => names(t, name)));
-        assert.equal(shown.length, LEDGER_ROWS, `${format}: ${lab.name} lists ${shown.join(', ')}`);
-        for (const name of newest) assert(shown.some(t => names(t, name)), `${format}: ${lab.name} does not list ${name}`);
+      const texts = ledgerTexts(set, clock, format, hold), ctx = makeRenderer(set, clock, format).canvas.getContext('2d');
+      for (const col of ledgerLayout(set, format)) {
+        const groups = launchGroups(set).filter(g => g.lab === col.lab.id);
+        const rows = ledgerEntries(ctx, groups.slice(-6), col, clock, hold).filter(r => r.complete && r.alpha > .01);
+        assert(rows.some(r => r.event.id === groups.at(-1).id), `${format}: newest ${col.lab.name} is present`);
+        assert(rows.length >= (set === data ? 3 : 2), `${format}: ${col.lab.name} has at least three complete rows`);
+        const shown = texts.get(col.lab.id).join(' ');
+        for (const row of rows) assert(shown.includes(row.names.lines.join(' ')), `${format}: omitted visible name ${row.name}`);
       }
     }
   }
@@ -173,7 +174,7 @@ test('ledger shows the newest name on top and pushes older rows down smoothly wi
     previous = rows;
   }
   for (const lab of data.labs) {
-    const labEvents = data.releases.filter(e => e.lab === lab.id);
+    const labEvents = launchGroups(data).filter(e => e.lab === lab.id).map(g => g.models[0]);
     for (const e of labEvents) for (const dt of [0, .03, .1, .2]) {
       const time = timeline.onsets.get(e.id) + dt, rows = ledgerRows(labEvents.filter(x => timeline.onsets.get(x.id) <= time).slice(-6), timeline, time);
       for (let k = 1; k < rows.length; k++) assert(rows[k - 1].row - rows[k].row >= 1 - 1e-9);
@@ -238,7 +239,7 @@ test('burst forms differ in arrangement but share ray count, reach and lifetime'
 test('name tags stay up for at least the merge window and never name more than three launches', () => {
   for (const set of [data, stress]) {
     const clock = makeTimeline(set), groups = tagGroups(set, clock);
-    assert.equal(groups.reduce((n, g) => n + g.events.length, 0), set.releases.length, 'every launch is in one tag');
+    assert.equal(groups.reduce((n, g) => n + g.events.length, 0), launchGroups(set).length, 'every announcement is in one tag');
     for (const [i, g] of groups.entries()) {
       assert(g.end - g.start >= TAG.merge - 1e-9, `tag at ${g.start.toFixed(2)} s lasts ${(g.end - g.start).toFixed(3)} s`);
       assert(g.end - g.start <= TAG.life + 1e-9 && (groups[i + 1]?.start ?? Infinity) >= g.end);
@@ -261,7 +262,7 @@ function drawLog(data, timeline, format) {
     fillText(value, x, y);
   };
   ctx.roundRect = (x, y, w, h, radius) => {
-    log.push({ op: 'plate', x, y, w, h });
+    log.push({ op: 'plate', x, y, w, h, alpha: ctx.globalAlpha });
     roundRect(x, y, w, h, radius);
   };
   ctx.fill = (...args) => {
@@ -335,7 +336,7 @@ test('the plate dims the bursts and step lines under a tag at the reviewed dense
           for (let x = Math.ceil(plate.x + 10); x <= Math.floor(plate.x + plate.w - 10); x++) {
             const k = (y * width + x) * 4;
             brightest = Math.max(brightest, luma(under, k));
-            assert(luma(shown, k) <= .2 * luma(under, k) + .05, `${at}: pixel (${x}, ${y}) is not dimmed by the plate`);
+            assert(luma(shown, k) <= (1 - .8 * plate.alpha) * luma(under, k) + .05, `${at}: pixel (${x}, ${y}) is not dimmed by the plate`);
           }
         }
       }

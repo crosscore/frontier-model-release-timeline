@@ -7,9 +7,11 @@ import { loadDataset, yearlyStats } from '../src/data.mjs';
 import { makeTimeline } from '../src/timeline.mjs';
 import { captions, sourceCsv, previewHtml } from '../src/artifacts.mjs';
 import { soundCues, SCORE } from '../src/audio.mjs';
+import { syncDocs } from './sync-docs.mjs';
 import { options } from './options.mjs';
 const args = options();
 const data = await loadDataset(args.data), timeline = makeTimeline(data);
+await syncDocs(data, { check: true });
 const text = name => readFile(join(args.out, name), 'utf8');
 const json = async name => JSON.parse(await text(name));
 assert.deepEqual(await json('releases.json'), data, 'bundled dataset');
@@ -40,4 +42,4 @@ for (const format of ['landscape', 'portrait']) {
 }
 assert((await stat(join(args.out, 'preview.gif'))).size > 0);
 assert((await stat(join(args.out, 'preview.gif'))).size <= 15_000_000, 'GIF <= 15 MB');
-console.log(`Verified both artifact bundles against ${data.releases.length} events, sources, annual statistics, captions, original score and date-exact cues.`);
+console.log(`Verified both artifact bundles against ${data.releases.length} models, sources, annual statistics, captions, original score and announcement-sequenced cues.`);

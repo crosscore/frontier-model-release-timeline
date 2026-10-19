@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "title": "Frontier / Release rhythm",
   "startDate": "2023-01-01",
   "endDate": "2026-10-19",
   "verifiedOn": "2026-10-19",
-  "scope": "Selected public main-family model launch events from OpenAI, Anthropic, Google (Gemini), DeepSeek and Meta. Not a complete industry census or benchmark ranking; burst heights use Epoch AI's ECI for the matching released version.",
+  "scope": "Selected public main-family named model launches from OpenAI, Anthropic, Google (PaLM 2 and Gemini), DeepSeek and Meta. Not a complete industry census or benchmark ranking; burst heights use Epoch AI's ECI for the matching released version.",
   "capability": {
     "index": "Epoch Capabilities Index (ECI)",
     "publisher": "Epoch AI",
@@ -95,6 +95,34 @@
       "note": "Initial public introduction; access initially offered via partners and requests."
     },
     {
+      "id": "anthropic-claude-instant",
+      "date": "2023-03-14",
+      "lab": "anthropic",
+      "name": "Claude Instant",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/introducing-claude",
+          "title": "Claude Instant — official announcement"
+        }
+      ],
+      "note": "Introduced alongside Claude as a separately named faster general-purpose model."
+    },
+    {
+      "id": "google-palm-2",
+      "date": "2023-05-10",
+      "lab": "google",
+      "name": "PaLM 2",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/products/google-palm-2-ai-large-language-model/",
+          "title": "PaLM 2 — official announcement"
+        }
+      ],
+      "note": "Introduced in Bard and the PaLM API that day; Google main family before Gemini. Publicly shipped size versus Epoch PaLM 2-L/M/S score correspondence to be confirmed; left unscored."
+    },
+    {
       "id": "anthropic-claude-2",
       "date": "2023-07-11",
       "lab": "anthropic",
@@ -132,6 +160,24 @@
         }
       ],
       "note": "7B/13B/70B base/chat grouped; 70B tier ECI. Custom Llama 2 Community License permits qualified commercial use; open weights does not imply OSI open source."
+    },
+    {
+      "id": "anthropic-claude-instant-1-2",
+      "date": "2023-08-09",
+      "lab": "anthropic",
+      "name": "Claude Instant 1.2",
+      "stage": "release",
+      "capability": {
+        "model": "Claude Instant",
+        "score": 120.31
+      },
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/releasing-claude-instant-1-2",
+          "title": "Claude Instant 1.2 — official announcement"
+        }
+      ],
+      "note": "Epoch Claude Instant is dated 2023-08-09, matching the 1.2 release; exact version identification to be confirmed."
     },
     {
       "id": "openai-gpt-4-turbo",
@@ -193,7 +239,7 @@
       "id": "google-gemini-1",
       "date": "2023-12-06",
       "lab": "google",
-      "name": "Gemini 1.0",
+      "name": "Gemini 1.0 Pro",
       "stage": "release",
       "capability": {
         "model": "Gemini 1.0 Pro",
@@ -205,7 +251,7 @@
           "title": "Gemini 1.0 — official announcement"
         }
       ],
-      "note": "Pro in Bard and Nano on Pixel 8 Pro from launch day; Gemini API followed Dec 13. Ultra was announced here but released later."
+      "note": "Pro available in Bard from launch day; Gemini API followed Dec 13. Nano is excluded as on-device-only. Ultra was announced here but released later."
     },
     {
       "id": "google-gemini-ultra-1",
@@ -236,10 +282,10 @@
       "note": "Limited preview by sign-up in AI Studio and Vertex AI; public API preview Apr 9 and GA May 23, 2024 are not counted again."
     },
     {
-      "id": "anthropic-claude-3",
+      "id": "anthropic-claude-3-opus",
       "date": "2024-03-04",
       "lab": "anthropic",
-      "name": "Claude 3",
+      "name": "Claude 3 Opus",
       "stage": "release",
       "capability": {
         "model": "Claude 3 Opus",
@@ -251,7 +297,43 @@
           "title": "Claude 3 — official announcement"
         }
       ],
-      "note": "Opus and Sonnet grouped as one launch event; Haiku arrived later."
+      "note": "Opus released on March 4; Haiku arrived later."
+    },
+    {
+      "id": "anthropic-claude-3-sonnet",
+      "date": "2024-03-04",
+      "lab": "anthropic",
+      "name": "Claude 3 Sonnet",
+      "stage": "release",
+      "capability": {
+        "model": "Claude 3 Sonnet",
+        "score": 120.72
+      },
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-3-family",
+          "title": "Claude 3 — official announcement"
+        }
+      ],
+      "note": "Sonnet released alongside Claude 3 Opus on March 4; Haiku arrived later."
+    },
+    {
+      "id": "anthropic-claude-3-haiku",
+      "date": "2024-03-13",
+      "lab": "anthropic",
+      "name": "Claude 3 Haiku",
+      "stage": "release",
+      "capability": {
+        "model": "Claude 3 Haiku",
+        "score": 118.39
+      },
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-3-haiku",
+          "title": "Claude 3 Haiku — official announcement"
+        }
+      ],
+      "note": "March 4 was an announcement of future availability; use the March 13 public release. Epoch dates this checkpoint March 7."
     },
     {
       "id": "meta-llama-3",
@@ -315,6 +397,42 @@
       ]
     },
     {
+      "id": "google-gemini-1-5-flash",
+      "date": "2024-05-14",
+      "lab": "google",
+      "name": "Gemini 1.5 Flash",
+      "stage": "preview",
+      "capability": {
+        "model": "Gemini 1.5 Flash (May 2024)",
+        "score": 122.61
+      },
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/products/google-gemini-update-flash-ai-assistant-io-2024/",
+          "title": "Gemini 1.5 Flash — official announcement"
+        },
+        {
+          "url": "https://ai.google.dev/gemini-api/docs/changelog",
+          "title": "Gemini 1.5 Flash — official API changelog"
+        }
+      ],
+      "note": "Public preview at I/O on May 14; the API changelog records a May 10 preview, so the first-public date is to be confirmed. Epoch dates the May checkpoint May 23."
+    },
+    {
+      "id": "deepseek-v2-lite",
+      "date": "2024-05-16",
+      "lab": "deepseek",
+      "name": "DeepSeek V2-Lite",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://github.com/deepseek-ai/DeepSeek-V2",
+          "title": "DeepSeek V2-Lite — official announcement"
+        }
+      ],
+      "note": "Official repository News dates release May 16. Separately named small V2 tier with Chat and public weights."
+    },
+    {
       "id": "anthropic-claude-3-5-sonnet",
       "date": "2024-06-20",
       "lab": "anthropic",
@@ -331,6 +449,24 @@
         }
       ],
       "note": "API release log dates availability June 20; the news page currently displays June 21."
+    },
+    {
+      "id": "openai-gpt-4o-mini",
+      "date": "2024-07-18",
+      "lab": "openai",
+      "name": "GPT-4o mini",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-4o mini",
+        "score": 126.58
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/",
+          "title": "GPT-4o mini — official announcement"
+        }
+      ],
+      "note": "Separately named small general-purpose GPT-4o tier."
     },
     {
       "id": "meta-llama-3-1",
@@ -390,6 +526,24 @@
       ]
     },
     {
+      "id": "openai-o1-mini",
+      "date": "2024-09-12",
+      "lab": "openai",
+      "name": "o1-mini",
+      "stage": "release",
+      "capability": {
+        "model": "o1-mini",
+        "score": 135.82
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-openai-o1-preview/",
+          "title": "o1-mini — official announcement"
+        }
+      ],
+      "note": "Released alongside o1-preview; this model is a release even though the other model is a preview."
+    },
+    {
       "id": "meta-llama-3-2",
       "date": "2024-09-25",
       "lab": "meta",
@@ -428,6 +582,28 @@
         }
       ],
       "note": "v2 is an editorial label for the explicitly announced upgraded Sonnet."
+    },
+    {
+      "id": "anthropic-claude-3-5-haiku",
+      "date": "2024-11-04",
+      "lab": "anthropic",
+      "name": "Claude 3.5 Haiku",
+      "stage": "release",
+      "capability": {
+        "model": "Claude 3.5 Haiku",
+        "score": 127.17
+      },
+      "sources": [
+        {
+          "url": "https://platform.claude.com/docs/en/release-notes/overview",
+          "title": "Claude 3.5 Haiku — official API release notes"
+        },
+        {
+          "url": "https://www.anthropic.com/news/3-5-models-and-computer-use",
+          "title": "Claude 3.5 Haiku — official announcement"
+        }
+      ],
+      "note": "October 22 announced future availability; the API release log records November 4 availability. Epoch dates the checkpoint October 22."
     },
     {
       "id": "deepseek-r1-lite-preview",
@@ -550,6 +726,24 @@
       "note": "Main 671B reasoning model, MIT weights. R1-Zero research checkpoint and six distilled models do not add events or supply the score."
     },
     {
+      "id": "openai-o3-mini",
+      "date": "2025-01-31",
+      "lab": "openai",
+      "name": "o3-mini",
+      "stage": "release",
+      "capability": {
+        "model": "o3-mini",
+        "score": 140.33
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/openai-o3-mini/",
+          "title": "o3-mini — official announcement"
+        }
+      ],
+      "note": "Separately named small general-purpose reasoning tier."
+    },
+    {
       "id": "google-gemini-2-0-pro",
       "date": "2025-02-05",
       "lab": "google",
@@ -565,7 +759,21 @@
           "title": "Gemini 2.0 Pro — official announcement"
         }
       ],
-      "note": "Experimental 2.0 Pro; same-day 2.0 Flash GA and 2.0 Flash-Lite preview are grouped here, not counted separately."
+      "note": "Experimental Pro preview. Same-day Gemini 2.0 Flash GA adds availability to the existing Flash model and is excluded."
+    },
+    {
+      "id": "google-gemini-2-0-flash-lite",
+      "date": "2025-02-05",
+      "lab": "google",
+      "name": "Gemini 2.0 Flash-Lite",
+      "stage": "preview",
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-model-updates-february-2025/",
+          "title": "Gemini 2.0 Pro — official announcement"
+        }
+      ],
+      "note": "Public Flash-Lite preview. No exact matching ECI CSV row. Same-day Gemini 2.0 Flash GA is an availability addition and is excluded."
     },
     {
       "id": "anthropic-claude-3-7-sonnet",
@@ -642,10 +850,10 @@
       "note": "Experimental at launch; updated previews on May 6 and Jun 5 and stable GA on Jun 17, 2025 are not counted again."
     },
     {
-      "id": "meta-llama-4",
+      "id": "meta-llama-4-maverick",
       "date": "2025-04-05",
       "lab": "meta",
-      "name": "Llama 4",
+      "name": "Llama 4 Maverick",
       "stage": "release",
       "capability": {
         "model": "Llama 4 Maverick",
@@ -661,7 +869,29 @@
           "title": "Official corroborating model card / announcement"
         }
       ],
-      "note": "Scout/Maverick grouped; use Maverick highest released tier. Behemoth still in training and excluded. Custom Llama 4 Community License. Epoch CSV dates Maverick April 6; official announcement and model card say April 5, used here."
+      "note": "Maverick publicly released on April 5; Epoch CSV dates it April 6. Custom Llama 4 Community License. Unreleased Behemoth excluded."
+    },
+    {
+      "id": "meta-llama-4-scout",
+      "date": "2025-04-05",
+      "lab": "meta",
+      "name": "Llama 4 Scout",
+      "stage": "release",
+      "capability": {
+        "model": "Llama 4 Scout",
+        "score": 129.65
+      },
+      "sources": [
+        {
+          "url": "https://ai.meta.com/blog/llama-4-multimodal-intelligence/",
+          "title": "Llama 4 — official announcement / model card"
+        },
+        {
+          "url": "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct",
+          "title": "Official corroborating model card / announcement"
+        }
+      ],
+      "note": "Scout publicly released alongside Maverick on April 5. Custom Llama 4 Community License. Unreleased Behemoth excluded."
     },
     {
       "id": "openai-gpt-4-1",
@@ -682,6 +912,42 @@
       "note": "API launch; later ChatGPT availability is not counted again."
     },
     {
+      "id": "openai-gpt-4-1-mini",
+      "date": "2025-04-14",
+      "lab": "openai",
+      "name": "GPT-4.1 mini",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-4.1 mini",
+        "score": 135
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-4-1/",
+          "title": "GPT-4.1 mini — official announcement"
+        }
+      ],
+      "note": "Separately named small tier released alongside GPT-4.1 and nano."
+    },
+    {
+      "id": "openai-gpt-4-1-nano",
+      "date": "2025-04-14",
+      "lab": "openai",
+      "name": "GPT-4.1 nano",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-4.1 nano",
+        "score": 129.63
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-4-1/",
+          "title": "GPT-4.1 nano — official announcement"
+        }
+      ],
+      "note": "Separately named smallest tier released alongside GPT-4.1 and mini."
+    },
+    {
       "id": "openai-o3",
       "date": "2025-04-16",
       "lab": "openai",
@@ -697,13 +963,49 @@
           "title": "o3 — official announcement"
         }
       ],
-      "note": "o4-mini announced alongside o3 is outside this sample's smaller-model scope."
+      "note": "o3 released alongside the separately named o4-mini."
     },
     {
-      "id": "anthropic-claude-4",
+      "id": "openai-o4-mini",
+      "date": "2025-04-16",
+      "lab": "openai",
+      "name": "o4-mini",
+      "stage": "release",
+      "capability": {
+        "model": "o4-mini",
+        "score": 145.6
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-o3-and-o4-mini/",
+          "title": "o3 — official announcement"
+        }
+      ],
+      "note": "o4-mini released alongside o3."
+    },
+    {
+      "id": "google-gemini-2-5-flash",
+      "date": "2025-04-17",
+      "lab": "google",
+      "name": "Gemini 2.5 Flash",
+      "stage": "preview",
+      "capability": {
+        "model": "Gemini 2.5 Flash (Apr 2025)",
+        "score": 139.94
+      },
+      "sources": [
+        {
+          "url": "https://blog.google/products-and-platforms/products/gemini/gemini-2-5-flash-preview/",
+          "title": "Gemini 2.5 Flash — official announcement"
+        }
+      ],
+      "note": "Public preview of the separately named fast general-purpose tier; use the April checkpoint."
+    },
+    {
+      "id": "anthropic-claude-opus-4",
       "date": "2025-05-22",
       "lab": "anthropic",
-      "name": "Claude 4",
+      "name": "Claude Opus 4",
       "stage": "release",
       "capability": {
         "model": "Claude Opus 4",
@@ -715,7 +1017,25 @@
           "title": "Claude 4 — official announcement"
         }
       ],
-      "note": "Opus 4 and Sonnet 4 grouped as one launch event."
+      "note": "Opus 4 released alongside Sonnet 4."
+    },
+    {
+      "id": "anthropic-claude-sonnet-4",
+      "date": "2025-05-22",
+      "lab": "anthropic",
+      "name": "Claude Sonnet 4",
+      "stage": "release",
+      "capability": {
+        "model": "Claude Sonnet 4",
+        "score": 141.67
+      },
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-4",
+          "title": "Claude 4 — official announcement"
+        }
+      ],
+      "note": "Sonnet 4 released alongside Opus 4."
     },
     {
       "id": "deepseek-r1-0528",
@@ -738,6 +1058,24 @@
         }
       ],
       "note": "Explicit major reasoning revision with benchmark gains and added JSON/function calling. MIT; the distilled Qwen3-8B is excluded."
+    },
+    {
+      "id": "google-gemini-2-5-flash-lite",
+      "date": "2025-06-17",
+      "lab": "google",
+      "name": "Gemini 2.5 Flash-Lite",
+      "stage": "preview",
+      "capability": {
+        "model": "Gemini 2.5 Flash-Lite (Jun 2025)",
+        "score": 133.95
+      },
+      "sources": [
+        {
+          "url": "https://blog.google/products-and-platforms/products/gemini/gemini-2-5-model-family-expands/",
+          "title": "Gemini 2.5 Flash-Lite — official announcement"
+        }
+      ],
+      "note": "Public preview of the separately named lightweight tier; use the June checkpoint."
     },
     {
       "id": "anthropic-claude-opus-4-1",
@@ -774,6 +1112,42 @@
       ]
     },
     {
+      "id": "openai-gpt-5-mini",
+      "date": "2025-08-07",
+      "lab": "openai",
+      "name": "GPT-5 mini",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-5 mini",
+        "score": 145.43
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-5-for-developers/",
+          "title": "GPT-5 mini — official announcement"
+        }
+      ],
+      "note": "Separately named small tier released alongside GPT-5 and nano."
+    },
+    {
+      "id": "openai-gpt-5-nano",
+      "date": "2025-08-07",
+      "lab": "openai",
+      "name": "GPT-5 nano",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-5 nano",
+        "score": 139.33
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-5-for-developers/",
+          "title": "GPT-5 nano — official announcement"
+        }
+      ],
+      "note": "Separately named smallest tier released alongside GPT-5 and mini."
+    },
+    {
       "id": "deepseek-v3-1",
       "date": "2025-08-21",
       "lab": "deepseek",
@@ -793,7 +1167,7 @@
           "title": "Official model card / repository"
         }
       ],
-      "note": "Unified hybrid thinking/non-thinking main model; MIT weights. Both modes grouped, using the matching ECI V3.1 entry."
+      "note": "Unified hybrid thinking/non-thinking main model; MIT weights. Thinking and non-thinking are modes of the same version, counted as one model with the matching ECI V3.1 entry."
     },
     {
       "id": "anthropic-claude-sonnet-4-5",
@@ -835,6 +1209,24 @@
       "note": "Public experimental preview introducing DeepSeek Sparse Attention. API and MIT weights available, not a closed evaluation."
     },
     {
+      "id": "anthropic-claude-haiku-4-5",
+      "date": "2025-10-15",
+      "lab": "anthropic",
+      "name": "Claude Haiku 4.5",
+      "stage": "release",
+      "capability": {
+        "model": "Claude Haiku 4.5",
+        "score": 142.4
+      },
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/news/claude-haiku-4-5",
+          "title": "Claude Haiku 4.5 — official announcement"
+        }
+      ],
+      "note": "Separately named fast general-purpose Haiku tier."
+    },
+    {
       "id": "openai-gpt-5-1",
       "date": "2025-11-12",
       "lab": "openai",
@@ -850,7 +1242,21 @@
           "title": "GPT-5.1 — official announcement"
         }
       ],
-      "note": "Instant and Thinking grouped as one launch event."
+      "note": "Instant and Thinking are modes of the same version, counted as one model."
+    },
+    {
+      "id": "openai-gpt-5-1-instant",
+      "date": "2025-11-12",
+      "lab": "openai",
+      "name": "GPT-5.1 Instant",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-5-1/",
+          "title": "GPT-5.1 Instant — official announcement"
+        }
+      ],
+      "note": "Announcement explicitly names Instant and Thinking; API model gpt-5.1-chat-latest. No exact ECI row."
     },
     {
       "id": "google-gemini-3-pro",
@@ -915,7 +1321,7 @@
           "title": "DeepSeek V3.2 Speciale — official weights and model card"
         }
       ],
-      "note": "V3.2 and Speciale are grouped on December 1. The general V3.2 replaced V3.2-Exp in the app, web and API and supplies the exact Epoch DeepSeek-V3.2 score (model date December 1). Speciale is a same-day reasoning-maxed specialist with no tool calls, served from a temporary API endpoint until December 15; published weights do not make it the general main tier. It is treated like Deep Think / Pro compute-maxed modes and excluded specialist lines such as Prover / Math for score selection. Speciale remains grouped and its source is retained. 要確認 (editorial specialist-versus-main-tier boundary)."
+      "note": "General V3.2 replaced V3.2-Exp in the app, web and API; uses the exact DeepSeek-V3.2 ECI row. Speciale is excluded as a compute-only reasoning mode, like Deep Think / Pro. Its official source is retained as evidence for this distinction."
     },
     {
       "id": "openai-gpt-5-2",
@@ -933,6 +1339,38 @@
           "title": "GPT-5.2 — official announcement"
         }
       ]
+    },
+    {
+      "id": "openai-gpt-5-2-instant",
+      "date": "2025-12-11",
+      "lab": "openai",
+      "name": "GPT-5.2 Instant",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-5-2/",
+          "title": "GPT-5.2 Instant — official announcement"
+        }
+      ],
+      "note": "Explicitly named in the announcement; API model gpt-5.2-chat-latest. No exact ECI row."
+    },
+    {
+      "id": "google-gemini-3-flash",
+      "date": "2025-12-17",
+      "lab": "google",
+      "name": "Gemini 3 Flash",
+      "stage": "preview",
+      "capability": {
+        "model": "Gemini 3 Flash",
+        "score": 151.8
+      },
+      "sources": [
+        {
+          "url": "https://blog.google/products-and-platforms/products/gemini/gemini-3-flash/",
+          "title": "Gemini 3 Flash — official announcement"
+        }
+      ],
+      "note": "API model gemini-3-flash-preview; marked preview consistently with Gemini 3 Pro."
     },
     {
       "id": "anthropic-claude-opus-4-6",
@@ -1004,6 +1442,24 @@
       ]
     },
     {
+      "id": "google-gemini-3-1-flash-lite",
+      "date": "2026-03-03",
+      "lab": "google",
+      "name": "Gemini 3.1 Flash-Lite",
+      "stage": "preview",
+      "capability": {
+        "model": "Gemini 3.1 Flash-Lite",
+        "score": 144.47
+      },
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-1-flash-lite/",
+          "title": "Gemini 3.1 Flash-Lite — official announcement"
+        }
+      ],
+      "note": "First public preview; May 7 general availability is not counted again."
+    },
+    {
       "id": "openai-gpt-5-4",
       "date": "2026-03-05",
       "lab": "openai",
@@ -1019,6 +1475,42 @@
           "title": "GPT-5.4 — official announcement"
         }
       ]
+    },
+    {
+      "id": "openai-gpt-5-4-mini",
+      "date": "2026-03-17",
+      "lab": "openai",
+      "name": "GPT-5.4 mini",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-5.4 Mini",
+        "score": 148.77
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-5-4-mini-and-nano/",
+          "title": "GPT-5.4 mini — official announcement"
+        }
+      ],
+      "note": "Separately named small general-purpose tier released with nano."
+    },
+    {
+      "id": "openai-gpt-5-4-nano",
+      "date": "2026-03-17",
+      "lab": "openai",
+      "name": "GPT-5.4 nano",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-5.4 Nano",
+        "score": 146.12
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-5-4-mini-and-nano/",
+          "title": "GPT-5.4 nano — official announcement"
+        }
+      ],
+      "note": "Separately named smallest general-purpose tier released with mini."
     },
     {
       "id": "meta-muse-spark",
@@ -1078,10 +1570,10 @@
       "note": "ChatGPT/Codex rollout; the API followed April 24."
     },
     {
-      "id": "deepseek-v4-preview",
+      "id": "deepseek-v4-pro",
       "date": "2026-04-24",
       "lab": "deepseek",
-      "name": "DeepSeek V4",
+      "name": "DeepSeek V4 Pro",
       "stage": "preview",
       "capability": {
         "model": "DeepSeek-V4-Pro",
@@ -1097,7 +1589,47 @@
           "title": "Official model card / repository"
         }
       ],
-      "note": "Public preview; Pro/Flash grouped, using Pro preview ECI rather than later August GA. Million-token context and new architecture; MIT weights. Model card publication April 27 follows the April 24 launch."
+      "note": "Public Pro preview; uses the April checkpoint rather than the August revision. Million-token context and new architecture; MIT weights. Model card publication April 27 follows the April 24 launch."
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "date": "2026-04-24",
+      "lab": "deepseek",
+      "name": "DeepSeek V4 Flash",
+      "stage": "preview",
+      "capability": {
+        "model": "DeepSeek-V4-Flash",
+        "score": 146.05
+      },
+      "sources": [
+        {
+          "url": "https://www.deepseek.com/en/news/v4-preview/",
+          "title": "DeepSeek V4 — official release"
+        },
+        {
+          "url": "https://api-docs.deepseek.com/news/news260424/",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "Public Flash preview alongside V4 Pro; uses its own Flash checkpoint. Million-token context and new architecture; MIT weights. Model card publication April 27 follows the April 24 launch."
+    },
+    {
+      "id": "openai-gpt-5-5-instant",
+      "date": "2026-05-05",
+      "lab": "openai",
+      "name": "GPT-5.5 Instant",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-5.5 Instant",
+        "score": 142.45
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-5-5-instant/",
+          "title": "GPT-5.5 Instant — official announcement"
+        }
+      ],
+      "note": "Separately named general-purpose Instant release."
     },
     {
       "id": "google-gemini-3-5-flash",
@@ -1170,10 +1702,10 @@
       ]
     },
     {
-      "id": "openai-gpt-5-6",
+      "id": "openai-gpt-5-6-sol",
       "date": "2026-07-09",
       "lab": "openai",
-      "name": "GPT-5.6",
+      "name": "GPT-5.6 Sol",
       "stage": "release",
       "capability": {
         "model": "GPT-5.6 Sol",
@@ -1185,7 +1717,43 @@
           "title": "GPT-5.6 — official announcement"
         }
       ],
-      "note": "Sol/Terra/Luna grouped at general release; earlier closed partner preview excluded."
+      "note": "Sol tier at general release; earlier closed partner preview excluded."
+    },
+    {
+      "id": "openai-gpt-5-6-terra",
+      "date": "2026-07-09",
+      "lab": "openai",
+      "name": "GPT-5.6 Terra",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-5.6 Terra",
+        "score": 159.43
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-5-6/",
+          "title": "GPT-5.6 — official announcement"
+        }
+      ],
+      "note": "Terra tier at general release; earlier closed partner preview excluded."
+    },
+    {
+      "id": "openai-gpt-5-6-luna",
+      "date": "2026-07-09",
+      "lab": "openai",
+      "name": "GPT-5.6 Luna",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-5.6 Luna",
+        "score": 156.33
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-5-6/",
+          "title": "GPT-5.6 — official announcement"
+        }
+      ],
+      "note": "Luna tier at general release; earlier closed partner preview excluded."
     },
     {
       "id": "meta-muse-spark-1-1",
@@ -1225,7 +1793,25 @@
           "title": "Gemini 3.6 Flash — official announcement"
         }
       ],
-      "note": "Counted as a new version number; same-day 3.5 Flash-Lite and restricted 3.5 Flash Cyber are outside scope."
+      "note": "General release alongside Gemini 3.5 Flash-Lite. Restricted 3.5 Flash Cyber excluded."
+    },
+    {
+      "id": "google-gemini-3-5-flash-lite",
+      "date": "2026-07-21",
+      "lab": "google",
+      "name": "Gemini 3.5 Flash-Lite",
+      "stage": "release",
+      "capability": {
+        "model": "Gemini 3.5 Flash-Lite",
+        "score": 145.15
+      },
+      "sources": [
+        {
+          "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-6-flash-3-5-flash-lite-3-5-flash-cyber/",
+          "title": "Gemini 3.6 Flash — official announcement"
+        }
+      ],
+      "note": "General release of the separately named Flash-Lite model alongside Gemini 3.6 Flash. Restricted 3.5 Flash Cyber excluded."
     },
     {
       "id": "anthropic-claude-opus-5",
@@ -1263,6 +1849,20 @@
       "note": "Main Spark revision available via API and Muse Code. Coding-focused training retains general-agent capability; included as a main-family update, unlike a separate Codex/Code Llama specialized branch. Closed weights."
     },
     {
+      "id": "meta-muse-glimmer",
+      "date": "2026-08-10",
+      "lab": "meta",
+      "name": "Muse Glimmer",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://research.meta.ai/blog/introducing-muse-glimmer-open-agentic-model",
+          "title": "Muse Glimmer — official announcement"
+        }
+      ],
+      "note": "Separately named small Muse tier: 30B, public weights, general dialogue, reasoning and tool use. No exact ECI row."
+    },
+    {
       "id": "google-gemini-3-7-flash",
       "date": "2026-08-13",
       "lab": "google",
@@ -1281,10 +1881,10 @@
       "note": "Counted as a new version number; GA in the Gemini API on the announcement date."
     },
     {
-      "id": "deepseek-v4-pro-ga",
+      "id": "deepseek-v4-pro-0813",
       "date": "2026-08-13",
       "lab": "deepseek",
-      "name": "DeepSeek V4 Pro",
+      "name": "DeepSeek V4 Pro-0813",
       "stage": "release",
       "capability": {
         "model": "DeepSeek V4 Pro 0813",
@@ -1420,7 +2020,29 @@
           "title": "Official related-article date: September 22, 2026"
         }
       ],
-      "note": "Sol counted as one launch event; accompanying Luna is not a separate event."
+      "note": "Sol publicly released alongside the separately named Luna tier."
+    },
+    {
+      "id": "openai-gpt-6-luna",
+      "date": "2026-09-22",
+      "lab": "openai",
+      "name": "GPT-6 Luna",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-6 Luna",
+        "score": 156.31
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
+          "title": "GPT-6 Sol — official announcement"
+        },
+        {
+          "url": "https://openai.com/index/introducing-gpt-6-1-sol/",
+          "title": "Official related-article date: September 22, 2026"
+        }
+      ],
+      "note": "Luna publicly released alongside Sol."
     },
     {
       "id": "anthropic-claude-opus-5-5",
@@ -1479,6 +2101,24 @@
       "note": "Date confirmed by the GPT-6 Sol and Luna article's September 29 update."
     },
     {
+      "id": "anthropic-claude-haiku-5-5",
+      "date": "2026-10-07",
+      "lab": "anthropic",
+      "name": "Claude Haiku 5.5",
+      "stage": "release",
+      "capability": {
+        "model": "Claude Haiku 5.5",
+        "score": 158.98
+      },
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/claude-haiku-5-5",
+          "title": "Claude Haiku 5.5 — official announcement"
+        }
+      ],
+      "note": "Separately named fast general-purpose tier; the October 3–19 audit had excluded it under the previous small-tier rule."
+    },
+    {
       "id": "meta-muse-wonder",
       "date": "2026-10-12",
       "lab": "meta",
@@ -1490,7 +2130,21 @@
           "title": "Muse Wonder — official announcement / model card"
         }
       ],
-      "note": "Wonder and Wonder Full grouped. Both publicly released through API/Muse Code or paid subscription; Full is a separately trained larger base-model tier, not just a compute-only mode. No matching ECI entry."
+      "note": "Wonder publicly released through API and Muse Code. No matching ECI entry."
+    },
+    {
+      "id": "meta-muse-wonder-full",
+      "date": "2026-10-12",
+      "lab": "meta",
+      "name": "Muse Wonder Full",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://research.meta.ai/blog/muse-wonder",
+          "title": "Muse Wonder — official announcement / model card"
+        }
+      ],
+      "note": "Wonder Full publicly available through subscription; a separately trained larger base-model tier. No matching ECI entry."
     },
     {
       "id": "google-gemini-4-argon",

@@ -4,14 +4,14 @@
     "start": "2023-01-01",
     "end": "2023-12-31",
     "observedDays": 365,
-    "count": 9,
+    "count": 12,
     "partial": false,
-    "daysPerLaunch": 40.55555555555556,
-    "meanGapDays": 35.625,
+    "daysPerModel": 30.416666666666668,
+    "meanGapDays": 25.90909090909091,
     "byLab": {
       "openai": 2,
-      "anthropic": 3,
-      "google": 1,
+      "anthropic": 5,
+      "google": 2,
       "deepseek": 1,
       "meta": 2
     }
@@ -21,15 +21,15 @@
     "start": "2024-01-01",
     "end": "2024-12-31",
     "observedDays": 366,
-    "count": 17,
+    "count": 24,
     "partial": false,
-    "daysPerLaunch": 21.529411764705884,
-    "meanGapDays": 20.125,
+    "daysPerModel": 15.25,
+    "meanGapDays": 14,
     "byLab": {
-      "openai": 3,
-      "anthropic": 3,
-      "google": 3,
-      "deepseek": 4,
+      "openai": 5,
+      "anthropic": 6,
+      "google": 4,
+      "deepseek": 5,
       "meta": 4
     }
   },
@@ -38,16 +38,16 @@
     "start": "2025-01-01",
     "end": "2025-12-31",
     "observedDays": 365,
-    "count": 21,
+    "count": 36,
     "partial": false,
-    "daysPerLaunch": 17.38095238095238,
-    "meanGapDays": 16.25,
+    "daysPerModel": 10.13888888888889,
+    "meanGapDays": 9.457142857142857,
     "byLab": {
-      "openai": 6,
-      "anthropic": 5,
-      "google": 3,
+      "openai": 14,
+      "anthropic": 7,
+      "google": 7,
       "deepseek": 6,
-      "meta": 1
+      "meta": 2
     }
   },
   {
@@ -55,16 +55,16 @@
     "start": "2026-01-01",
     "end": "2026-10-19",
     "observedDays": 292,
-    "count": 32,
+    "count": 44,
     "partial": true,
-    "daysPerLaunch": 9.125,
-    "meanGapDays": 8.193548387096774,
+    "daysPerModel": 6.636363636363637,
+    "meanGapDays": 5.906976744186046,
     "byLab": {
-      "openai": 7,
-      "anthropic": 10,
-      "google": 6,
-      "deepseek": 4,
-      "meta": 5
+      "openai": 13,
+      "anthropic": 11,
+      "google": 8,
+      "deepseek": 5,
+      "meta": 7
     }
   }
 ]

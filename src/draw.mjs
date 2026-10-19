@@ -1,9 +1,9 @@
-import { day, iso, yearOf, yearlyStats } from './data.mjs';
+import { day, iso, yearOf, yearlyStats, launchGroups, joinNames, modelLabel } from './data.mjs';
 import { BAR_SECONDS, BEAT_SECONDS, clamp, cuePoints, energy, kickLight, scorePart, smooth, stateAt, stateYear, visibleEvents } from './timeline.mjs';
 import { chartBox, chartScale, eventPose, scoreOf } from './chart.mjs';
 import { cameraAt } from './camera.mjs';
-import { launchesOf, paceAt, pacePeak, PACE_CADENCES, PACE_TAU_DAYS } from './pace.mjs';
-export { chartBox, chartScale, eventPose, scoreOf };
+import { launchesAt, paceAt, pacePeak, PACE_CADENCES, PACE_TAU_DAYS } from './pace.mjs';
+export { chartBox, chartScale, eventPose, scoreOf, modelLabel };
 
 export const FORMATS = { landscape: { width: 1920, height: 1080 }, portrait: { width: 1080, height: 1920 } };
 export const FIREWORK = Object.freeze({ rise: .36, life: 1.9, rays: 68 });
@@ -61,6 +61,27 @@ function fit(ctx, value, x, y, width, size, min, color = C.text, weight = 500, a
   label(ctx, f.text, x, y, f.size, color, weight, align);
   return f;
 }
+// Keep a fitting name on one line. Joined names break only after a model separator;
+// a single oversized model may instead break at a word boundary.
+export function nameLines(ctx, value, width, size, min, maxLines = 2) {
+  const one = fitText(ctx, value, width, size, min);
+  if (!one.text.includes('…') || maxLines === 1) return { lines: [one.text], size: one.size };
+  const parts = value.split(' · '), candidates = [];
+  for (let i = 1; i < parts.length; i++) candidates.push([parts.slice(0, i).join(' · ') + ' ·', parts.slice(i).join(' · ')]);
+  if (parts.some(part => textWidth(ctx, part, min) > width)) {
+    const words = value.split(' ');
+    for (let i = 1; i < words.length; i++) {
+      if (words[i] === '·' || words[i] === '*') continue;
+      candidates.push([words.slice(0, i).join(' '), words.slice(i).join(' ')]);
+    }
+  }
+  const best = candidates.map(lines => ({ lines, widest: Math.max(...lines.map(text => textWidth(ctx, text, min))) }))
+    .sort((a, b) => a.widest - b.widest)[0];
+  if (!best) return { lines: [one.text], size: one.size };
+  const fitted = Math.max(min, Math.min(size, min * width / best.widest));
+  return { lines: best.lines.map(text => fitText(ctx, text, width, fitted, min).text), size: fitted };
+}
+
 function line(ctx, x1, y1, x2, y2, color = C.line, width = 1) {
   ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
 }
@@ -130,7 +151,7 @@ function header(ctx, w, portrait, data) {
   label(ctx, 'FRONTIER OBSERVATORY', 64, 58, 18, C.gold, 600);
   label(ctx, TITLE, 64, portrait ? 137 : 127, portrait ? 62 : 58, C.text, 600);
   legend(ctx, data, portrait);
-  if (!portrait) label(ctx, `${data.releases.length} SELECTED LAUNCHES · ${data.startDate.slice(0, 4)}—${data.endDate.slice(0, 4)}`, 1848, 126, 19, C.muted, 500, 'right');
+  if (!portrait) label(ctx, `${data.releases.length} SELECTED MODELS · ${data.startDate.slice(0, 4)}—${data.endDate.slice(0, 4)}`, 1848, 126, 19, C.muted, 500, 'right');
 }
 function footer(ctx, data, w, h, portrait) {
   line(ctx, 64, h - 67, w - 64, h - 67);
@@ -281,15 +302,15 @@ function counter(ctx, data, timeline, state, year, visible, box, portrait) {
   let right = c.x + textWidth(ctx, String(year), size);
   const thisYear = visible.filter(e => e.date.startsWith(String(year))), count = thisYear.length;
   const pop = count ? Math.exp(-(state.time - timeline.onsets.get(thisYear.at(-1).id)) / .12) : 0;
-  label(ctx, `${months[Number(iso(state.day).slice(5, 7)) - 1]} · ${count} ${count === 1 ? 'LAUNCH' : 'LAUNCHES'}`, c.x + 4, c.sub, c.subSize * (1 + .12 * pop), C.text, 500);
-  right = Math.max(right, c.x + 4 + ctx.measureText('DEC · 00 LAUNCHES').width * (1 + .12 * pop));
+  label(ctx, `${months[Number(iso(state.day).slice(5, 7)) - 1]} · ${count} ${count === 1 ? 'MODEL' : 'MODELS'}`, c.x + 4, c.sub, c.subSize * (1 + .12 * pop), C.text, 500);
+  right = Math.max(right, c.x + 4 + ctx.measureText('DEC · 00 MODELS').width * (1 + .12 * pop));
   let bottom = c.sub + 8;
   if (year === yearOf(data.endDate)) { label(ctx, `YTD · THROUGH ${data.endDate.slice(5)}`, c.x + 4, c.ytd, c.ytdSize, C.gold); bottom = c.ytd + 8; }
   return { left: c.x - 8, top: c.y - size * .78, right: right + 12, bottom };
 }
 // The newest launch's name tag rides next to its burst. Launches arriving within a moment of each other share one
 // tag, newest at the bottom, its size fixed from the start so it never jumps; the next tag replaces it, so every tag
-// stays up for at least the merge window. At most three rows: a larger group names its first two launches and counts
+// stays up for at least the merge window. Each row names every model of one announcement. At most three rows; a larger cluster names its first two announcements and counts
 // the rest, as they arrive, towards the lists.
 export const TAG = Object.freeze({ life: 1.6, merge: .3, rows: 3 });
 const tagPlans = new WeakMap();
@@ -297,11 +318,11 @@ export function tagGroups(data, timeline) {
   const cached = tagPlans.get(timeline);
   if (cached?.data === data) return cached.groups;
   const onset = e => timeline.onsets.get(e.id), groups = [];
-  const events = [...data.releases].sort((a, b) => onset(a) - onset(b) || (scoreOf(b) ?? -1) - (scoreOf(a) ?? -1));
+  const events = launchGroups(data).sort((a, b) => onset(a.models[0]) - onset(b.models[0]) || (scoreOf(b.models[0]) ?? -1) - (scoreOf(a.models[0]) ?? -1));
   for (const e of events) {
-    const g = groups.at(-1), t = onset(e);
-    if (g && (t === g.events.at(-1).onset || t - g.start <= TAG.merge)) g.events.push({ event: e, onset: t });
-    else groups.push({ start: t, events: [{ event: e, onset: t }] });
+    const g = groups.at(-1), t = onset(e.models[0]), entry = { group: e, event: e.models[0], onset: t };
+    if (g && (t === g.events.at(-1).onset || t - g.start <= TAG.merge)) g.events.push(entry);
+    else groups.push({ start: t, events: [entry] });
   }
   groups.forEach((g, i) => { g.end = Math.min(g.start + TAG.life, groups[i + 1]?.start ?? Infinity); });
   tagPlans.set(timeline, { data, groups });
@@ -316,8 +337,8 @@ function callout(ctx, data, timeline, state, cam, box, portrait, avoid) {
   const ax = point.x, ay = pose.scored ? point.y : box.y - (portrait ? 160 : 100);
   const nameSize = portrait ? 36 : 30, subSize = portrait ? 22 : 19, rowH = nameSize + (portrait ? 18 : 14), gap = portrait ? 36 : 32, mark = portrait ? 30 : 26;
   const padX = portrait ? 16 : 14, padY = portrait ? 12 : 10;
-  const rows = announced.slice(0, extra ? TAG.rows - 1 : TAG.rows).map(({ event, onset }) => ({ onset, name: modelLabel(event),
-    sub: scoreOf(event) === null ? 'NOT YET SCORED' : `ECI ${Math.round(scoreOf(event))}`, lab: labOf(data, event.lab), preview: event.stage === 'preview' }));
+  const rows = announced.slice(0, extra ? TAG.rows - 1 : TAG.rows).map(({ group, event, onset }) => ({ onset, name: joinNames(group.models),
+    sub: group.models.every(e => scoreOf(e) === null) ? 'NOT YET SCORED' : `ECI ${group.models.map(e => scoreOf(e) === null ? '—' : Math.round(scoreOf(e))).join(' · ')}`, lab: labOf(data, event.lab), preview: group.models.every(model => model.stage === 'preview') }));
   const more = n => `+${n} MORE IN THE LISTS BELOW`, maxWidth = box.w - 24;
   const arrived = group.events.slice(TAG.rows - 1).filter(({ onset }) => onset <= time).length;
   const note = extra ? more(extra) : null;
@@ -367,13 +388,15 @@ function callout(ctx, data, timeline, state, cam, box, portrait, avoid) {
 function pacePanel(ctx, data, timeline, state, box, visible, portrait, cam, light) {
   const pb = box.pace, beside = pb.x >= box.x + box.w, scale = chartScale(data, box), left = pb.x, right = pb.x + box.w;
   const sx = d => cam.toScreen(scale.x(d), 0).x + pb.x - box.x;
-  const launches = launchesOf(visible, e => easeOut((state.time - timeline.onsets.get(e.id)) / .3));
-  const top = Math.max(18, 1.35 * pacePeak(launches)), py = v => pb.bottom - v / top * (pb.bottom - pb.top);
+  const launches = launchesAt(data, timeline, state.time), peak = pacePeak(launches);
+  // Reserve 35% of the panel above the running peak for cadence labels.
+  const top = Math.max(18, peak / .65), py = v => pb.bottom - v / top * (pb.bottom - pb.top);
   // Axis labels pair each gridline's value with its cadence. Highest first; once a label would crowd the one above it,
   // the lower ones wait until the scale gives them room.
   const size = portrait ? 20 : 16, note = portrait ? 15 : 13, room = size * .8 + note + 8;
   let above = -Infinity;
   for (const c of [...PACE_CADENCES].sort((p, q) => q.value - p.value)) {
+    if (c.days === 3 && peak <= 1.5 * 365 / 7) continue;
     const y = py(c.value), a = clamp((top - c.value) / (top * .08));
     if (a <= 0) continue;
     ctx.setLineDash([2, 5]); line(ctx, left, y, right, y, rgba('#3A4D6B', a)); ctx.setLineDash([]);
@@ -412,7 +435,7 @@ function pacePanel(ctx, data, timeline, state, box, visible, portrait, cam, ligh
     const x = sx(day(e.date));
     if (x >= left && x <= right) glyph(ctx, styles.get(e.lab).shape, x, pb.bottom - (n > 3 ? 3 : 0) + (labIndex(data, e.lab) - (n - 1) / 2) * lane, n > 3 ? 2.6 : 3.2, labOf(data, e.lab).color, e.stage === 'preview');
   }
-  const title = `LAUNCH PACE · LAUNCHES / YEAR, ANNUALIZED · ${PACE_TAU_DAYS}-DAY EMA`;
+  const title = `LAUNCH PACE · MODELS / YEAR, ANNUALIZED · ${PACE_TAU_DAYS}-DAY EMA`;
   if (beside) label(ctx, title, left, pb.top - 16, 17, C.gold, 600); else label(ctx, title, left + 10, pb.top + 20, 19, C.gold, 600);
   // The head carries its live value, like the last price on a trading chart, and pops with each launch.
   if (nowX < left || nowX > right) return;
@@ -533,77 +556,95 @@ function fireworks(ctx, data, timeline, state, box, portrait, cam) {
   }
   ctx.restore();
 }
-// Full names everywhere except the lists, whose column headers already name the lab and whose rows show the date:
-// there the repeated lab prefix is dropped before a family name (Claude Opus 4.6 → Opus 4.6, Claude 3.5 Sonnet →
-// 3.5 Sonnet, DeepSeek V3.2 → V3.2) and a month qualifier loses its year (GPT-6 Sol (Oct 2026) → GPT-6 Sol (Oct)),
-// while numeric or generic names such as Claude 2.1 or DeepSeek LLM stay whole.
-export function modelLabel(event, compact = false) {
-  const full = event.name + (event.stage === 'preview' ? ' *' : '');
-  return compact ? full.replace(/^Claude (?=[A-Za-z]|\d+(?:\.\d+)* [A-Za-z])/, '').replace(/^DeepSeek (?=[A-Z]\d)/, '').replace(/ \(([A-Za-z]+) \d{4}\)/, ' ($1)') : full;
-}
-// Newest first. An arrival enters at the top and pushes older names down one row; the fifth fades out.
+// Newest first: each arrival pushes by its own measured height, with no overlap mid-slide.
 const PUSH_SECONDS = .28;
-export function ledgerRows(events, timeline, time) {
-  const eased = events.map(e => easeOut((time - timeline.onsets.get(e.id)) / PUSH_SECONDS));
+export function ledgerRows(events, timeline, time, heightOf = () => 1) {
+  const eased = events.map(e => easeOut((time - timeline.onsets.get(e.models?.[0].id ?? e.id)) / PUSH_SECONDS));
   let below = Infinity;
-  // Oldest first: each name sits one row lower for every later arrival, and a newer name never
-  // comes closer than one row above the name below it, so rows cannot overlap mid-animation.
   return events.map((event, k) => {
-    const row = Math.min(eased.slice(k + 1).reduce((sum, v) => sum + v, 0) - (1 - eased[k]), below - 1);
+    const height = heightOf(event);
+    const row = Math.min(events.slice(k + 1).reduce((sum, e, i) => sum + heightOf(e) * eased[k + 1 + i], 0) - height * (1 - eased[k]), below - height);
     below = row;
-    return { event, row, alpha: Math.min(clamp((row + .5) / .5), clamp((3.25 - row) / .25)) };
+    return { event, row, height, alpha: clamp((row + height * .5) / (height * .5)) };
   });
 }
 // Where each lab's list sits. Landscape: one row of columns under both panels; two or three labs get wide columns
 // with the date, name and score on one line, four or five get narrow ones with the date under the name. Portrait:
-// up to three columns per row (3 + 2 for five labs, 2 + 2 for four). Every column holds four rows; `bottom` is the
+// up to three columns per row (3 + 2 for five labs, 2 + 2 for four). Columns fit up to four announcements; `bottom` is the
 // lowest any of its text may reach, including the fifth name as it fades out.
 export const LEDGER_ROWS = 4;
 export function ledgerLayout(data, format) {
   const n = data.labs.length, portrait = format === 'portrait', p = 64, room = FORMATS[format].width - 2 * p;
   const grid = portrait ? (n <= 3 ? [n] : [Math.ceil(n / 2), Math.floor(n / 2)]) : [n];
   const m = portrait
-    ? grid.length > 1 ? { head: 26, hint: 19, name: 32, min: 25, date: 20, dateDy: 27, score: 30, first: 50, rowH: 60, pitch: 296, y: 1140, bottom: 1716 }
+    ? grid.length > 1 ? { head: 26, hint: 19, name: 32, min: 25, date: 20, dateDy: 27, score: 30, first: 44, rowH: 72, pitch: 342, y: 1140, bottom: 1796 }
       : { head: 30, hint: 21, name: 42, min: 30, date: 24, dateDy: 34, score: 34, first: 62, rowH: 88, pitch: 0, y: 1150, bottom: 1716 }
     : n <= 3 ? { head: 23, hint: 19, name: 34, min: 26, date: 22, score: 26, first: 48, rowH: 52, nameX: 150, y: 752, bottom: 992 }
-      : { head: 21, hint: 17, name: 28, min: 22, date: 16, dateDy: 23, score: 26, first: 44, rowH: 52, y: 752, bottom: 992 };
+      : { head: 21, hint: 17, name: 28, min: 22, date: 16, dateDy: 23, score: 26, first: 40, rowH: 56, y: 752, bottom: 992 };
   const gap = portrait ? 28 : n <= 2 ? 90 : n === 3 ? 60 : 32, columns = [];
   let i = 0;
   grid.forEach((count, g) => {
     const w = (room - gap * (count - 1)) / count, y = m.y + g * (m.pitch ?? 0);
-    const bottom = g + 1 < grid.length ? y + m.pitch - m.head * .75 - 2 : m.bottom;
-    for (let k = 0; k < count; k++, i++) columns.push({ lab: data.labs[i], x: p + k * (w + gap), w, y, first: y + m.first, bottom, compact: portrait || n > 3, m });
+    const bottom = g + 1 < grid.length ? y + m.pitch - m.head * .75 - 12 : m.bottom;
+    for (let k = 0; k < count; k++, i++) {
+      const compact = portrait || n > 3;
+      columns.push({ lab: data.labs[i], x: p + k * (w + gap), w, y, first: y + m.first, bottom, compact, m });
+    }
   });
   return columns;
 }
+// Measure the same ink bounds used for drawing and acceptance checks.
+function ink(ctx, value, size) {
+  textWidth(ctx, value, size);
+  const m = ctx.measureText(value);
+  return { ascent: m.actualBoundingBoxAscent, descent: m.actualBoundingBoxDescent };
+}
+export function ledgerName(ctx, event, col) {
+  const { m, w } = col, name = joinNames(event.models, col.compact);
+  const room = w - (m.nameX ?? 0) - textWidth(ctx, '000', m.score) - (m.nameX ? 24 : 16);
+  const names = nameLines(ctx, name, room, m.name, m.min);
+  const lineH = Math.ceil(names.size * 1.12), last = (names.lines.length - 1) * lineH;
+  const bounds = names.lines.map(text => ink(ctx, text, names.size));
+  const date = event.date.replaceAll('-', '.'), dateInk = ink(ctx, date, m.date);
+  const dateOffset = m.nameX && names.lines.length === 1 ? 0 : last + m.dateDy;
+  const top = Math.min(-bounds[0].ascent, dateOffset - dateInk.ascent, -ink(ctx, '000', m.score).ascent);
+  const bottom = Math.max(last + bounds.at(-1).descent, dateOffset + dateInk.descent, ink(ctx, '000', m.score).descent);
+  // A fixed pitch per format, one line taller for a wrapped name. `rowH` leaves more ink gap below a date than above it,
+  // so every date reads as part of its own name.
+  const height = m.rowH + last;
+  return { name, names, lineH, date, dateOffset, top, bottom, height };
+}
+export function ledgerEntries(ctx, events, col, timeline, time) {
+  const plans = new Map(events.map(event => [event, ledgerName(ctx, event, col)])), heightOf = event => plans.get(event).height;
+  // Where each row comes to rest once every push has finished. A row that fits there stays fully opaque; one that will
+  // not fit fades as it is pushed past the bottom, so no row is ever left half-transparent at rest.
+  const rest = new Map(ledgerRows(events, timeline, Infinity, heightOf).map(row => [row.event, row.row]));
+  return ledgerRows(events, timeline, time, heightOf).map(row => {
+    const plan = plans.get(row.event), baseline = col.first + row.row;
+    const top = baseline + plan.top, bottom = baseline + plan.bottom, clipTop = col.y + 15;
+    const fits = col.first + rest.get(row.event) + plan.bottom <= col.bottom;
+    const alpha = row.alpha * (fits ? 1 : clamp((col.bottom - bottom) / 8)) * clamp((top - clipTop) / 4);
+    return { ...row, ...plan, baseline, top, bottom, alpha, complete: top >= clipTop && bottom <= col.bottom };
+  });
+}
 function ledger(ctx, data, visible, timeline, state, portrait) {
-  const styles = labStyles(data.labs);
+  const styles = labStyles(data.labs), groups = launchGroups(data).filter(g => timeline.onsets.get(g.models[0].id) <= state.time).sort((a, b) => timeline.onsets.get(a.models[0].id) - timeline.onsets.get(b.models[0].id));
   for (const col of ledgerLayout(data, portrait ? 'portrait' : 'landscape')) {
-    const { lab, x, w, y, m } = col, all = visible.filter(e => e.lab === lab.id), newest = all.at(-1), hint = 'ECI', hintW = textWidth(ctx, hint, m.hint);
+    const { lab, x, w, y, m } = col, all = groups.filter(e => e.lab === lab.id), newest = all.at(-1), hint = 'ECI', hintW = textWidth(ctx, hint, m.hint);
     glyph(ctx, styles.get(lab.id).shape, x + 6, y - m.head * .36, m.head * .24, lab.color);
     fit(ctx, lab.name.toUpperCase(), x + 22, y, w - 22 - hintW - 16, m.head, m.head * .75, lab.color, 600);
     label(ctx, hint, x + w, y, m.hint, C.dim, 500, 'right');
     line(ctx, x, y + 14, x + w, y + 14);
-    const clipTop = y + 15;
-    ctx.save(); ctx.beginPath(); ctx.rect(x - 12, clipTop, w + 24, col.bottom - clipTop); ctx.clip();
-    const scoreW = textWidth(ctx, '000', m.score);
-    for (const { event, row, alpha } of ledgerRows(all.slice(-(LEDGER_ROWS + 2)), timeline, state.time)) {
-      if (alpha <= .01) continue;
-      const yy = col.first + row * m.rowH, age = state.time - timeline.onsets.get(event.id), latest = event === newest;
-      const date = event.date.replaceAll('-', '.'), name = modelLabel(event, col.compact), score = scoreOf(event) === null ? '—' : String(Math.round(scoreOf(event)));
-      ctx.globalAlpha = alpha;
-      if (age < 1.2) { const t = yy - m.name * .86 - 4; rect(ctx, x - 9, t, w + 18, yy + (m.nameX ? m.name * .3 : m.dateDy + m.date * .3) + 5 - t, rgba(lab.color, .1 * (1 - age / 1.2))); }
-      // A row's text appears as a whole once it has slid below the rule, fading in over the last of its slide, and is
-      // dropped once it fades past the last row; it never shows a date or score without its name.
-      if (yy - m.name * .78 < clipTop || yy + (m.nameX ? m.name * .25 : m.dateDy + m.date * .25) > col.bottom) continue;
-      ctx.globalAlpha = alpha * clamp((row + .12) / .12);
-      if (m.nameX) {
-        label(ctx, date, x, yy, m.date, latest ? C.text : C.muted);
-        fit(ctx, name, x + m.nameX, yy, w - m.nameX - scoreW - 24, m.name, m.min);
-      } else {
-        fit(ctx, name, x, yy, w - scoreW - 16, m.name, m.min);
-        label(ctx, date, x, yy + m.dateDy, m.date, latest ? C.text : C.muted);
-      }
+    ctx.save(); ctx.beginPath(); ctx.rect(x - 12, y + 15, w + 24, col.bottom - y - 15); ctx.clip();
+    for (const row of ledgerEntries(ctx, all.slice(-(LEDGER_ROWS + 2)), col, timeline, state.time)) {
+      if (row.alpha <= .01 || !row.complete) continue;
+      const { event, baseline: yy, names, date, dateOffset, lineH } = row;
+      const first = event.models[0], age = state.time - timeline.onsets.get(first.id), latest = event === newest;
+      const score = scoreOf(first) === null ? '—' : String(Math.round(scoreOf(first)));
+      ctx.globalAlpha = row.alpha;
+      if (age < 1.2) rect(ctx, x - 9, row.top - 4, w + 18, row.bottom - row.top + 9, rgba(lab.color, .1 * (1 - age / 1.2)));
+      names.lines.forEach((text, i) => label(ctx, text, x + (m.nameX ?? 0), yy + i * lineH, names.size));
+      label(ctx, date, x, yy + dateOffset, m.date, latest ? C.text : C.muted);
       label(ctx, score, x + w, yy, m.score, latest ? lab.color : C.muted, 500, 'right');
     }
     ctx.restore();
@@ -620,7 +661,7 @@ function intro(ctx, data, timeline, state, w, h, portrait) {
   const show = (at, draw) => { ctx.globalAlpha = enter(at) * (1 - exit); draw(); };
   show(0, () => label(ctx, 'NEW MODELS.', slide(0, 64), y, portrait ? 106 : 120, C.text, 500));
   show(BEAT_SECONDS, () => label(ctx, 'LESS QUIET.', slide(BEAT_SECONDS, 64), y + (portrait ? 127 : 136), portrait ? 106 : 120, C.gold, 500));
-  show(2 * BEAT_SECONDS, () => label(ctx, 'One launch. One spark.', slide(2 * BEAT_SECONDS, 69), y + (portrait ? 239 : 232), 37, C.muted));
+  show(2 * BEAT_SECONDS, () => label(ctx, 'One model. One spark.', slide(2 * BEAT_SECONDS, 69), y + (portrait ? 239 : 232), 37, C.muted));
   show(3 * BEAT_SECONDS, () => label(ctx, 'Each burst lands at its capability score.', slide(3 * BEAT_SECONDS, 69), y + (portrait ? 302 : 290), portrait ? 29 : 30, C.muted));
   const sy = portrait ? 1207 : 790, gx = 64 + (w - 128) * smooth((t - BAR_SECONDS) / Math.max(.001, timeline.introSeconds - BAR_SECONDS - .24));
   show(BAR_SECONDS, () => {
@@ -632,7 +673,7 @@ function intro(ctx, data, timeline, state, w, h, portrait) {
   });
   show(BAR_SECONDS, () => {
     label(ctx, `${data.startDate.slice(0, 4)} — ${data.endDate.slice(0, 4)}`, slide(BAR_SECONDS, 64), sy + 83, 34, C.text);
-    fit(ctx, `${data.releases.length} selected launches · ${COUNT_WORDS[data.labs.length] ?? data.labs.length} labs · scores from ${data.capability.publisher}`, slide(BAR_SECONDS, 64), sy + 134, w - 128, portrait ? 27 : 29, 20, C.muted);
+    fit(ctx, `${data.releases.length} selected models · ${COUNT_WORDS[data.labs.length] ?? data.labs.length} labs · scores from ${data.capability.publisher}`, slide(BAR_SECONDS, 64), sy + 134, w - 128, portrait ? 27 : 29, 20, C.muted);
   });
   ctx.restore();
 }
@@ -649,14 +690,14 @@ function ending(ctx, data, timeline, state, w, h, portrait) {
   const valueY = portrait ? 596 : 460, rightX = portrait ? 577 : 1002;
   show(BEAT_SECONDS);
   const countProgress = easeOut((t - BEAT_SECONDS) / BAR_SECONDS);
-  label(ctx, (first.daysPerLaunch * countProgress)?.toFixed(1) ?? '—', p, valueY, portrait ? 128 : 166, C.text);
+  label(ctx, (first.daysPerModel * countProgress)?.toFixed(1) ?? '—', p, valueY, portrait ? 128 : 166, C.text);
   label(ctx, '→', portrait ? 403 : 640, valueY - 23, 76, C.dim);
-  const count = Number.isFinite(first.daysPerLaunch) && Number.isFinite(last.daysPerLaunch) ? last.daysPerLaunch * countProgress : null;
+  const count = Number.isFinite(first.daysPerModel) && Number.isFinite(last.daysPerModel) ? last.daysPerModel * countProgress : null;
   label(ctx, count?.toFixed(1) ?? '—', rightX, valueY, portrait ? 136 : 166, C.gold);
   label(ctx, String(first.year), p + 5, valueY + 54, 27, C.muted);
   label(ctx, `${last.year}${last.partial ? ' YTD' : ''}`, rightX + 4, valueY + 54, 27, C.muted);
   show(BEAT_SECONDS);
-  label(ctx, 'CALENDAR DAYS / SELECTED LAUNCH', p, valueY + 118, portrait ? 23 : 25, C.gold);
+  label(ctx, 'CALENDAR DAYS / SELECTED MODEL', p, valueY + 118, portrait ? 23 : 25, C.gold);
   const best = year => Math.max(...data.releases.filter(e => yearOf(e.date) === year).map(scoreOf).filter(v => v !== null));
   const [low, high] = [best(first.year), best(last.year)];
   if (Number.isFinite(low) && Number.isFinite(high)) {
@@ -672,20 +713,20 @@ function ending(ctx, data, timeline, state, w, h, portrait) {
     }
   }
   const top = portrait ? 903 : 680, step = portrait ? Math.min(126, 680 / rows.length) : Math.min(55, 230 / rows.length);
-  const max = Math.max(1, ...rows.map(r => r.daysPerLaunch ?? 0));
+  const max = Math.max(1, ...rows.map(r => r.daysPerModel ?? 0));
   for (const [i, row] of rows.entries()) {
     const y = top + i * step, bx = portrait ? 278 : 315, bw = portrait ? 535 : 1040, at = BEAT_SECONDS * (1 + i);
     show(at);
     label(ctx, String(row.year) + (row.partial ? ' YTD' : ''), p, y + 18, portrait ? 27 : 24, C.muted);
     line(ctx, bx, y + 5, bx + bw, y + 5, '#1B293C', 7);
-    line(ctx, bx, y + 5, bx + bw * (row.daysPerLaunch ?? 0) / max * easeOut((t - at) / BEAT_SECONDS), y + 5, i === rows.length - 1 ? C.gold : '#739EAD', 7);
-    label(ctx, row.daysPerLaunch?.toFixed(1) ?? '—', bx + bw + 26, y + 18, portrait ? 30 : 28, C.text);
-    if (portrait) label(ctx, `${row.observedDays} days / ${row.count} launches`, bx, y + 55, 22, C.dim);
-    else label(ctx, `${row.observedDays} days / ${row.count} launches`, w - 64, y + 18, 21, C.dim, 500, 'right');
+    line(ctx, bx, y + 5, bx + bw * (row.daysPerModel ?? 0) / max * easeOut((t - at) / BEAT_SECONDS), y + 5, i === rows.length - 1 ? C.gold : '#739EAD', 7);
+    label(ctx, row.daysPerModel?.toFixed(1) ?? '—', bx + bw + 26, y + 18, portrait ? 30 : 28, C.text);
+    if (portrait) label(ctx, `${row.observedDays} days / ${row.count} models`, bx, y + 55, 22, C.dim);
+    else label(ctx, `${row.observedDays} days / ${row.count} models`, w - 64, y + 18, 21, C.dim, 500, 'right');
   }
   const ny = portrait ? 1575 : 952;
   show(2 * BAR_SECONDS);
-  label(ctx, 'Launch density, not development time.', p, ny, portrait ? 30 : 27, C.text);
+  label(ctx, 'Model density, not development time.', p, ny, portrait ? 30 : 27, C.text);
   label(ctx, 'A curated sample. Changing the selection changes the result.', p, ny + 43, portrait ? 23 : 22, C.muted);
   const finale = cuePoints(timeline).finale;
   if (state.time >= finale) {
@@ -725,12 +766,11 @@ export function drawFrame(ctx, data, timeline, seconds, format = 'landscape') {
     const avoid = chart(ctx, data, timeline, state, year, box, visible, portrait, cam, light);
     ledger(ctx, data, visible, timeline, state, portrait);
     if (portrait) {
-      label(ctx, '1 BURST = 1 LAUNCH · HEIGHT = ECI · LISTS NEWEST FIRST', 64, 1744, 26, C.muted);
-      label(ctx, '* PREVIEW · FOUNTAIN / — = NOT YET SCORED', 64, 1781, 24, C.muted);
-      label(ctx, `ECI: ${data.capability.publisher}, ${data.capability.license} · retrieved ${data.capability.retrievedOn}`, 64, 1818, 24, C.muted);
+      label(ctx, '1 BURST = 1 MODEL · HEIGHT = ECI · * PREVIEW · — = NOT YET SCORED', 64, 1820, 22, C.muted);
+      label(ctx, `ECI: ${data.capability.publisher}, ${data.capability.license} · retrieved ${data.capability.retrievedOn}`, 64, 1847, 20, C.muted);
     } else {
       label(ctx, '* PREVIEW · FOUNTAIN ON THE AXIS / — = NOT YET SCORED BY EPOCH AI', 64, 1010, 19, C.muted);
-      label(ctx, 'ONE BURST = ONE LAUNCH · HEIGHT = ECI · CONSTANT CALENDAR SPEED · LISTS NEWEST FIRST', 1856, 1010, 19, C.muted, 500, 'right');
+      label(ctx, 'ONE BURST = ONE MODEL · HEIGHT = ECI · CONSTANT CALENDAR SPEED · LISTS NEWEST FIRST', 1856, 1010, 19, C.muted, 500, 'right');
     }
     if (light.breath > 0) rect(ctx, 0, 150, w, h - 220, rgba(C.bg, .2 * light.breath));
     fireworks(ctx, data, timeline, state, box, portrait, cam);

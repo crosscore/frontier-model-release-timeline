@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import assert from 'node:assert/strict';
 import { createCanvas } from '@napi-rs/canvas';
-import { day, loadDataset } from '../src/data.mjs';
+import { day, loadDataset, launchGroups } from '../src/data.mjs';
 import { BAR_SECONDS, BEAT_SECONDS, cuePoints, kickTimes, makeTimeline } from '../src/timeline.mjs';
 import { makeRenderer } from '../src/node-renderer.mjs';
 import { cameraAt, DIVE_SECONDS, REVEAL_SECONDS } from '../src/camera.mjs';
@@ -53,6 +53,18 @@ for (let year = Number(data.startDate.slice(0, 4)) + 1; year <= Number(data.endD
   if (withinWindow(date)) boundaryMoments.push([`${year} boundary`, at(date) + .03]);
 }
 const clusters = [
+  ['2025 Apr14', '2025-04-14', .18],
+  ['2025 Apr15', '2025-04-15', .18],
+  ['2025 Apr16', '2025-04-16', .3],
+  ['2025 May22 first', '2025-05-22', .05],
+  ['2025 May22 salvo', '2025-05-22', .3],
+  ['2026 Jul09 first', '2026-07-09', .05],
+  ['2026 Jul09 second', '2026-07-09', .17],
+  ['2026 Jul09 third', '2026-07-09', .24],
+  ['2026 Jul09 tails', '2026-07-09', .3],
+  ['2026 Sep22 first', '2026-09-22', .05],
+  ['2026 Sep22 salvo', '2026-09-22', .3],
+  ['2026 Sep23', '2026-09-23', .18],
   ['2025 cluster', '2025-09-29', .12],
   ['2026 Sep cluster', '2026-09-22', .12],
   ['2026 Oct cluster', '2026-10-12', .04],
@@ -185,7 +197,8 @@ async function writePalette() {
 const summary = {
   fixture: args.fixture,
   labs: data.labs.map(lab => lab.id),
-  events: data.releases.length,
+  models: data.releases.length,
+  announcements: launchGroups(data).length,
   densest,
   formats: {},
 };

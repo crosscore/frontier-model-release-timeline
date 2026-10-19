@@ -1,4 +1,4 @@
-import { day, iso, yearOf } from './data.mjs';
+import { day, iso, yearOf, launchGroups } from './data.mjs';
 
 export const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 export const smooth = x => { x = clamp(x); return x * x * (3 - 2 * x); };
@@ -17,7 +17,10 @@ export function makeTimeline(data, { travelSeconds = 24 * BAR_SECONDS, holdSecon
     if (duration <= 0) return;
     segments.push({ fromTime: at, toTime: at + duration, from, to, type }); at += duration;
   };
-  for (const event of data.releases) onsets.set(event.id, introSeconds + (day(event.date) - start) / Math.max(1, end - start) * travelSeconds);
+  for (const group of launchGroups(data)) {
+    const first = introSeconds + (day(group.date) - start) / Math.max(1, end - start) * travelSeconds;
+    group.models.forEach((model, i) => onsets.set(model.id, first + i * BAR_SECONDS / 16));
+  }
   append(travelSeconds, start, end, 'travel');
   append(holdSeconds, end, end, 'hold');
   return { segments, onsets, start, end, travelSeconds, introSeconds, outroSeconds, outroStart: at, duration: at + outroSeconds };
@@ -33,7 +36,7 @@ export function stateAt(timeline, seconds) {
 }
 
 export function visibleEvents(data, timeline, seconds) {
-  return data.releases.filter(event => seconds >= timeline.onsets.get(event.id));
+  return data.releases.filter(event => seconds >= timeline.onsets.get(event.id)).sort((a, b) => timeline.onsets.get(a.id) - timeline.onsets.get(b.id));
 }
 export function stateYear(state) { return yearOf(iso(state.day)); }
 

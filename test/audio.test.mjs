@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { loadDataset } from '../src/data.mjs';
+import { loadDataset, launchGroups } from '../src/data.mjs';
 import { BAR_SECONDS, BEAT_SECONDS, cuePoints, kickTimes, makeTimeline } from '../src/timeline.mjs';
 import { FIREWORK } from '../src/draw.mjs';
 import { CHORDS, SCORE, labVoices, scorePart, soundCues, synthesize, wavBuffer } from '../src/audio.mjs';
@@ -21,7 +21,7 @@ test('one sound cue per source event; explosion coincides with its date and visu
     assert(Math.abs(c.burst - c.launch - FIREWORK.rise) < 1e-9);
   }
   const shared = data.releases.find(e => data.releases.some(o => o !== e && o.date === e.date));
-  const sameDay = data.releases.filter(e => e.date === shared.date).map(e => cues.find(c => c.id === e.id));
+  const sameDay = launchGroups(data).filter(g => g.date === shared.date).map(g => cues.find(c => c.id === g.models[0].id));
   assert(sameDay.length >= 2);
   for (const c of sameDay) assert.equal(c.burst, sameDay[0].burst);
   assert.equal(new Set(sameDay.map(c => c.pan)).size, sameDay.length);
@@ -137,9 +137,21 @@ test('dense launches stay audible over the music without crowding it', () => {
   assert(r.wholeDb.broadband > -26 && r.wholeDb.broadband < -12, `launch cues are a layer, not the lead (${r.wholeDb.broadband} dB)`);
   assert(r.events.presence.median >= 3, `a typical burst is above the music in 500 Hz+ (${r.events.presence.median} dB)`);
   assert(r.events.presence.p10 >= -3, `quiet bursts are not buried (${r.events.presence.p10} dB)`);
-  assert(r.audibleShare >= .8, `at least 80 percent of bursts clear the music (${r.audibleShare})`);
+  assert(r.models.length === data.releases.length && r.models.every(m => m.sfxToBgmDb !== null && m.sfxToBgmDb >= 0), `every model clears the music (${r.events.presence.min} dB minimum)`);
   assert(r.sfxBarSpreadDb <= 4, `the densest bar is not much louder than a typical one (${r.sfxBarSpreadDb} dB)`);
   const busiest = r.bars.reduce((x, y) => y.events > x.events ? y : x), sparse = r.bars.filter(b => b.events > 0 && b.events <= 3);
   assert(busiest.events >= 3 * Math.max(...sparse.map(b => b.events)));
   assert(busiest.sfxDbfs - Math.max(...sparse.map(b => b.sfxDbfs)) < 6, 'tripling the launches in a bar does not triple their loudness');
+});
+
+test('same-lab models have distinct sixteenth-note sounds and rise windows', () => {
+  const d = fixture([['openai', '2026-01-20'], ['openai', '2026-01-20'], ['openai', '2026-01-20']]);
+  const clock = makeTimeline(d), cues = soundCues(d, clock), audio = synthesize(d, clock, { sampleRate: 8000, stems: true });
+  const [, sfx] = stemsOf(audio);
+  for (const [i, cue] of cues.entries()) {
+    assert(Math.abs(cue.burst - cues[0].burst - i * BAR_SECONDS / 16) < 1e-9);
+    assert(Math.abs(cue.launch - cues[0].launch - i * BAR_SECONDS / 16) < 1e-9);
+    assert.equal(cue.neighbors, 3);
+    assert(power(sfx, cue.burst, cue.burst + .08) > power(sfx, cue.burst - .04, cue.burst), `${cue.id} has a distinct burst attack`);
+  }
 });
