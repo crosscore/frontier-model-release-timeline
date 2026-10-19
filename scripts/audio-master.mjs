@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { SCORE, synthesize, wavBuffer } from '../src/audio.mjs';
+import { SCORE, labVoices, synthesize, wavBuffer } from '../src/audio.mjs';
 
 export function loudness(file) {
   const result = spawnSync('ffmpeg', ['-hide_banner', '-nostats', '-i', file, '-af', `loudnorm=I=${SCORE.targetLufs}:TP=${SCORE.truePeakDb}:LRA=9:print_format=json`, '-f', 'null', '-'], { encoding: 'utf8' });
@@ -24,7 +24,7 @@ export async function masterSoundtrack(data, timeline, { duration, timeScale, ou
     const result = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-i', wav, '-af', filter, '-ar', String(SCORE.sampleRate), '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-metadata', `title=${SCORE.title}`, '-metadata', 'artist=crosscore / procedural original', destination], { encoding: 'utf8' });
     if (result.status !== 0) throw new Error(`Audio mastering failed: ${result.stderr || result.error}`);
     const final = loudness(destination);
-    const report = { ...SCORE, original: true, recordedSamplesUsed: false, synthesis: 'Deterministic oscillators and seeded filtered noise', ...audio.metrics, integratedLufs: Number(final.input_i), truePeakDbtp: Number(final.input_tp), loudnessRangeLu: Number(final.input_lra), cues: audio.cues };
+    const report = { ...SCORE, original: true, recordedSamplesUsed: false, synthesis: 'Deterministic oscillators and seeded filtered noise', ...audio.metrics, integratedLufs: Number(final.input_i), truePeakDbtp: Number(final.input_tp), loudnessRangeLu: Number(final.input_lra), voices: labVoices(data.labs), cues: audio.cues };
     await writeFile(join(out, `audio-${format}.json`), JSON.stringify(report, null, 2) + '\n');
     return { filename, report };
   } finally { await rm(wav, { force: true }); }

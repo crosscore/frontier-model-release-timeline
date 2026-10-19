@@ -9,7 +9,26 @@ export function day(date) {
 }
 export const iso = value => new Date(Math.floor(value) * DAY).toISOString().slice(0, 10);
 export const yearOf = date => Number(date.slice(0, 4));
-const hosts = { openai: ['openai.com', 'help.openai.com'], anthropic: ['anthropic.com', 'www.anthropic.com', 'platform.claude.com'], google: ['blog.google', 'deepmind.google', 'developers.googleblog.com', 'ai.google.dev', 'cloud.google.com'] };
+const hosts = {
+  openai: ['openai.com', 'help.openai.com', 'deploymentsafety.openai.com'],
+  anthropic: ['anthropic.com', 'www.anthropic.com', 'platform.claude.com'],
+  google: ['blog.google', 'deepmind.google', 'developers.googleblog.com', 'ai.google.dev', 'cloud.google.com', 'gemini.google'],
+  deepseek: ['api-docs.deepseek.com', 'www.deepseek.com', 'deepseek.com'],
+  meta: ['ai.meta.com', 'about.fb.com', 'www.llama.com', 'llama.com', 'research.meta.ai', 'dev.meta.ai', 'developer.meta.com'],
+};
+// Shared hosting is trusted only inside the publisher's exact organization namespace.
+const sourcePaths = {
+  deepseek: { 'github.com': ['/deepseek-ai/'], 'huggingface.co': ['/deepseek-ai/'] },
+  meta: { 'github.com': ['/meta-llama/', '/facebookresearch/llama/'], 'huggingface.co': ['/meta-llama/', '/meta-models/'] },
+};
+export function isOfficialSource(lab, value) {
+  let url;
+  try { url = new URL(value); } catch { return false; }
+  if (url.protocol !== 'https:' || url.username || url.password || url.port) return false;
+  if (hosts[lab]?.includes(url.hostname)) return true;
+  const prefixes = sourcePaths[lab]?.[url.hostname];
+  return !!prefixes && !url.pathname.includes('%') && prefixes.some(prefix => url.pathname.startsWith(prefix) && url.pathname.length > prefix.length);
+}
 function requireThat(condition, message) { if (!condition) throw new Error(message); }
 function keys(object, allowed, context) {
   requireThat(object && typeof object === 'object' && !Array.isArray(object), `${context} must be an object`);
@@ -34,7 +53,7 @@ export function validateDataset(data) {
   requireThat(start <= end, 'startDate must not follow endDate');
   requireThat(day(data.verifiedOn) >= end, 'verifiedOn must cover endDate');
   requireThat(yearOf(data.endDate) - yearOf(data.startDate) < 8, 'This layout supports at most 8 calendar years');
-  requireThat(Array.isArray(data.labs) && data.labs.length >= 2 && data.labs.length <= 3, 'The layout supports two or three labs');
+  requireThat(Array.isArray(data.labs) && data.labs.length >= 2 && data.labs.length <= 5, 'The layout supports two through five labs');
   const labs = new Set();
   for (const lab of data.labs) {
     keys(lab, ['id', 'name', 'color'], 'Lab');
@@ -69,8 +88,7 @@ export function validateDataset(data) {
     requireThat(Array.isArray(event.sources) && event.sources.length > 0, `${event.id}: missing sources`);
     for (const source of event.sources) {
       keys(source, ['url', 'title'], 'Source'); text(source.title, 'Source title');
-      const url = new URL(source.url);
-      requireThat(url.protocol === 'https:' && !url.username && !url.password && hosts[event.lab].includes(url.hostname), `${event.id}: source must use an official HTTPS host for its lab`);
+      requireThat(isOfficialSource(event.lab, source.url), `${event.id}: source must use an official HTTPS host for its lab and an official organization path on shared hosts`);
     }
   }
   return data;

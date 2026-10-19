@@ -12,7 +12,9 @@
     "build": "node scripts/build.mjs",
     "render": "node scripts/render.mjs",
     "preview": "node scripts/serve.mjs",
-    "verify:media": "node scripts/verify-media.mjs"
+    "verify:media": "node scripts/verify-media.mjs",
+    "verify:artifacts": "node scripts/verify-artifacts.mjs",
+    "qa:visual": "node scripts/visual-checks.mjs"
   },
   "dependencies": { "@napi-rs/canvas": "1.0.10" },
   "license": "MIT"

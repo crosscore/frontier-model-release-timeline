@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { day, loadDataset, validateDataset, yearlyStats } from '../src/data.mjs';
+import { day, isOfficialSource, loadDataset, validateDataset, yearlyStats } from '../src/data.mjs';
 import { applyEciScores, parseCsv } from '../src/capability.mjs';
 const original = await loadDataset();
 const copy = () => structuredClone(original);
@@ -16,7 +16,7 @@ for (const [name, mutate, expected] of [
   ['cross-lab citations', d => { d.releases[0].sources[0].url = 'https://openai.com/index/gpt-4/'; }, /official HTTPS/],
   ['future entries relative to the frozen window', d => { d.releases.at(-1).date = '2099-01-01'; }, /outside observation/],
   ['duplicate IDs', d => { d.releases[1].id = d.releases[0].id; }, /duplicate ID/],
-  ['same-lab same-date double counting', d => { d.releases[1].lab = d.releases[0].lab; }, /Group simultaneous/],
+  ['same-lab same-date double counting', d => { d.releases[1] = {...d.releases[0], id: 'duplicate-date'}; }, /Group simultaneous/],
   ['unsorted dates', d => { d.releases.reverse(); }, /chronological/],
   ['unverified observation windows', d => { d.verifiedOn = '2020-01-01'; }, /verifiedOn/],
   ['unsupported stage', d => { d.releases[0].stage = 'rumor'; }, /invalid stage/],
@@ -39,7 +39,7 @@ test('density and adjacent gaps use different denominators; partial years and le
   assert.equal(partial.observedDays, 275); assert.equal(partial.daysPerLaunch, 275); assert.equal(partial.meanGapDays, null); assert(partial.partial);
 });
 test('same-day launches from different labs count separately and have zero adjacent gap', () => {
-  const data = copy(); data.releases = data.releases.slice(0, 2);
+  const data = copy(); data.releases = data.releases.filter(e => e.date === '2023-03-14');
   const [stats] = yearlyStats(validateDataset(data));
   assert.equal(stats.count, 2); assert.equal(stats.meanGapDays, 0); assert.equal(stats.daysPerLaunch, 182.5);
 });
@@ -60,4 +60,30 @@ test('ECI refresh copies scores by mapped model name and reports models Epoch ha
   assert.equal(data.capability.retrievedOn, '2026-10-04'); assert.equal(data.releases.find(e => e.id === 'anthropic-claude').capability, undefined);
   validateDataset(data);
   assert.throws(() => applyEciScores(copy(), 'name,score\nx,1\n', '2026-10-04'), /Model and eci/);
+});
+
+test('shared source hosts require exact lab-owned organization paths', () => {
+  for (const [lab, url] of [
+    ['deepseek', 'https://github.com/deepseek-ai/DeepSeek-LLM'],
+    ['deepseek', 'https://huggingface.co/deepseek-ai/DeepSeek-V3'],
+    ['meta', 'https://github.com/meta-llama/llama-models/blob/main/README.md'],
+    ['meta', 'https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B'],
+  ]) assert(isOfficialSource(lab, url), url);
+  for (const url of [
+    'https://github.com/other/deepseek-ai/model', 'https://github.com/deepseek-ai-evil/model',
+    'https://huggingface.co/deepseek-ai.evil/model', 'https://huggingface.co/deepseek-ai',
+    'https://huggingface.co/deepseek-ai/', 'https://huggingface.co/deepseek-ai/../other/model',
+    'https://huggingface.co/deepseek-ai/%2e%2e/other/model', 'https://huggingface.co/deepseek-ai/%2fother/model',
+    'https://huggingface.co/other/model?path=/deepseek-ai/', 'https://huggingface.co/other/model#/deepseek-ai/',
+    'https://huggingface.co.evil/deepseek-ai/model', 'https://user@huggingface.co/deepseek-ai/model',
+    'https://huggingface.co:8443/deepseek-ai/model', 'http://huggingface.co/deepseek-ai/model',
+  ]) assert(!isOfficialSource('deepseek', url), url);
+  assert(!isOfficialSource('meta', 'https://huggingface.co/deepseek-ai/DeepSeek-V3'));
+  assert(!isOfficialSource('deepseek', 'https://huggingface.co/meta-llama/Llama-4'));
+});
+
+test('five labs validate and a sixth lab fails before rendering', () => {
+  assert.equal(original.labs.length, 5); validateDataset(copy());
+  const d = copy(); d.labs.push({id:'sixth',name:'Sixth',color:'#ffffff'});
+  assert.throws(() => validateDataset(d), /two through five/);
 });

@@ -21,7 +21,7 @@ test('calendar never runs backward; start, final hold and ending remain exact', 
   assert.equal(visibleEvents(data, timeline, timeline.duration).length, data.releases.length);
 });
 test('one-day datasets and simultaneous launches have a valid timeline', () => {
-  const small = structuredClone(data); small.releases = small.releases.slice(0, 2); small.startDate = small.endDate = small.releases[0].date;
+  const small = structuredClone(data); small.releases = small.releases.filter(e => e.date === '2023-03-14'); small.startDate = small.endDate = small.releases[0].date;
   const clock = makeTimeline(small);
   assert.equal(clock.onsets.get(small.releases[0].id), clock.onsets.get(small.releases[1].id));
   assert(Number.isFinite(clock.duration)); assert.equal(stateAt(clock, 3.1).day, day(small.startDate));

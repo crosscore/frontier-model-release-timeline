@@ -5,17 +5,17 @@
   "fps": 30,
   "frames": 900,
   "duration": 30,
-  "datasetSha256": "b1bfea7423e335994ac03976e2d8a22d19c95ec74e372092bc06610161fba324",
-  "events": 51,
-  "observationEnd": "2026-10-02",
+  "datasetSha256": "148690297f8007c6cbdd79cf8fc9d9f309666421d1225067a26ed1c5ffada2a9",
+  "events": 79,
+  "observationEnd": "2026-10-19",
   "codec": "h264",
   "pixelFormat": "yuv420p",
   "audio": {
     "codec": "aac",
     "sampleRate": 48000,
     "channels": 2,
-    "title": "Afterburn / 004",
-    "integratedLufs": -16.03,
-    "truePeakDbtp": -5.99
+    "title": "Deep Field / 005",
+    "integratedLufs": -15.99,
+    "truePeakDbtp": -6.89
   }
 }

@@ -11,6 +11,7 @@ const C = { bg: '#050A14', text: '#F4F3EE', muted: '#ABB7C9', dim: '#697C94', li
 const TAU = Math.PI * 2;
 const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const labIndex = (data, id) => data.labs.findIndex(lab => lab.id === id);
+const labOf = (data, id) => data.labs.find(lab => lab.id === id);
 const rgba = (hex, a) => `${hex}${Math.round(clamp(a) * 255).toString(16).padStart(2, '0')}`;
 const mixHex = (a, b, q) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - q) + parseInt(b.slice(i, i + 2), 16) * q).toString(16).padStart(2, '0')).join('');
 const easeOut = x => 1 - (1 - clamp(x)) ** 3;
@@ -18,13 +19,40 @@ export function seeded(seed) {
   let a = typeof seed === 'number' ? seed : [...seed].reduce((n, c) => Math.imul(n ^ c.charCodeAt(0), 16777619), 2166136261);
   return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
+// Each lab keeps one marker shape and one burst form, assigned by its id so that reordering the labs never swaps
+// them. A lab outside this list takes the first style that no listed lab in the dataset uses.
+export const LAB_STYLES = Object.freeze([
+  { shape: 'circle', form: 'peony' }, { shape: 'diamond', form: 'glitter' }, { shape: 'square', form: 'double ring' },
+  { shape: 'triangle', form: 'fan' }, { shape: 'cross', form: 'four-point star' }].map(Object.freeze));
+const STYLE_OF = { openai: 0, anthropic: 1, google: 2, deepseek: 3, meta: 4 };
+export function labStyles(labs) {
+  const used = new Set(labs.map(lab => STYLE_OF[lab.id]).filter(k => k !== undefined)), styles = new Map();
+  let free = 0;
+  for (const lab of labs) {
+    let k = STYLE_OF[lab.id];
+    if (k === undefined) { while (used.has(free)) free++; used.add(free); k = free % LAB_STYLES.length; }
+    styles.set(lab.id, LAB_STYLES[k]);
+  }
+  return styles;
+}
+const styleOf = (data, id) => labStyles(data.labs).get(id);
 function label(ctx, value, x, y, size = 26, color = C.text, weight = 500, align = 'left') {
   ctx.font = `${Math.round(weight / 100) * 100} ${size}px Manrope${weight >= 600 ? 600 : 500}`; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.fillText(value, x, y);
 }
-function fit(ctx, value, x, y, width, size = 30, color = C.text) {
-  ctx.font = `500 ${size}px Manrope500`;
-  while (ctx.measureText(value).width > width && size > 14) { size--; ctx.font = `500 ${size}px Manrope500`; }
-  label(ctx, value, x, y, size, color);
+const textWidth = (ctx, value, size, weight = 500) => { ctx.font = `${weight >= 600 ? 600 : 500} ${size}px Manrope${weight >= 600 ? 600 : 500}`; return ctx.measureText(value).width; };
+// Shrinks text to fit `width` but never below `min`; whatever still does not fit is shortened with an ellipsis.
+function fitText(ctx, value, width, size, min, weight = 500) {
+  const natural = textWidth(ctx, value, size, weight);
+  if (natural <= width) return { text: value, size };
+  size = Math.max(min, Math.floor(size * width / natural * 10) / 10);
+  let text = value;
+  while (text.length > 1 && textWidth(ctx, text, size, weight) > width) text = text.slice(0, -2).trimEnd() + '…';
+  return { text, size };
+}
+function fit(ctx, value, x, y, width, size, min, color = C.text, weight = 500, align = 'left') {
+  const f = fitText(ctx, value, width, size, min, weight);
+  label(ctx, f.text, x, y, f.size, color, weight, align);
+  return f;
 }
 function line(ctx, x1, y1, x2, y2, color = C.line, width = 1) {
   ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
@@ -33,6 +61,21 @@ function rect(ctx, x, y, w, h, fill) { ctx.fillStyle = fill; ctx.fillRect(x, y, 
 function circle(ctx, x, y, radius, color, hollow = false) {
   ctx.beginPath(); ctx.arc(x, y, Math.max(0, radius), 0, TAU);
   if (hollow) { ctx.strokeStyle = color; ctx.lineWidth = 1.7; ctx.stroke(); } else { ctx.fillStyle = color; ctx.fill(); }
+}
+// Marker outlines of roughly equal area, centred on the point.
+function shapePath(ctx, shape, x, y, size) {
+  ctx.beginPath();
+  const poly = points => points.forEach(([u, v], k) => k ? ctx.lineTo(x + u, y + v) : ctx.moveTo(x + u, y + v));
+  if (shape === 'diamond') { const d = size * 1.4; poly([[0, -d], [d, 0], [0, d], [-d, 0]]); }
+  else if (shape === 'square') { const d = size * .9; poly([[-d, -d], [d, -d], [d, d], [-d, d]]); }
+  else if (shape === 'triangle') { const r = size * 1.55; poly([0, 1, 2].map(k => [r * Math.sin(k * TAU / 3), -r * Math.cos(k * TAU / 3)])); }
+  else if (shape === 'cross') { const a = size * 1.3, b = size * .44; poly([[-b, -a], [b, -a], [b, -b], [a, -b], [a, b], [b, b], [b, a], [-b, a], [-b, b], [-a, b], [-a, -b], [-b, -b]]); }
+  else ctx.arc(x, y, Math.max(0, size), 0, TAU);
+  ctx.closePath();
+}
+export function glyph(ctx, shape, x, y, size, color, hollow = false) {
+  shapePath(ctx, shape, x, y, size);
+  if (hollow) { ctx.fillStyle = C.bg; ctx.fill(); ctx.strokeStyle = color; ctx.lineWidth = Math.max(1.2, size * .4); ctx.stroke(); } else { ctx.fillStyle = color; ctx.fill(); }
 }
 function glow(ctx, x, y, radius, color, strength = .3) {
   const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
@@ -51,32 +94,54 @@ function background(ctx, w, h, t, cam) {
     circle(ctx, wrap(x + ox * depth, 36, w - 72), wrap(y + oy * depth, 170, h * .49), r, rgba('#ADCEEE', .09 + .13 * (1 + Math.sin(t * .5 + i)) / 2));
   }
 }
+const TITLE = 'The frontier, ignited.';
+// Lab key: each name beside its marker shape. Landscape sets it right of the title, portrait on its own row;
+// names shrink, then shorten, so any five labs fit.
+function legend(ctx, data, portrait) {
+  const n = data.labs.length, styles = labStyles(data.labs), mark = 22, gap = portrait ? 30 : 34, y = portrait ? 204 : 84;
+  const left = portrait ? 64 : 64 + textWidth(ctx, TITLE, 58, 600) + 48, right = portrait ? 1016 : 1856, room = right - left - n * mark - (n - 1) * gap;
+  const total = data.labs.reduce((sum, lab) => sum + textWidth(ctx, lab.name, 24), 0), size = clamp(24 * room / total, 18, 24);
+  const items = data.labs.map(lab => total * size / 24 <= room ? { text: lab.name, size } : fitText(ctx, lab.name, room / n, size, size));
+  const widths = items.map(f => textWidth(ctx, f.text, f.size));
+  let x = portrait ? left : right - widths.reduce((a, b) => a + b, 0) - n * mark - (n - 1) * gap;
+  data.labs.forEach((lab, i) => {
+    glyph(ctx, styles.get(lab.id).shape, x + 6, y - 8, 5.2, lab.color);
+    label(ctx, items[i].text, x + mark, y, items[i].size, lab.color);
+    x += mark + widths[i] + gap;
+  });
+}
 function header(ctx, w, portrait, data) {
   label(ctx, 'FRONTIER OBSERVATORY', 64, 58, 18, C.gold, 600);
-  label(ctx, 'The frontier, ignited.', 64, portrait ? 137 : 127, portrait ? 62 : 58, C.text, 600);
-  const step = portrait ? 236 : 190, ly = portrait ? 204 : 84, lx = portrait ? 65 : 1866 - step * data.labs.length;
-  data.labs.forEach((lab, i) => {
-    circle(ctx, lx + i * step, ly - 7, 5, lab.color);
-    label(ctx, lab.name, lx + 16 + i * step, ly, 24, lab.color);
-  });
+  label(ctx, TITLE, 64, portrait ? 137 : 127, portrait ? 62 : 58, C.text, 600);
+  legend(ctx, data, portrait);
   if (!portrait) label(ctx, `${data.releases.length} SELECTED LAUNCHES · ${data.startDate.slice(0, 4)}—${data.endDate.slice(0, 4)}`, 1848, 126, 19, C.muted, 500, 'right');
 }
 function footer(ctx, data, w, h, portrait) {
   line(ctx, 64, h - 67, w - 64, h - 67);
-  label(ctx, `CURATED ${data.labs.map(lab => lab.name.toUpperCase()).join(' + ')} · THROUGH ${data.endDate}`, 64, h - 31, portrait ? 18 : 19, C.muted);
-  if (!portrait) label(ctx, `ECI: ${data.capability.publisher}, ${data.capability.license} · retrieved ${data.capability.retrievedOn}`, w - 64, h - 31, 19, C.dim, 500, 'right');
+  const size = portrait ? 18 : 19, credit = `ECI: ${data.capability.publisher}, ${data.capability.license} · retrieved ${data.capability.retrievedOn}`;
+  const room = w - 128 - (portrait ? 0 : textWidth(ctx, credit, size) + 48), names = `CURATED ${data.labs.map(lab => lab.name.toUpperCase()).join(' + ')} · THROUGH ${data.endDate}`;
+  fit(ctx, textWidth(ctx, names, size) <= room ? names : `CURATED SAMPLE OF ${data.labs.length} LABS · THROUGH ${data.endDate}`, 64, h - 31, room, size, 14, C.muted);
+  if (!portrait) label(ctx, credit, w - 64, h - 31, size, C.dim, 500, 'right');
 }
 export function activeFireworks(data, timeline, time) {
   return data.releases.filter(e => { const age = time - timeline.onsets.get(e.id); return age >= -FIREWORK.rise && age < FIREWORK.life; });
 }
+// How many bursts are in the air, each counted smoothly from launch to the end of its lifetime. Decorative light
+// (glow, flash, climbing trails, streaks, glints) dims together by 1 / sqrt(crowd) in dense clusters; every launch
+// keeps its exact position, rays, radius and lifetime.
+export function burstCrowd(data, timeline, time) {
+  let crowd = 0;
+  for (const e of data.releases) {
+    const age = time - timeline.onsets.get(e.id);
+    if (age > -FIREWORK.rise && age < FIREWORK.life) crowd += smooth((age + FIREWORK.rise) / FIREWORK.rise) * (1 - smooth(age / FIREWORK.life));
+  }
+  return crowd;
+}
 function marker(ctx, data, event, box, opacity, size) {
-  const { bx, by } = eventPose(data, event, box), c = data.labs.find(l => l.id === event.lab).color, shape = labIndex(data, event.lab) % 3;
-  ctx.beginPath();
-  if (shape === 0) ctx.arc(bx, by, size, 0, TAU);
-  else if (shape === 1) { const d = size * 1.35; ctx.moveTo(bx, by - d); ctx.lineTo(bx + d, by); ctx.lineTo(bx, by + d); ctx.lineTo(bx - d, by); ctx.closePath(); }
-  else ctx.rect(bx - size * .9, by - size * .9, size * 1.8, size * 1.8);
+  const { bx, by } = eventPose(data, event, box), c = labOf(data, event.lab).color;
+  shapePath(ctx, styleOf(data, event.lab).shape, bx, by, size);
   ctx.fillStyle = event.stage === 'preview' ? rgba(C.bg, opacity) : rgba(c, opacity); ctx.fill();
-  if (event.stage === 'preview') { ctx.strokeStyle = rgba(c, opacity); ctx.lineWidth = 2; ctx.stroke(); }
+  if (event.stage === 'preview') { ctx.strokeStyle = rgba(c, opacity); ctx.lineWidth = size * .42; ctx.stroke(); }
 }
 // Each lab's best score so far, as a step line that climbs when a launch sets a new high.
 function frontierLines(ctx, data, timeline, visible, box, time, nowX, opacity, width) {
@@ -96,51 +161,73 @@ function frontierLines(ctx, data, timeline, visible, box, time, nowX, opacity, w
     ctx.strokeStyle = rgba(lab.color, opacity); ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.stroke();
   }
 }
+// The rays of one burst as fractions of its radius. Every form has the same ray count, reach (speed at most 1),
+// gravity range and lifetime; only their arrangement differs.
+const rayCache = new Map();
+export function burstRays(form, seed) {
+  const key = `${form}\n${seed}`;
+  if (rayCache.has(key)) return rayCache.get(key);
+  const rand = seeded(seed), n = FIREWORK.rays, rays = [];
+  for (let i = 0; i < n; i++) {
+    let angle = i / n * TAU + (rand() - .5) * .08, speed = .76 + rand() * .24, tail = .1 + rand() * .055;
+    if (form === 'glitter') tail = .17 + rand() * .08;
+    else if (form === 'double ring') { speed = i % 2 ? .94 + rand() * .05 : .5 + rand() * .05; tail = .07; }
+    else if (form === 'fan') {
+      // Seventeen spokes across the upper 150°, four stars along each.
+      angle = -Math.PI / 2 + (i % 17 / 16 - .5) * 2.62 + (rand() - .5) * .03; speed = .37 + .2 * Math.floor(i / 17) + rand() * .03; tail = .12;
+    } else if (form === 'four-point star') {
+      // Forty stars strung along four arms (up, right, down, left) around a small round core.
+      if (i < 40) { angle = i % 4 * Math.PI / 2 - Math.PI / 2 + (rand() - .5) * .06; speed = .3 + .07 * (Math.floor(i / 4) + rand()); tail = .09; }
+      else { angle = (i - 39.5) / (n - 40) * TAU + (rand() - .5) * .05; speed = .24 + rand() * .1; tail = .06; }
+    }
+    rays.push({ angle, speed, tail, gravity: 19 + rand() * 8 });
+  }
+  rayCache.set(key, rays);
+  return rays;
+}
 // Fireworks are drawn in world coordinates under the camera. `view` carries the camera-dependent parts:
-// the visible axis to launch from, the burst radius (it grows with zoom, but slower than the zoom) and a line-width factor.
+// the visible axis to launch from, the burst radius (it grows with zoom, but slower than the zoom), a line-width
+// factor, and `deco`, the shared dimming of decorative light in crowded moments.
 function rocket(ctx, data, e, lab, age, box, view) {
-  // Style follows the lab, never the event: peony, glitter chrysanthemum, double ring.
-  const rand = seeded(e.id), { origin, bx, by } = eventPose(data, e, box), style = labIndex(data, e.lab) % 3;
-  const base = Math.max(view.baseY, by), height = base - by, radius = view.radius, px = view.px, fall = radius / box.radius;
+  const form = styleOf(data, e.lab).form, rays = burstRays(form, e.id), { origin, bx, by } = eventPose(data, e, box);
+  const base = Math.max(view.baseY, by), height = base - by, radius = view.radius, px = view.px, fall = radius / box.radius, deco = view.deco;
   const flight = q => ({ x: origin + (bx - origin) * q, y: base - height * (1 - (1 - q) ** 1.7) });
   const c = lab.color;
   if (age < FIREWORK.rise) {
     const q = clamp(age / FIREWORK.rise), head = flight(q);
     for (let j = 0; j < 24; j++) {
       const f = Math.max(0, q - j * .014), p1 = flight(f), p2 = flight(Math.max(0, f - .014));
-      line(ctx, p1.x, p1.y, p2.x, p2.y, rgba(c, (1 - j / 24) * .8), 2.5 * (1 - j / 30) * px);
+      line(ctx, p1.x, p1.y, p2.x, p2.y, rgba(c, (1 - j / 24) * .8 * (.5 + .5 * deco)), 2.5 * (1 - j / 30) * px);
     }
-    glow(ctx, head.x, head.y, 30 * px, c, .55); circle(ctx, head.x, head.y, 3 * px, '#FFFFFF');
+    glow(ctx, head.x, head.y, 30 * px, c, .55 * deco); circle(ctx, head.x, head.y, 3 * px, '#FFFFFF');
     return;
   }
   const t = age - FIREWORK.rise, fade = (1 - clamp(t / FIREWORK.life)) ** 1.5;
   if (fade <= 0) return;
-  glow(ctx, bx, by, radius * 1.4, c, .25 * Math.exp(-t * 1.4));
+  glow(ctx, bx, by, radius * 1.4, c, .25 * Math.exp(-t * 1.4) * deco);
   // Local bloom only, never a full-frame white flash.
   const impulse = Math.exp(-t * 10);
-  circle(ctx, bx, by, (4 + 11 * (1 - impulse)) * px, rgba('#FFF3DB', impulse * .65), true);
-  for (let i = 0; i < FIREWORK.rays; i++) {
-    const angle = i / FIREWORK.rays * TAU + (rand() - .5) * .08;
-    const speed = style === 2 ? (i % 2 ? .94 + rand() * .05 : .5 + rand() * .05) : .76 + rand() * .25;
-    const gravity = (19 + rand() * 8) * fall, tail = style === 1 ? .17 + rand() * .08 : style === 2 ? .07 : .10 + rand() * .055;
-    const at = sec => {
-      const r = radius * speed * (1 - Math.exp(-sec * 3.4));
-      return { x: bx + Math.cos(angle) * r, y: by + Math.sin(angle) * r + gravity * sec * sec };
+  circle(ctx, bx, by, (4 + 11 * (1 - impulse)) * px, rgba('#FFF3DB', impulse * .65 * deco), true);
+  const streak = .55 + .45 * deco;
+  for (const [i, ray] of rays.entries()) {
+    const gravity = ray.gravity * fall, at = sec => {
+      const r = radius * ray.speed * (1 - Math.exp(-sec * 3.4));
+      return { x: bx + Math.cos(ray.angle) * r, y: by + Math.sin(ray.angle) * r + gravity * sec * sec };
     };
-    const head = at(t), prev = at(Math.max(0, t - tail));
+    const head = at(t), prev = at(Math.max(0, t - ray.tail));
     const sparkle = .68 + .32 * Math.sin(t * 13 + i * 2.3) ** 2;
-    line(ctx, prev.x, prev.y, head.x, head.y, rgba(c, fade * sparkle), (i % 5 ? 2.4 : 3.2) * px);
+    line(ctx, prev.x, prev.y, head.x, head.y, rgba(c, fade * sparkle * streak), (i % 5 ? 2.4 : 3.2) * px);
     circle(ctx, head.x, head.y, (i % 7 === 0 ? 2.1 : 1.4) * px, rgba(i % 5 === 0 ? '#FFF3DB' : c, fade));
     if (i % 3 === 0 && t > .32) {
       const extra = at(Math.max(0, t - .17));
-      circle(ctx, extra.x, extra.y, .75 * px, rgba('#FCDFB1', fade * .5));
+      circle(ctx, extra.x, extra.y, .75 * px, rgba('#FCDFB1', fade * .5 * deco));
     }
-    if (style === 1 && i % 2 === 0 && t > .22 && Math.sin(t * 47 + i * 1.9) > .2) {
+    if (form === 'glitter' && i % 2 === 0 && t > .22 && Math.sin(t * 47 + i * 1.9) > .2) {
       const glint = at(Math.max(0, t - .05));
-      circle(ctx, glint.x + Math.cos(i * 7.1) * 5 * px, glint.y + Math.sin(i * 3.7) * 5 * px, 1.3 * px, rgba('#FFF3DB', fade * .85));
+      circle(ctx, glint.x + Math.cos(i * 7.1) * 5 * px, glint.y + Math.sin(i * 3.7) * 5 * px, 1.3 * px, rgba('#FFF3DB', fade * .85 * deco));
     }
   }
-  const tailFade = Math.exp(-t * 3) * .4;
+  const tailFade = Math.exp(-t * 3) * .4 * deco;
   line(ctx, origin, base, bx, by, rgba(c, tailFade), px);
 }
 // Launches without a published score spray a low fountain from the date axis instead of claiming a height.
@@ -148,19 +235,19 @@ function fountain(ctx, e, lab, age, x, view) {
   const rand = seeded(e.id), c = lab.color, r = view.radius, y0 = view.baseY, px = view.px;
   if (age < FIREWORK.rise) {
     const q = clamp(age / FIREWORK.rise);
-    glow(ctx, x, y0, (16 + 18 * q) * px, c, .2 + .35 * q); circle(ctx, x, y0 - 2 * px, 2.5 * px, '#FFFFFF');
+    glow(ctx, x, y0, (16 + 18 * q) * px, c, (.2 + .35 * q) * view.deco); circle(ctx, x, y0 - 2 * px, 2.5 * px, '#FFFFFF');
     return;
   }
   const t = age - FIREWORK.rise, fade = (1 - clamp(t / FIREWORK.life)) ** 1.3;
   if (fade <= 0) return;
-  glow(ctx, x, y0, r * .7, c, .22 * Math.exp(-t * 1.6));
+  glow(ctx, x, y0, r * .7, c, .22 * Math.exp(-t * 1.6) * view.deco);
   for (let i = 0; i < 46; i++) {
     const birth = rand() * .95, angle = -Math.PI / 2 + (rand() - .5) * .75, speed = r * (2.3 + rand() * .7);
     const at = s => ({ x: x + Math.cos(angle) * speed * s, y: y0 + Math.sin(angle) * speed * s + r * 3.6 * s * s });
     const s = t - birth;
     if (s < 0 || s > .8) continue;
     const head = at(s), prev = at(Math.max(0, s - .07)), life = 1 - s / .8;
-    line(ctx, prev.x, prev.y, head.x, head.y, rgba(c, fade * life), 2 * px);
+    line(ctx, prev.x, prev.y, head.x, head.y, rgba(c, fade * life * (.55 + .45 * view.deco)), 2 * px);
     circle(ctx, head.x, head.y, 1.4 * px, rgba(i % 4 ? c : '#FFF3DB', fade * life));
   }
 }
@@ -180,44 +267,83 @@ function counter(ctx, data, timeline, state, year, visible, box, portrait) {
   if (year === yearOf(data.endDate)) { label(ctx, `YTD · THROUGH ${data.endDate.slice(5)}`, c.x + 4, c.ytd, c.ytdSize, C.gold); bottom = c.ytd + 8; }
   return { left: c.x - 8, top: c.y - size * .78, right: right + 12, bottom };
 }
-// The newest launch's name tag rides next to its burst for just over a second, sliding in from the side.
-// Same-day launches share one stacked tag.
-function callout(ctx, data, timeline, state, cam, box, visible, portrait, avoid) {
-  const latest = visible.at(-1), life = 1.2;
-  if (!latest) return;
-  const onset = timeline.onsets.get(latest.id), age = state.time - onset;
-  if (age >= life) return;
-  const group = visible.filter(e => timeline.onsets.get(e.id) === onset).sort((a, b) => (scoreOf(b) ?? -1) - (scoreOf(a) ?? -1));
-  const pose = eventPose(data, group[0], box), point = cam.toScreen(pose.bx, pose.by);
+// The newest launch's name tag rides next to its burst. Launches arriving within a moment of each other share one
+// tag, newest at the bottom, its size fixed from the start so it never jumps; the next tag replaces it, so every tag
+// stays up for at least the merge window. At most three rows: a larger group names its first two launches and counts
+// the rest, as they arrive, towards the lists.
+export const TAG = Object.freeze({ life: 1.2, merge: .3, rows: 3 });
+const tagPlans = new WeakMap();
+export function tagGroups(data, timeline) {
+  const cached = tagPlans.get(timeline);
+  if (cached?.data === data) return cached.groups;
+  const onset = e => timeline.onsets.get(e.id), groups = [];
+  const events = [...data.releases].sort((a, b) => onset(a) - onset(b) || (scoreOf(b) ?? -1) - (scoreOf(a) ?? -1));
+  for (const e of events) {
+    const g = groups.at(-1), t = onset(e);
+    if (g && (t === g.events.at(-1).onset || t - g.start <= TAG.merge)) g.events.push({ event: e, onset: t });
+    else groups.push({ start: t, events: [{ event: e, onset: t }] });
+  }
+  groups.forEach((g, i) => { g.end = Math.min(g.start + TAG.life, groups[i + 1]?.start ?? Infinity); });
+  tagPlans.set(timeline, { data, groups });
+  return groups;
+}
+function callout(ctx, data, timeline, state, cam, box, portrait, avoid) {
+  const time = state.time, group = tagGroups(data, timeline).find(g => g.start <= time && time < g.end);
+  if (!group) return;
+  const announced = group.events.filter(({ onset }) => onset <= time);
+  const age = time - group.start, extra = announced.length > TAG.rows ? announced.length - TAG.rows + 1 : 0;
+  const pose = eventPose(data, group.events[0].event, box), point = cam.toScreen(pose.bx, pose.by);
   const ax = point.x, ay = pose.scored ? point.y : box.y - (portrait ? 160 : 100);
-  const nameSize = portrait ? 40 : 34, subSize = portrait ? 23 : 19, rowH = nameSize + subSize + (portrait ? 26 : 20), gap = portrait ? 36 : 32;
-  const rows = group.map(e => ({ name: modelLabel(e, portrait), sub: scoreOf(e) === null ? 'NOT YET SCORED' : `ECI ${Math.round(scoreOf(e))}`, color: data.labs.find(l => l.id === e.lab).color }));
-  let width = 0;
-  for (const r of rows) { ctx.font = `600 ${nameSize}px Manrope600`; width = Math.max(width, ctx.measureText(r.name).width); ctx.font = `600 ${subSize}px Manrope600`; width = Math.max(width, ctx.measureText(r.sub).width); }
-  const height = rows.length * rowH - (portrait ? 18 : 14), right = box.x + box.w - 12;
+  const nameSize = portrait ? 36 : 30, subSize = portrait ? 22 : 19, rowH = nameSize + (portrait ? 18 : 14), gap = portrait ? 36 : 32, mark = portrait ? 30 : 26;
+  const padX = portrait ? 16 : 14, padY = portrait ? 12 : 10;
+  const rows = announced.slice(0, extra ? TAG.rows - 1 : TAG.rows).map(({ event, onset }) => ({ onset, name: modelLabel(event),
+    sub: scoreOf(event) === null ? 'NOT YET SCORED' : `ECI ${Math.round(scoreOf(event))}`, lab: labOf(data, event.lab), preview: event.stage === 'preview' }));
+  const more = n => `+${n} MORE IN THE LISTS BELOW`, maxWidth = box.w - 24;
+  const arrived = group.events.slice(TAG.rows - 1).filter(({ onset }) => onset <= time).length;
+  const note = extra ? more(extra) : null;
+  let width = note ? textWidth(ctx, note, subSize, 600) : 0;
+  for (const r of rows) {
+    r.subWidth = textWidth(ctx, r.sub, subSize, 600);
+    r.fit = fitText(ctx, r.name, maxWidth - mark - 14 - r.subWidth, nameSize, portrait ? 26 : 22, 600);
+    width = Math.max(width, mark + textWidth(ctx, r.fit.text, r.fit.size, 600) + 14 + r.subWidth);
+  }
+  const height = (rows.length + (note ? 1 : 0)) * rowH - rowH + nameSize, right = box.x + box.w - 12;
   let x = ax + gap > right - width ? ax - gap - width : ax + gap, top = ay - height / 2;
   x = clamp(x, box.x + 12, right - width);
   const fitY = v => clamp(v, box.top + 10, box.y - 16 - height);
   top = fitY(top);
-  if (x < avoid.right && x + width > avoid.left && top < avoid.bottom && top + height > avoid.top) {
+  // The counter keeps clear of the tag's whole plate, not just its text.
+  if (x - padX < avoid.right && x + width + padX > avoid.left && top - padY < avoid.bottom && top + height + padY > avoid.top) {
     top = fitY(avoid.bottom + 14);
-    if (top < avoid.bottom) x = Math.min(right - width, avoid.right + 20);
+    if (top - padY < avoid.bottom) x = Math.min(right - width, avoid.right + 20);
   }
-  const a = easeOut(age / .12) * clamp((life - age) / .3), slide = (1 - easeOut(age / .22)) * (x > ax ? 28 : -28);
-  ctx.save(); ctx.globalAlpha = a;
-  const edge = x > ax ? x - 10 : x + width + 10;
-  line(ctx, ax, ay, edge + slide, top + nameSize * .45, rgba(rows[0].color, .55), 1.5);
+  const a = easeOut(age / .12) * clamp((group.end - time) / .25), slide = (1 - easeOut(age / .22)) * (x > ax ? 28 : -28);
+  ctx.save();
+  const over = ax > x - padX && ax < x + width + padX, edge = over ? ax - slide : x > ax ? x - padX : x + width + padX;
+  const end = over ? (ay < top ? top - padY : top + height + padY) : top + nameSize * .45;
+  ctx.globalAlpha = a;
+  if (!over || ay < top - 36 || ay > top + height + 36) line(ctx, ax, ay, edge + slide, end, rgba(rows[0].lab.color, .55), 1.5);
+  // One dark plate behind the whole group, edged in the first launch's lab colour. The tag must stay the last thing
+  // drawn in the plot, after the bursts and step lines, so that nothing crosses the plate.
+  ctx.beginPath();
+  ctx.roundRect(x + slide - padX, top - padY, width + 2 * padX, height + 2 * padY, portrait ? 8 : 6);
+  ctx.fillStyle = rgba(C.bg, .82); ctx.fill();
+  ctx.strokeStyle = rgba(rows[0].lab.color, .75); ctx.lineWidth = 1.5; ctx.stroke();
   ctx.shadowColor = rgba(C.bg, .9); ctx.shadowBlur = 14;
   rows.forEach((r, i) => {
-    const y = top + nameSize * .78 + i * rowH;
-    label(ctx, r.name, x + slide, y, nameSize, C.text, 600);
-    label(ctx, r.sub, x + slide, y + subSize + 10, subSize, r.color, 600);
+    if (time < r.onset) return;
+    const y = top + nameSize * .8 + i * rowH, tx = x + slide;
+    ctx.globalAlpha = a * easeOut((time - r.onset) / .12);
+    glyph(ctx, styleOf(data, r.lab.id).shape, tx + mark * .32, y - nameSize * .3, nameSize * .17, r.lab.color, r.preview);
+    label(ctx, r.fit.text, tx + mark, y, r.fit.size, C.text, 600);
+    label(ctx, r.sub, tx + mark + textWidth(ctx, r.fit.text, r.fit.size, 600) + 14, y, subSize, r.lab.color, 600);
   });
+  if (note && arrived) { ctx.globalAlpha = a; label(ctx, more(arrived), x + slide + mark, top + nameSize * .8 + rows.length * rowH, subSize, C.muted, 600); }
   ctx.restore();
 }
 // Launch pace beside the chart (landscape) or under it (portrait), like an indicator with a price chart: it shares the
 // camera's calendar, and its scale widens whenever the pace sets a new high, so the cadence gridlines sink as launches
-// speed up. Each launch kicks the line up as it bursts and leaves a dot on the panel's baseline.
+// speed up. Each launch kicks the line up as it bursts and leaves a mark on the panel's baseline.
 function pacePanel(ctx, data, timeline, state, box, visible, portrait, cam) {
   const pb = box.pace, beside = pb.x >= box.x + box.w, scale = chartScale(data, box), left = pb.x, right = pb.x + box.w;
   const sx = d => cam.toScreen(scale.x(d), 0).x + pb.x - box.x;
@@ -256,13 +382,15 @@ function pacePanel(ctx, data, timeline, state, box, visible, portrait, cam) {
   // A ring in the lab's colour opens where each launch kicks the line.
   for (const e of visible) {
     const age = state.time - timeline.onsets.get(e.id), d = day(e.date);
-    if (age < .6) circle(ctx, sx(d), py(paceAt(launches, d)), (4 + 24 * easeOut(age / .6)) * (portrait ? 1.2 : 1.1), rgba(data.labs.find(l => l.id === e.lab).color, 1 - age / .6), true);
+    if (age < .6) circle(ctx, sx(d), py(paceAt(launches, d)), (4 + 24 * easeOut(age / .6)) * (portrait ? 1.2 : 1.1), rgba(labOf(data, e.lab).color, 1 - age / .6), true);
   }
   ctx.restore();
-  // One dot per launch on the baseline, the raw dates the line is built from (hollow for previews).
+  // One mark per launch on the baseline, the raw dates the line is built from: one lane per lab, in its marker
+  // shape (hollow for previews). The lanes tighten as labs are added and sit just above the date ticks.
+  const n = data.labs.length, lane = n > 3 ? 5.5 : 8, styles = labStyles(data.labs);
   for (const e of visible) {
     const x = sx(day(e.date));
-    if (x >= left && x <= right) circle(ctx, x, pb.bottom + (labIndex(data, e.lab) - (data.labs.length - 1) / 2) * 8, 3.5, data.labs.find(l => l.id === e.lab).color, e.stage === 'preview');
+    if (x >= left && x <= right) glyph(ctx, styles.get(e.lab).shape, x, pb.bottom - (n > 3 ? 3 : 0) + (labIndex(data, e.lab) - (n - 1) / 2) * lane, n > 3 ? 2.6 : 3.2, labOf(data, e.lab).color, e.stage === 'preview');
   }
   const title = `LAUNCH PACE · LAUNCHES / YEAR, ANNUALIZED · ${PACE_TAU_DAYS}-DAY EMA`;
   if (beside) label(ctx, title, left, pb.top - 16, 17, C.gold, 600); else label(ctx, title, left + 10, pb.top + 20, 19, C.gold, 600);
@@ -291,7 +419,7 @@ function chart(ctx, data, timeline, state, year, box, visible, portrait, cam) {
   }
   label(ctx, `${data.capability.index.toUpperCase()} · HIGHER = MORE CAPABLE`, box.x, box.top - (portrait ? 18 : 16), portrait ? 21 : 17, C.gold, 600);
   glow(ctx, box.x + box.w * .5, box.y, box.w * .7, '#407685', .15);
-  const world = () => { ctx.translate(cam.P.x + cam.dx - cam.cx * cam.s, cam.P.y + cam.dy - cam.cy * cam.s); ctx.scale(cam.s, cam.s); };
+  const world = () => { ctx.translate(cam.P.x - cam.cx * cam.s, cam.P.y - cam.cy * cam.s); ctx.scale(cam.s, cam.s); };
   // Step lines and markers stay inside the plot; their strokes thicken a little as the camera closes in.
   const thin = cam.s ** -.7;
   ctx.save(); ctx.beginPath(); ctx.rect(box.x, clipTop, box.w, box.y + 4 - clipTop); ctx.clip();
@@ -300,15 +428,15 @@ function chart(ctx, data, timeline, state, year, box, visible, portrait, cam) {
   frontierLines(ctx, data, timeline, visible, box, state.time, scale.x(state.day), .62, (portrait ? 3 : 2.2) * thin);
   const latest = new Set(data.labs.map(lab => visible.filter(e => e.lab === lab.id && scoreOf(e) !== null).at(-1)));
   for (const e of visible) if (scoreOf(e) !== null) {
-    if (latest.has(e)) { const { bx, by } = eventPose(data, e, box); glow(ctx, bx, by, (portrait ? 30 : 22) * thin, data.labs.find(l => l.id === e.lab).color, .35); }
+    if (latest.has(e)) { const { bx, by } = eventPose(data, e, box); glow(ctx, bx, by, (portrait ? 30 : 22) * thin, labOf(data, e.lab).color, .35); }
     marker(ctx, data, e, box, latest.has(e) ? .95 : .6, (portrait ? 6.5 : 4.8) * thin);
   }
   ctx.restore();
   // Bursts may spill past the plot's sides; rockets launch from the visible axis.
-  const view = { baseY: Math.min(box.y, cam.toWorld(0, box.y).y), radius: box.radius * cam.s ** -.45, px: cam.s ** -.5 };
+  const view = { baseY: Math.min(box.y, cam.toWorld(0, box.y).y), radius: box.radius * cam.s ** -.45, px: cam.s ** -.5, deco: 1 / Math.sqrt(Math.max(1, burstCrowd(data, timeline, state.time))) };
   ctx.save(); ctx.beginPath(); ctx.rect(0, clipTop, box.pace.x > right ? right + 36 : W, box.y + 4 - clipTop); ctx.clip(); world();
   for (const event of activeFireworks(data, timeline, state.time)) {
-    const age = state.time - timeline.onsets.get(event.id) + FIREWORK.rise, lab = data.labs.find(l => l.id === event.lab);
+    const age = state.time - timeline.onsets.get(event.id) + FIREWORK.rise, lab = labOf(data, event.lab);
     if (scoreOf(event) === null) fountain(ctx, event, lab, age, scale.x(event.date), view); else rocket(ctx, data, event, lab, age, box, view);
   }
   ctx.restore();
@@ -338,11 +466,15 @@ function chart(ctx, data, timeline, state, year, box, visible, portrait, cam) {
   if (end < right) label(ctx, 'UNOBSERVED', right + pb.x - box.x, pb.bottom + (portrait ? 70 : 56), portrait ? 22 : 17, C.muted, 500, 'right');
   if (nowX >= box.x && nowX <= right) { line(ctx, nowX, box.y - 19, nowX, box.y + 15, C.gold, 2); circle(ctx, nowX, box.y, 3, C.text); }
   const avoid = counter(ctx, data, timeline, state, year, visible, box, portrait);
-  callout(ctx, data, timeline, state, cam, box, visible, portrait, avoid);
+  callout(ctx, data, timeline, state, cam, box, portrait, avoid);
 }
-export function modelLabel(event, portrait = false) {
+// Full names everywhere except the lists, whose column headers already name the lab and whose rows show the date:
+// there the repeated lab prefix is dropped before a family name (Claude Opus 4.6 → Opus 4.6, Claude 3.5 Sonnet →
+// 3.5 Sonnet, DeepSeek V3.2 → V3.2) and a month qualifier loses its year (GPT-6 Sol (Oct 2026) → GPT-6 Sol (Oct)),
+// while numeric or generic names such as Claude 2.1 or DeepSeek LLM stay whole.
+export function modelLabel(event, compact = false) {
   const full = event.name + (event.stage === 'preview' ? ' *' : '');
-  return portrait ? full.replace(/^Claude (?=[A-Za-z])/, '') : full;
+  return compact ? full.replace(/^Claude (?=[A-Za-z]|\d+(?:\.\d+)* [A-Za-z])/, '').replace(/^DeepSeek (?=[A-Z]\d)/, '').replace(/ \(([A-Za-z]+) \d{4}\)/, ' ($1)') : full;
 }
 // Newest first. An arrival enters at the top and pushes older names down one row; the fifth fades out.
 const PUSH_SECONDS = .28;
@@ -357,32 +489,64 @@ export function ledgerRows(events, timeline, time) {
     return { event, row, alpha: Math.min(clamp((row + .5) / .5), clamp((3.25 - row) / .25)) };
   });
 }
-function ledger(ctx, data, visible, timeline, state, year, w, portrait) {
-  const n = data.labs.length, p = 64, gap = portrait ? (n > 2 ? 30 : 42) : (n > 2 ? 60 : 90), col = (w - 2 * p - gap * (n - 1)) / n, nameX = n > 2 ? 150 : 165;
-  const y = portrait ? 1290 : 767, rowH = portrait ? 91 : 49, top = y + (portrait ? 54 : 58);
-  data.labs.forEach((lab, i) => {
-    const x = p + i * (col + gap), all = visible.filter(e => e.lab === lab.id), newest = all.at(-1);
-    circle(ctx, x + 5, y - 7, 5, lab.color);
-    label(ctx, lab.name.toUpperCase(), x + 24, y, portrait ? 30 : 23, lab.color, 600);
-    if (!portrait || n === 2) label(ctx, 'NEWEST FIRST · ECI', x + col, y, portrait ? 21 : 19, C.dim, 500, 'right');
-    line(ctx, x, y + 16, x + col, y + 16);
-    ctx.save(); ctx.beginPath(); ctx.rect(x - 12, y + 17, col + 24, top - y - 17 + 3.25 * rowH + (portrait ? 61 : 12)); ctx.clip();
-    for (const { event, row, alpha } of ledgerRows(all.slice(-6), timeline, state.time)) {
+// Where each lab's list sits. Landscape: one row of columns under both panels; two or three labs get wide columns
+// with the date, name and score on one line, four or five get narrow ones with the date under the name. Portrait:
+// up to three columns per row (3 + 2 for five labs, 2 + 2 for four). Every column holds four rows; `bottom` is the
+// lowest any of its text may reach, including the fifth name as it fades out.
+export const LEDGER_ROWS = 4;
+export function ledgerLayout(data, format) {
+  const n = data.labs.length, portrait = format === 'portrait', p = 64, room = FORMATS[format].width - 2 * p;
+  const grid = portrait ? (n <= 3 ? [n] : [Math.ceil(n / 2), Math.floor(n / 2)]) : [n];
+  const m = portrait
+    ? grid.length > 1 ? { head: 26, hint: 19, name: 32, min: 25, date: 20, dateDy: 27, score: 30, first: 50, rowH: 60, pitch: 296, y: 1140, bottom: 1716 }
+      : { head: 30, hint: 21, name: 42, min: 30, date: 24, dateDy: 34, score: 34, first: 62, rowH: 88, pitch: 0, y: 1150, bottom: 1716 }
+    : n <= 3 ? { head: 23, hint: 19, name: 34, min: 26, date: 22, score: 26, first: 48, rowH: 52, nameX: 150, y: 752, bottom: 992 }
+      : { head: 21, hint: 17, name: 28, min: 22, date: 16, dateDy: 23, score: 26, first: 44, rowH: 52, y: 752, bottom: 992 };
+  const gap = portrait ? 28 : n <= 2 ? 90 : n === 3 ? 60 : 32, columns = [];
+  let i = 0;
+  grid.forEach((count, g) => {
+    const w = (room - gap * (count - 1)) / count, y = m.y + g * (m.pitch ?? 0);
+    const bottom = g + 1 < grid.length ? y + m.pitch - m.head * .75 - 2 : m.bottom;
+    for (let k = 0; k < count; k++, i++) columns.push({ lab: data.labs[i], x: p + k * (w + gap), w, y, first: y + m.first, bottom, compact: portrait || n > 3, m });
+  });
+  return columns;
+}
+function ledger(ctx, data, visible, timeline, state, portrait) {
+  const styles = labStyles(data.labs);
+  for (const col of ledgerLayout(data, portrait ? 'portrait' : 'landscape')) {
+    const { lab, x, w, y, m } = col, all = visible.filter(e => e.lab === lab.id), newest = all.at(-1), hint = 'ECI', hintW = textWidth(ctx, hint, m.hint);
+    glyph(ctx, styles.get(lab.id).shape, x + 6, y - m.head * .36, m.head * .24, lab.color);
+    fit(ctx, lab.name.toUpperCase(), x + 22, y, w - 22 - hintW - 16, m.head, m.head * .75, lab.color, 600);
+    label(ctx, hint, x + w, y, m.hint, C.dim, 500, 'right');
+    line(ctx, x, y + 14, x + w, y + 14);
+    const clipTop = y + 15;
+    ctx.save(); ctx.beginPath(); ctx.rect(x - 12, clipTop, w + 24, col.bottom - clipTop); ctx.clip();
+    const scoreW = textWidth(ctx, '000', m.score);
+    for (const { event, row, alpha } of ledgerRows(all.slice(-(LEDGER_ROWS + 2)), timeline, state.time)) {
       if (alpha <= .01) continue;
-      const yy = top + row * rowH, age = state.time - timeline.onsets.get(event.id), latest = event === newest;
+      const yy = col.first + row * m.rowH, age = state.time - timeline.onsets.get(event.id), latest = event === newest;
+      const date = event.date.replaceAll('-', '.'), name = modelLabel(event, col.compact), score = scoreOf(event) === null ? '—' : String(Math.round(scoreOf(event)));
       ctx.globalAlpha = alpha;
-      if (age < 1.2) rect(ctx, x - 9, yy - (portrait ? 26 : 30), col + 18, portrait ? 82 : 44, rgba(lab.color, .1 * (1 - age / 1.2)));
-      // Text that would sit above the list's clip edge stays undrawn until it slides into view.
-      const shown = (baseline, size) => baseline - size * .75 >= y + 17;
-      if (shown(yy, portrait ? 30 : 22)) label(ctx, event.date.replaceAll('-', '.'), x, yy, portrait ? 30 : 22, latest ? C.text : C.muted);
-      if (shown(yy + (portrait ? 47 : 0), portrait ? 43 : 34)) fit(ctx, modelLabel(event, portrait), portrait ? x : x + nameX, yy + (portrait ? 47 : 0), portrait ? col : col - nameX - 88, portrait ? 43 : 34, C.text);
-      if (shown(yy, portrait ? 30 : 26)) label(ctx, scoreOf(event) === null ? '—' : String(Math.round(scoreOf(event))), x + col, yy, portrait ? 30 : 26, latest ? lab.color : C.muted, 500, 'right');
+      if (age < 1.2) { const t = yy - m.name * .86 - 4; rect(ctx, x - 9, t, w + 18, yy + (m.nameX ? m.name * .3 : m.dateDy + m.date * .3) + 5 - t, rgba(lab.color, .1 * (1 - age / 1.2))); }
+      // A row's text appears as a whole once it has slid below the rule, fading in over the last of its slide, and is
+      // dropped once it fades past the last row; it never shows a date or score without its name.
+      if (yy - m.name * .78 < clipTop || yy + (m.nameX ? m.name * .25 : m.dateDy + m.date * .25) > col.bottom) continue;
+      ctx.globalAlpha = alpha * clamp((row + .12) / .12);
+      if (m.nameX) {
+        label(ctx, date, x, yy, m.date, latest ? C.text : C.muted);
+        fit(ctx, name, x + m.nameX, yy, w - m.nameX - scoreW - 24, m.name, m.min);
+      } else {
+        fit(ctx, name, x, yy, w - scoreW - 16, m.name, m.min);
+        label(ctx, date, x, yy + m.dateDy, m.date, latest ? C.text : C.muted);
+      }
+      label(ctx, score, x + w, yy, m.score, latest ? lab.color : C.muted, 500, 'right');
     }
     ctx.restore();
-  });
+  }
 }
 // Scale the drawing about a point; text keeps its own coordinates, so layout checks still see the unscaled design.
 function zoomAbout(ctx, x, y, k) { ctx.translate(x, y); ctx.scale(k, k); ctx.translate(-x, -y); }
+const COUNT_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
 // Title card: lines cascade in on the beat while the card drifts closer, then it zooms through into the chart.
 function intro(ctx, data, timeline, state, w, h, portrait) {
   const t = state.time, exit = clamp((t - (timeline.introSeconds - .24)) / .24), y = portrait ? 708 : 417;
@@ -403,7 +567,7 @@ function intro(ctx, data, timeline, state, w, h, portrait) {
   });
   show(.6, () => {
     label(ctx, `${data.startDate.slice(0, 4)} — ${data.endDate.slice(0, 4)}`, slide(.6, 64), sy + 83, 34, C.text);
-    label(ctx, `${data.releases.length} selected launches · ${['', 'one', 'two', 'three'][data.labs.length]} labs · scores from ${data.capability.publisher}`, slide(.6, 64), sy + 134, portrait ? 27 : 29, C.muted);
+    fit(ctx, `${data.releases.length} selected launches · ${COUNT_WORDS[data.labs.length] ?? data.labs.length} labs · scores from ${data.capability.publisher}`, slide(.6, 64), sy + 134, w - 128, portrait ? 27 : 29, 20, C.muted);
   });
   ctx.restore();
 }
@@ -479,11 +643,15 @@ export function drawFrame(ctx, data, timeline, seconds, format = 'landscape') {
     ctx.save();
     if (out > 0) { ctx.beginPath(); ctx.rect(0, portrait ? 160 : 140, w, h - (portrait ? 160 : 140) - 70); ctx.clip(); zoomAbout(ctx, cam.P.x, cam.P.y, 1 + .22 * out ** 2); }
     chart(ctx, data, timeline, state, year, box, visible, portrait, cam);
-    if (portrait) { label(ctx, '1 BURST = 1 LAUNCH · HEIGHT = ECI', 64, 1718, 30, C.muted); label(ctx, `ECI: ${data.capability.publisher}, ${data.capability.license} · retrieved ${data.capability.retrievedOn}`, 64, 1761, 26, C.muted); }
-    else label(ctx, 'ONE BURST = ONE LAUNCH · HEIGHT = ECI SCORE · CONSTANT CALENDAR SPEED', 64, 720, 19, C.muted);
-    ledger(ctx, data, visible, timeline, state, year, w, portrait);
-    if (portrait) { label(ctx, '* PREVIEW · FOUNTAIN / — = NOT YET SCORED', 64, 1810, 24, C.muted); }
-    else label(ctx, '* PREVIEW · FOUNTAIN ON THE AXIS / — = NOT YET SCORED BY EPOCH AI', 64, 1010, 19, C.muted);
+    ledger(ctx, data, visible, timeline, state, portrait);
+    if (portrait) {
+      label(ctx, '1 BURST = 1 LAUNCH · HEIGHT = ECI · LISTS NEWEST FIRST', 64, 1744, 26, C.muted);
+      label(ctx, '* PREVIEW · FOUNTAIN / — = NOT YET SCORED', 64, 1781, 24, C.muted);
+      label(ctx, `ECI: ${data.capability.publisher}, ${data.capability.license} · retrieved ${data.capability.retrievedOn}`, 64, 1818, 24, C.muted);
+    } else {
+      label(ctx, '* PREVIEW · FOUNTAIN ON THE AXIS / — = NOT YET SCORED BY EPOCH AI', 64, 1010, 19, C.muted);
+      label(ctx, 'ONE BURST = ONE LAUNCH · HEIGHT = ECI · CONSTANT CALENDAR SPEED · LISTS NEWEST FIRST', 1856, 1010, 19, C.muted, 500, 'right');
+    }
     ctx.restore();
   }
   if (veil > 0) rect(ctx, 0, 0, w, h, rgba(C.bg, veil));

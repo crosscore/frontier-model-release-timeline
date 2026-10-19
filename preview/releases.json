@@ -2,16 +2,16 @@
   "schemaVersion": 2,
   "title": "Frontier / Release rhythm",
   "startDate": "2023-01-01",
-  "endDate": "2026-10-02",
-  "verifiedOn": "2026-10-02",
-  "scope": "Selected public model launch events from OpenAI, Anthropic and Google (Gemini). Not a complete industry census or a benchmark ranking; burst heights use Epoch AI's Epoch Capabilities Index where Epoch has scored the launched model.",
+  "endDate": "2026-10-19",
+  "verifiedOn": "2026-10-19",
+  "scope": "Selected public main-family model launch events from OpenAI, Anthropic, Google (Gemini), DeepSeek and Meta. Not a complete industry census or benchmark ranking; burst heights use Epoch AI's ECI for the matching released version.",
   "capability": {
     "index": "Epoch Capabilities Index (ECI)",
     "publisher": "Epoch AI",
     "url": "https://epoch.ai/benchmarks/eci",
     "data": "https://epoch.ai/data/eci_scores.csv",
     "license": "CC BY 4.0",
-    "retrievedOn": "2026-10-03"
+    "retrievedOn": "2026-10-19"
   },
   "labs": [
     {
@@ -28,9 +28,58 @@
       "id": "google",
       "name": "Google",
       "color": "#9AA5FF"
+    },
+    {
+      "id": "deepseek",
+      "name": "DeepSeek",
+      "color": "#D2823C"
+    },
+    {
+      "id": "meta",
+      "name": "Meta",
+      "color": "#DC50A0"
     }
   ],
   "releases": [
+    {
+      "id": "meta-llama",
+      "date": "2023-02-24",
+      "lab": "meta",
+      "name": "LLaMA",
+      "stage": "release",
+      "capability": {
+        "model": "LLaMA-65B",
+        "score": 110.23
+      },
+      "sources": [
+        {
+          "url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/",
+          "title": "LLaMA — official announcement / model card"
+        },
+        {
+          "url": "https://github.com/meta-llama/llama/blob/llama_v1/MODEL_CARD.md",
+          "title": "Official corroborating model card / announcement"
+        }
+      ],
+      "note": "7B/13B/33B/65B grouped. Research-only noncommercial, application-based weights; included as first public introduction under the same request-access precedent as Claude and Gemini 1.5 Pro. Not universal availability."
+    },
+    {
+      "id": "openai-gpt-4",
+      "date": "2023-03-14",
+      "lab": "openai",
+      "name": "GPT-4",
+      "stage": "release",
+      "capability": {
+        "model": "GPT-4 (Mar 2023)",
+        "score": 125.88
+      },
+      "sources": [
+        {
+          "url": "https://openai.com/index/gpt-4-research/",
+          "title": "GPT-4 — official announcement"
+        }
+      ]
+    },
     {
       "id": "anthropic-claude",
       "date": "2023-03-14",
@@ -46,23 +95,6 @@
       "note": "Initial public introduction; access initially offered via partners and requests."
     },
     {
-      "id": "openai-gpt-4",
-      "date": "2023-03-14",
-      "lab": "openai",
-      "name": "GPT-4",
-      "stage": "release",
-      "capability": {
-        "model": "GPT-4 (Mar 2023)",
-        "score": 125.89
-      },
-      "sources": [
-        {
-          "url": "https://openai.com/index/gpt-4-research/",
-          "title": "GPT-4 — official announcement"
-        }
-      ]
-    },
-    {
       "id": "anthropic-claude-2",
       "date": "2023-07-11",
       "lab": "anthropic",
@@ -70,7 +102,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude 2",
-        "score": 120.14
+        "score": 120.15
       },
       "sources": [
         {
@@ -80,6 +112,28 @@
       ]
     },
     {
+      "id": "meta-llama-2",
+      "date": "2023-07-18",
+      "lab": "meta",
+      "name": "Llama 2",
+      "stage": "release",
+      "capability": {
+        "model": "Llama 2-70B",
+        "score": 113.84
+      },
+      "sources": [
+        {
+          "url": "https://about.fb.com/news/2023/07/llama-2/",
+          "title": "Llama 2 — official announcement / model card"
+        },
+        {
+          "url": "https://huggingface.co/meta-llama/Llama-2-70b-chat-hf",
+          "title": "Official corroborating model card / announcement"
+        }
+      ],
+      "note": "7B/13B/70B base/chat grouped; 70B tier ECI. Custom Llama 2 Community License permits qualified commercial use; open weights does not imply OSI open source."
+    },
+    {
       "id": "openai-gpt-4-turbo",
       "date": "2023-11-06",
       "lab": "openai",
@@ -87,7 +141,7 @@
       "stage": "preview",
       "capability": {
         "model": "GPT-4 Turbo (Nov 2023)",
-        "score": 126.47
+        "score": 126.46
       },
       "sources": [
         {
@@ -104,7 +158,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude 2.1",
-        "score": 119.28
+        "score": 119.3
       },
       "sources": [
         {
@@ -114,6 +168,28 @@
       ]
     },
     {
+      "id": "deepseek-llm",
+      "date": "2023-11-29",
+      "lab": "deepseek",
+      "name": "DeepSeek LLM",
+      "stage": "release",
+      "capability": {
+        "model": "DeepSeek LLM 67B",
+        "score": 110.47
+      },
+      "sources": [
+        {
+          "url": "https://github.com/deepseek-ai/DeepSeek-LLM",
+          "title": "DeepSeek LLM — official release"
+        },
+        {
+          "url": "https://huggingface.co/deepseek-ai/deepseek-llm-67b-chat",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "7B and 67B base/chat grouped; ECI maps the 67B tier. Release date corroborated by first official GitHub commit on November 29 and official Hugging Face repository creation the same day. Code MIT; weights use the DeepSeek Model License."
+    },
+    {
       "id": "google-gemini-1",
       "date": "2023-12-06",
       "lab": "google",
@@ -121,7 +197,7 @@
       "stage": "release",
       "capability": {
         "model": "Gemini 1.0 Pro",
-        "score": 117.05
+        "score": 117.07
       },
       "sources": [
         {
@@ -178,6 +254,50 @@
       "note": "Opus and Sonnet grouped as one launch event; Haiku arrived later."
     },
     {
+      "id": "meta-llama-3",
+      "date": "2024-04-18",
+      "lab": "meta",
+      "name": "Llama 3",
+      "stage": "release",
+      "capability": {
+        "model": "Llama 3-70B",
+        "score": 122.94
+      },
+      "sources": [
+        {
+          "url": "https://ai.meta.com/blog/meta-llama-3/",
+          "title": "Llama 3 — official announcement / model card"
+        },
+        {
+          "url": "https://huggingface.co/meta-llama/Meta-Llama-3-70B-Instruct",
+          "title": "Official corroborating model card / announcement"
+        }
+      ],
+      "note": "8B/70B grouped; not the later 405B release. Custom Llama 3 Community License."
+    },
+    {
+      "id": "deepseek-v2",
+      "date": "2024-05-06",
+      "lab": "deepseek",
+      "name": "DeepSeek V2",
+      "stage": "release",
+      "capability": {
+        "model": "DeepSeek-V2 (MoE-236B, May 2024)",
+        "score": 124.78
+      },
+      "sources": [
+        {
+          "url": "https://github.com/deepseek-ai/DeepSeek-V2",
+          "title": "DeepSeek V2 — official release"
+        },
+        {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V2-Chat",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "236B MoE main model; official repository News states May 6. Hugging Face repository was created April 28, before the announced release; repository creation alone is not the launch date. Weights under DeepSeek Model License. Epoch CSV dates the same May version May 7; official release date May 6 controls the x-coordinate."
+    },
+    {
       "id": "openai-gpt-4o",
       "date": "2024-05-13",
       "lab": "openai",
@@ -185,7 +305,7 @@
       "stage": "release",
       "capability": {
         "model": "GPT-4o (May 2024)",
-        "score": 128.97
+        "score": 129.05
       },
       "sources": [
         {
@@ -213,6 +333,46 @@
       "note": "API release log dates availability June 20; the news page currently displays June 21."
     },
     {
+      "id": "meta-llama-3-1",
+      "date": "2024-07-23",
+      "lab": "meta",
+      "name": "Llama 3.1",
+      "stage": "release",
+      "capability": {
+        "model": "Llama 3.1-405B",
+        "score": 128.76
+      },
+      "sources": [
+        {
+          "url": "https://ai.meta.com/blog/meta-llama-3-1/",
+          "title": "Llama 3.1 — official announcement / model card"
+        },
+        {
+          "url": "https://huggingface.co/meta-llama/Llama-3.1-405B-Instruct",
+          "title": "Official corroborating model card / announcement"
+        }
+      ],
+      "note": "8B/70B/405B grouped, using the 405B tier. Custom Llama 3.1 Community License."
+    },
+    {
+      "id": "deepseek-v2-5",
+      "date": "2024-09-05",
+      "lab": "deepseek",
+      "name": "DeepSeek V2.5",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://api-docs.deepseek.com/news/news0905/",
+          "title": "DeepSeek V2.5 — official release"
+        },
+        {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V2.5",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "Merged general chat and coding capabilities in the main general-purpose model, not a separate Coder event. No matching ECI entry; do not substitute V2 or V3."
+    },
+    {
       "id": "openai-o1-preview",
       "date": "2024-09-12",
       "lab": "openai",
@@ -230,6 +390,28 @@
       ]
     },
     {
+      "id": "meta-llama-3-2",
+      "date": "2024-09-25",
+      "lab": "meta",
+      "name": "Llama 3.2",
+      "stage": "release",
+      "capability": {
+        "model": "Llama 3.2 90B",
+        "score": 125.51
+      },
+      "sources": [
+        {
+          "url": "https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/",
+          "title": "Llama 3.2 — official announcement / model card"
+        },
+        {
+          "url": "https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct",
+          "title": "Official corroborating model card / announcement"
+        }
+      ],
+      "note": "1B/3B text and 11B/90B general multimodal language models grouped; use 90B, not only the smaller text tier. Vision input does not turn a general-purpose LLM into an image generator. Custom Llama 3.2 Community License. Epoch CSV dates the model September 24; official announcement and model card say September 25, which controls the x-coordinate."
+    },
+    {
       "id": "anthropic-claude-3-5-sonnet-v2",
       "date": "2024-10-22",
       "lab": "anthropic",
@@ -237,7 +419,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude 3.5 Sonnet (October 2024)",
-        "score": 133.54
+        "score": 133.53
       },
       "sources": [
         {
@@ -248,6 +430,24 @@
       "note": "v2 is an editorial label for the explicitly announced upgraded Sonnet."
     },
     {
+      "id": "deepseek-r1-lite-preview",
+      "date": "2024-11-20",
+      "lab": "deepseek",
+      "name": "DeepSeek R1-Lite-Preview",
+      "stage": "preview",
+      "sources": [
+        {
+          "url": "https://www.deepseek.com/en/news/r1-lite-preview/",
+          "title": "DeepSeek R1-Lite-Preview — official release"
+        },
+        {
+          "url": "https://api-docs.deepseek.com/zh-cn/news/news1120/",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "First public preview of the main reasoning family, usable on the web that day; API and weights were only promised. Included as preview despite Lite in the name because it introduced the family, rather than an auxiliary smaller tier. No matching ECI entry."
+    },
+    {
       "id": "openai-o1",
       "date": "2024-12-05",
       "lab": "openai",
@@ -255,7 +455,7 @@
       "stage": "release",
       "capability": {
         "model": "o1",
-        "score": 141.9
+        "score": 141.84
       },
       "sources": [
         {
@@ -264,6 +464,28 @@
         }
       ],
       "note": "Production o1 replaces the separately named o1-preview; pro compute mode is not counted again."
+    },
+    {
+      "id": "meta-llama-3-3",
+      "date": "2024-12-06",
+      "lab": "meta",
+      "name": "Llama 3.3",
+      "stage": "release",
+      "capability": {
+        "model": "Llama 3.3 70B",
+        "score": 127.34
+      },
+      "sources": [
+        {
+          "url": "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct",
+          "title": "Llama 3.3 — official announcement / model card"
+        },
+        {
+          "url": "https://github.com/meta-llama/llama-models/blob/main/models/llama3_3/MODEL_CARD.md",
+          "title": "Official corroborating model card / announcement"
+        }
+      ],
+      "note": "70B general multilingual text model; date stated by model card and Community License. No separate 405B event."
     },
     {
       "id": "google-gemini-2-0-flash",
@@ -284,6 +506,50 @@
       "note": "New generation opened with experimental Flash; its API general availability on Feb 5, 2025 is not counted again."
     },
     {
+      "id": "deepseek-v3",
+      "date": "2024-12-26",
+      "lab": "deepseek",
+      "name": "DeepSeek V3",
+      "stage": "release",
+      "capability": {
+        "model": "DeepSeek-V3",
+        "score": 132.33
+      },
+      "sources": [
+        {
+          "url": "https://api-docs.deepseek.com/news/news1226/",
+          "title": "DeepSeek V3 — official release"
+        },
+        {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V3",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "671B MoE, 37B active; base/chat weights under DeepSeek Model License and code MIT. Model card and API log both date the release December 26."
+    },
+    {
+      "id": "deepseek-r1",
+      "date": "2025-01-20",
+      "lab": "deepseek",
+      "name": "DeepSeek R1",
+      "stage": "release",
+      "capability": {
+        "model": "DeepSeek-R1",
+        "score": 138.96
+      },
+      "sources": [
+        {
+          "url": "https://api-docs.deepseek.com/news/news250120/",
+          "title": "DeepSeek R1 — official release"
+        },
+        {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-R1",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "Main 671B reasoning model, MIT weights. R1-Zero research checkpoint and six distilled models do not add events or supply the score."
+    },
+    {
       "id": "google-gemini-2-0-pro",
       "date": "2025-02-05",
       "lab": "google",
@@ -291,7 +557,7 @@
       "stage": "preview",
       "capability": {
         "model": "Gemini 2.0 Pro",
-        "score": 135.06
+        "score": 135.05
       },
       "sources": [
         {
@@ -309,7 +575,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude 3.7 Sonnet",
-        "score": 141.16
+        "score": 141.14
       },
       "sources": [
         {
@@ -326,7 +592,7 @@
       "stage": "preview",
       "capability": {
         "model": "GPT-4.5",
-        "score": 136.74
+        "score": 136.73
       },
       "sources": [
         {
@@ -336,6 +602,28 @@
       ]
     },
     {
+      "id": "deepseek-v3-0324",
+      "date": "2025-03-24",
+      "lab": "deepseek",
+      "name": "DeepSeek V3-0324",
+      "stage": "release",
+      "capability": {
+        "model": "DeepSeek-V3 (Mar 2025)",
+        "score": 135.93
+      },
+      "sources": [
+        {
+          "url": "https://api-docs.deepseek.com/updates/",
+          "title": "DeepSeek V3-0324 — official release"
+        },
+        {
+          "url": "https://api-docs.deepseek.com/news/news250325/",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "Explicit major reasoning and tool-use upgrade, not a routine snapshot. Use March 24 from the official API change log; the standalone news post is dated March 25. MIT weights. This one-day discrepancy is preserved."
+    },
+    {
       "id": "google-gemini-2-5-pro",
       "date": "2025-03-25",
       "lab": "google",
@@ -343,7 +631,7 @@
       "stage": "preview",
       "capability": {
         "model": "Gemini 2.5 Pro (Mar 2025)",
-        "score": 144.15
+        "score": 144.12
       },
       "sources": [
         {
@@ -354,6 +642,28 @@
       "note": "Experimental at launch; updated previews on May 6 and Jun 5 and stable GA on Jun 17, 2025 are not counted again."
     },
     {
+      "id": "meta-llama-4",
+      "date": "2025-04-05",
+      "lab": "meta",
+      "name": "Llama 4",
+      "stage": "release",
+      "capability": {
+        "model": "Llama 4 Maverick",
+        "score": 132.2
+      },
+      "sources": [
+        {
+          "url": "https://ai.meta.com/blog/llama-4-multimodal-intelligence/",
+          "title": "Llama 4 — official announcement / model card"
+        },
+        {
+          "url": "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct",
+          "title": "Official corroborating model card / announcement"
+        }
+      ],
+      "note": "Scout/Maverick grouped; use Maverick highest released tier. Behemoth still in training and excluded. Custom Llama 4 Community License. Epoch CSV dates Maverick April 6; official announcement and model card say April 5, used here."
+    },
+    {
       "id": "openai-gpt-4-1",
       "date": "2025-04-14",
       "lab": "openai",
@@ -361,7 +671,7 @@
       "stage": "release",
       "capability": {
         "model": "GPT-4.1",
-        "score": 136.78
+        "score": 136.77
       },
       "sources": [
         {
@@ -379,7 +689,7 @@
       "stage": "release",
       "capability": {
         "model": "o3",
-        "score": 146.86
+        "score": 146.87
       },
       "sources": [
         {
@@ -397,7 +707,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Opus 4",
-        "score": 142.67
+        "score": 142.65
       },
       "sources": [
         {
@@ -408,6 +718,28 @@
       "note": "Opus 4 and Sonnet 4 grouped as one launch event."
     },
     {
+      "id": "deepseek-r1-0528",
+      "date": "2025-05-28",
+      "lab": "deepseek",
+      "name": "DeepSeek R1-0528",
+      "stage": "release",
+      "capability": {
+        "model": "DeepSeek-R1 (May 2025)",
+        "score": 141.27
+      },
+      "sources": [
+        {
+          "url": "https://www.deepseek.com/en/news/r1-0528/",
+          "title": "DeepSeek R1-0528 — official release"
+        },
+        {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "Explicit major reasoning revision with benchmark gains and added JSON/function calling. MIT; the distilled Qwen3-8B is excluded."
+    },
+    {
       "id": "anthropic-claude-opus-4-1",
       "date": "2025-08-05",
       "lab": "anthropic",
@@ -415,7 +747,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Opus 4.1",
-        "score": 144.11
+        "score": 144.09
       },
       "sources": [
         {
@@ -442,6 +774,28 @@
       ]
     },
     {
+      "id": "deepseek-v3-1",
+      "date": "2025-08-21",
+      "lab": "deepseek",
+      "name": "DeepSeek V3.1",
+      "stage": "release",
+      "capability": {
+        "model": "DeepSeek-V3.1",
+        "score": 139.91
+      },
+      "sources": [
+        {
+          "url": "https://api-docs.deepseek.com/news/news250821/",
+          "title": "DeepSeek V3.1 — official release"
+        },
+        {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V3.1",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "Unified hybrid thinking/non-thinking main model; MIT weights. Both modes grouped, using the matching ECI V3.1 entry."
+    },
+    {
       "id": "anthropic-claude-sonnet-4-5",
       "date": "2025-09-29",
       "lab": "anthropic",
@@ -449,7 +803,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Sonnet 4.5",
-        "score": 146.84
+        "score": 146.83
       },
       "sources": [
         {
@@ -459,6 +813,28 @@
       ]
     },
     {
+      "id": "deepseek-v3-2-exp",
+      "date": "2025-09-29",
+      "lab": "deepseek",
+      "name": "DeepSeek V3.2-Exp",
+      "stage": "preview",
+      "capability": {
+        "model": "DeepSeek-V3.2-Exp",
+        "score": 144.97
+      },
+      "sources": [
+        {
+          "url": "https://api-docs.deepseek.com/news/news250929/",
+          "title": "DeepSeek V3.2-Exp — official release"
+        },
+        {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V3.2-Exp",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "Public experimental preview introducing DeepSeek Sparse Attention. API and MIT weights available, not a closed evaluation."
+    },
+    {
       "id": "openai-gpt-5-1",
       "date": "2025-11-12",
       "lab": "openai",
@@ -466,7 +842,7 @@
       "stage": "release",
       "capability": {
         "model": "GPT-5.1",
-        "score": 149.65
+        "score": 149.76
       },
       "sources": [
         {
@@ -484,7 +860,7 @@
       "stage": "preview",
       "capability": {
         "model": "Gemini 3 Pro",
-        "score": 152.95
+        "score": 152.9
       },
       "sources": [
         {
@@ -506,7 +882,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Opus 4.5",
-        "score": 150.1
+        "score": 150.17
       },
       "sources": [
         {
@@ -516,6 +892,32 @@
       ]
     },
     {
+      "id": "deepseek-v3-2",
+      "date": "2025-12-01",
+      "lab": "deepseek",
+      "name": "DeepSeek V3.2",
+      "stage": "release",
+      "capability": {
+        "model": "DeepSeek-V3.2",
+        "score": 146.11
+      },
+      "sources": [
+        {
+          "url": "https://www.deepseek.com/en/news/deepseek-v3-2/",
+          "title": "DeepSeek V3.2 — official release"
+        },
+        {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V3.2",
+          "title": "Official model card / repository"
+        },
+        {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V3.2-Speciale",
+          "title": "DeepSeek V3.2 Speciale — official weights and model card"
+        }
+      ],
+      "note": "V3.2 and Speciale are grouped on December 1. The general V3.2 replaced V3.2-Exp in the app, web and API and supplies the exact Epoch DeepSeek-V3.2 score (model date December 1). Speciale is a same-day reasoning-maxed specialist with no tool calls, served from a temporary API endpoint until December 15; published weights do not make it the general main tier. It is treated like Deep Think / Pro compute-maxed modes and excluded specialist lines such as Prover / Math for score selection. Speciale remains grouped and its source is retained. 要確認 (editorial specialist-versus-main-tier boundary)."
+    },
+    {
       "id": "openai-gpt-5-2",
       "date": "2025-12-11",
       "lab": "openai",
@@ -523,7 +925,7 @@
       "stage": "release",
       "capability": {
         "model": "GPT-5.2",
-        "score": 153.49
+        "score": 153.46
       },
       "sources": [
         {
@@ -540,7 +942,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Opus 4.6",
-        "score": 155.31
+        "score": 155.27
       },
       "sources": [
         {
@@ -557,7 +959,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Sonnet 4.6",
-        "score": 152.26
+        "score": 152.39
       },
       "sources": [
         {
@@ -574,7 +976,7 @@
       "stage": "preview",
       "capability": {
         "model": "Gemini 3.1 Pro",
-        "score": 154.84
+        "score": 154.67
       },
       "sources": [
         {
@@ -609,7 +1011,7 @@
       "stage": "release",
       "capability": {
         "model": "GPT-5.4",
-        "score": 156.91
+        "score": 156.72
       },
       "sources": [
         {
@@ -619,6 +1021,28 @@
       ]
     },
     {
+      "id": "meta-muse-spark",
+      "date": "2026-04-08",
+      "lab": "meta",
+      "name": "Muse Spark",
+      "stage": "release",
+      "capability": {
+        "model": "Muse Spark",
+        "score": 152.13
+      },
+      "sources": [
+        {
+          "url": "https://ai.meta.com/blog/introducing-muse-spark-msl/",
+          "title": "Muse Spark — official announcement / model card"
+        },
+        {
+          "url": "https://about.fb.com/news/2026/04/introducing-muse-spark-meta-superintelligence-labs/",
+          "title": "Official corroborating model card / announcement"
+        }
+      ],
+      "note": "MSL main general-purpose multimodal reasoning family, closed weights; publicly usable in Meta AI that day. Private API preview is not a second launch. Open-weight-only filtering would miss this successor."
+    },
+    {
       "id": "anthropic-claude-opus-4-7",
       "date": "2026-04-16",
       "lab": "anthropic",
@@ -626,7 +1050,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Opus 4.7",
-        "score": 156.35
+        "score": 156.32
       },
       "sources": [
         {
@@ -643,7 +1067,7 @@
       "stage": "release",
       "capability": {
         "model": "GPT-5.5",
-        "score": 159.22
+        "score": 158.95
       },
       "sources": [
         {
@@ -654,6 +1078,28 @@
       "note": "ChatGPT/Codex rollout; the API followed April 24."
     },
     {
+      "id": "deepseek-v4-preview",
+      "date": "2026-04-24",
+      "lab": "deepseek",
+      "name": "DeepSeek V4",
+      "stage": "preview",
+      "capability": {
+        "model": "DeepSeek-V4-Pro",
+        "score": 149.19
+      },
+      "sources": [
+        {
+          "url": "https://www.deepseek.com/en/news/v4-preview/",
+          "title": "DeepSeek V4 — official release"
+        },
+        {
+          "url": "https://api-docs.deepseek.com/news/news260424/",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "Public preview; Pro/Flash grouped, using Pro preview ECI rather than later August GA. Million-token context and new architecture; MIT weights. Model card publication April 27 follows the April 24 launch."
+    },
+    {
       "id": "google-gemini-3-5-flash",
       "date": "2026-05-19",
       "lab": "google",
@@ -661,7 +1107,7 @@
       "stage": "release",
       "capability": {
         "model": "Gemini 3.5 Flash",
-        "score": 154.51
+        "score": 154.38
       },
       "sources": [
         {
@@ -679,7 +1125,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Opus 4.8",
-        "score": 158.34
+        "score": 158.26
       },
       "sources": [
         {
@@ -696,7 +1142,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Fable 5",
-        "score": 162.22
+        "score": 162.13
       },
       "sources": [
         {
@@ -714,7 +1160,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Sonnet 5",
-        "score": 156.34
+        "score": 156.36
       },
       "sources": [
         {
@@ -731,7 +1177,7 @@
       "stage": "release",
       "capability": {
         "model": "GPT-5.6 Sol",
-        "score": 161.8
+        "score": 161.73
       },
       "sources": [
         {
@@ -742,6 +1188,28 @@
       "note": "Sol/Terra/Luna grouped at general release; earlier closed partner preview excluded."
     },
     {
+      "id": "meta-muse-spark-1-1",
+      "date": "2026-07-09",
+      "lab": "meta",
+      "name": "Muse Spark 1.1",
+      "stage": "release",
+      "capability": {
+        "model": "Muse Spark 1.1",
+        "score": 154
+      },
+      "sources": [
+        {
+          "url": "https://research.meta.ai/blog/introducing-muse-spark-meta-model-api",
+          "title": "Muse Spark 1.1 — official announcement / model card"
+        },
+        {
+          "url": "https://dev.meta.ai/models/muse-spark",
+          "title": "Official corroborating model card / announcement"
+        }
+      ],
+      "note": "General multimodal reasoning model released in Meta AI Thinking; API itself in public preview. Stage release reflects the model availability, not API service beta."
+    },
+    {
       "id": "google-gemini-3-6-flash",
       "date": "2026-07-21",
       "lab": "google",
@@ -749,7 +1217,7 @@
       "stage": "release",
       "capability": {
         "model": "Gemini 3.6 Flash",
-        "score": 154.32
+        "score": 154.24
       },
       "sources": [
         {
@@ -767,7 +1235,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Opus 5",
-        "score": 162.94
+        "score": 162.6
       },
       "sources": [
         {
@@ -777,6 +1245,24 @@
       ]
     },
     {
+      "id": "meta-muse-spark-1-2",
+      "date": "2026-08-05",
+      "lab": "meta",
+      "name": "Muse Spark 1.2",
+      "stage": "release",
+      "capability": {
+        "model": "Muse Spark 1.2",
+        "score": 154.9
+      },
+      "sources": [
+        {
+          "url": "https://research.meta.ai/blog/introducing-muse-code-and-muse-spark-1-2",
+          "title": "Muse Spark 1.2 — official announcement / model card"
+        }
+      ],
+      "note": "Main Spark revision available via API and Muse Code. Coding-focused training retains general-agent capability; included as a main-family update, unlike a separate Codex/Code Llama specialized branch. Closed weights."
+    },
+    {
       "id": "google-gemini-3-7-flash",
       "date": "2026-08-13",
       "lab": "google",
@@ -784,7 +1270,7 @@
       "stage": "release",
       "capability": {
         "model": "Gemini 3.7 Flash",
-        "score": 157.44
+        "score": 157.22
       },
       "sources": [
         {
@@ -795,6 +1281,28 @@
       "note": "Counted as a new version number; GA in the Gemini API on the announcement date."
     },
     {
+      "id": "deepseek-v4-pro-ga",
+      "date": "2026-08-13",
+      "lab": "deepseek",
+      "name": "DeepSeek V4 Pro",
+      "stage": "release",
+      "capability": {
+        "model": "DeepSeek V4 Pro 0813",
+        "score": 155.29
+      },
+      "sources": [
+        {
+          "url": "https://api-docs.deepseek.com/news/news260813/",
+          "title": "DeepSeek V4 Pro — official release"
+        },
+        {
+          "url": "https://api-docs.deepseek.com/updates/",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "Explicit substantially retrained Pro GA revision on web/app/API, not merely removal of the preview label; match the August ECI entry, not April preview."
+    },
+    {
       "id": "anthropic-claude-fable-5-1",
       "date": "2026-09-01",
       "lab": "anthropic",
@@ -802,7 +1310,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Fable 5.1",
-        "score": 164.82
+        "score": 164.65
       },
       "sources": [
         {
@@ -820,7 +1328,7 @@
       "stage": "release",
       "capability": {
         "model": "Gemini 3.8 Flash",
-        "score": 156.93
+        "score": 157.2
       },
       "sources": [
         {
@@ -831,6 +1339,24 @@
       "note": "Counted as a new version number; restricted 3.8 Flash Cyber (Fairwind Program) is not counted."
     },
     {
+      "id": "meta-muse-spark-1-3",
+      "date": "2026-09-02",
+      "lab": "meta",
+      "name": "Muse Spark 1.3",
+      "stage": "release",
+      "capability": {
+        "model": "Muse Spark 1.3",
+        "score": 156.76
+      },
+      "sources": [
+        {
+          "url": "https://research.meta.ai/blog/introducing-muse-spark-1-3",
+          "title": "Muse Spark 1.3 — official announcement / model card"
+        }
+      ],
+      "note": "Main general agentic/coding update, closed weights. Use September 2 original release, not September 24 additional cloud-platform availability."
+    },
+    {
       "id": "openai-gpt-6-astra",
       "date": "2026-09-03",
       "lab": "openai",
@@ -838,7 +1364,7 @@
       "stage": "release",
       "capability": {
         "model": "GPT-6 Astra",
-        "score": 166.51
+        "score": 166.41
       },
       "sources": [
         {
@@ -853,21 +1379,26 @@
       "note": "Official start of staged rollout; date also listed in the GPT-6.1 Sol article."
     },
     {
-      "id": "anthropic-claude-opus-5-5",
-      "date": "2026-09-22",
-      "lab": "anthropic",
-      "name": "Claude Opus 5.5",
+      "id": "deepseek-v4-1-flash",
+      "date": "2026-09-10",
+      "lab": "deepseek",
+      "name": "DeepSeek V4.1 Flash",
       "stage": "release",
       "capability": {
-        "model": "Claude Opus 5.5",
-        "score": 167.35
+        "model": "DeepSeek V4.1 Flash",
+        "score": 155.57
       },
       "sources": [
         {
-          "url": "https://www.anthropic.com/claude-opus-5-5",
-          "title": "Claude Opus 5.5 — official announcement"
+          "url": "https://www.deepseek.com/en/news/deepseek-v4-1-flash/",
+          "title": "DeepSeek V4.1 Flash — official release"
+        },
+        {
+          "url": "https://api-docs.deepseek.com/news/news260910/",
+          "title": "Official model card / repository"
         }
-      ]
+      ],
+      "note": "New main architecture generation with native vision understanding and general reasoning/agents. Flash introduces V4.1, following the Gemini Flash new-version rule; not an auxiliary Lite tier. The launch news says V4 Pro would route away on September 14; the current API log instead records continued V4 Pro service. This availability correction is not another model launch. Epoch CSV date September 9 differs from official September 10 launch; use the official publisher date."
     },
     {
       "id": "openai-gpt-6-sol",
@@ -877,7 +1408,7 @@
       "stage": "release",
       "capability": {
         "model": "GPT-6 Sol",
-        "score": null
+        "score": 162.55
       },
       "sources": [
         {
@@ -892,6 +1423,23 @@
       "note": "Sol counted as one launch event; accompanying Luna is not a separate event."
     },
     {
+      "id": "anthropic-claude-opus-5-5",
+      "date": "2026-09-22",
+      "lab": "anthropic",
+      "name": "Claude Opus 5.5",
+      "stage": "release",
+      "capability": {
+        "model": "Claude Opus 5.5",
+        "score": 166.82
+      },
+      "sources": [
+        {
+          "url": "https://www.anthropic.com/claude-opus-5-5",
+          "title": "Claude Opus 5.5 — official announcement"
+        }
+      ]
+    },
+    {
       "id": "anthropic-claude-sonnet-5-5",
       "date": "2026-09-28",
       "lab": "anthropic",
@@ -899,7 +1447,7 @@
       "stage": "release",
       "capability": {
         "model": "Claude Sonnet 5.5",
-        "score": 165.2
+        "score": 164.45
       },
       "sources": [
         {
@@ -916,7 +1464,7 @@
       "stage": "release",
       "capability": {
         "model": "GPT-6.1 Sol",
-        "score": null
+        "score": 166.32
       },
       "sources": [
         {
@@ -929,6 +1477,60 @@
         }
       ],
       "note": "Date confirmed by the GPT-6 Sol and Luna article's September 29 update."
+    },
+    {
+      "id": "meta-muse-wonder",
+      "date": "2026-10-12",
+      "lab": "meta",
+      "name": "Muse Wonder",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://research.meta.ai/blog/muse-wonder",
+          "title": "Muse Wonder — official announcement / model card"
+        }
+      ],
+      "note": "Wonder and Wonder Full grouped. Both publicly released through API/Muse Code or paid subscription; Full is a separately trained larger base-model tier, not just a compute-only mode. No matching ECI entry."
+    },
+    {
+      "id": "google-gemini-4-argon",
+      "date": "2026-10-13",
+      "lab": "google",
+      "name": "Gemini 4 Argon",
+      "stage": "release",
+      "capability": {
+        "model": "Gemini 4 Argon",
+        "score": 164.56
+      },
+      "sources": [
+        {
+          "url": "https://ai.google.dev/gemini-api/docs/changelog",
+          "title": "Gemini API release notes — October 13 GA"
+        },
+        {
+          "url": "https://gemini.google/release-notes/",
+          "title": "Gemini Apps release notes — October 13 public rollout"
+        }
+      ],
+      "note": "First broad public release via API and Gemini app; September 30 was restricted Fairwind access and is not another event. ECI dated September 30 maps the same named Argon model; no claim that it was generally available then."
+    },
+    {
+      "id": "deepseek-v4-1-flash-1017",
+      "date": "2026-10-17",
+      "lab": "deepseek",
+      "name": "DeepSeek V4.1 Flash-1017",
+      "stage": "release",
+      "sources": [
+        {
+          "url": "https://api-docs.deepseek.com/news/news261017/",
+          "title": "DeepSeek V4.1 Flash-1017 — official release"
+        },
+        {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017",
+          "title": "Official model card / repository"
+        }
+      ],
+      "note": "Explicit major post-training release using reinforcement learning with self-feedback and broad benchmark gains, plus new weights. Included despite dated suffix, like V3-0324/R1-0528; not the separate Search/Fetch product launch. No matching ECI entry; never reuse September V4.1 Flash score."
     }
   ]
 }
